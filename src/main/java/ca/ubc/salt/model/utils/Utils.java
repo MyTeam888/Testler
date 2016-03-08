@@ -1,4 +1,4 @@
-package ca.ubs.salt.assertionModel.utils;
+package ca.ubc.salt.model.utils;
 
 import java.util.HashSet;
 import java.util.List;

@@ -1,4 +1,4 @@
-package ca.ubc.ca.salt.assertionModel.instrumenter;
+package ca.ubc.salt.model.instrumenter;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,7 +16,7 @@ import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 
-import ca.ubs.salt.assertionModel.utils.FileUtils;
+import ca.ubc.salt.model.utils.FileUtils;
 
 public class ClassModel
 {

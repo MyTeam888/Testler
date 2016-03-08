@@ -1,4 +1,4 @@
-package ca.ubc.salt.assertionmodel;
+package ca.ubc.salt.model.assertion;
 
 import japa.parser.ast.body.MethodDeclaration;
 import japa.parser.ast.stmt.BlockStmt;

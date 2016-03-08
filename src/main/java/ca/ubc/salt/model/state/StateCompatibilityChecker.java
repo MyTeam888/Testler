@@ -1,4 +1,4 @@
-package ca.ubc.salt.assertionmodel.state;
+package ca.ubc.salt.model.state;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,8 +20,8 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import ca.ubs.salt.assertionModel.utils.FileUtils;
-import ca.ubs.salt.assertionModel.utils.Settings;
+import ca.ubc.salt.model.utils.FileUtils;
+import ca.ubc.salt.model.utils.Settings;
 
 public class StateCompatibilityChecker
 {

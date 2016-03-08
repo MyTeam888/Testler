@@ -1,4 +1,4 @@
-package ca.ubc.ca.salt.assertionModel.instrumenter;
+package ca.ubc.salt.model.instrumenter;
 
 import java.util.HashMap;
 import java.util.HashSet;

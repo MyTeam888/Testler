@@ -1,4 +1,4 @@
-package ca.ubc.salt.assertionmodel;
+package ca.ubc.salt.model.assertion;
 
 import java.io.File;
 import java.io.FileInputStream;

@@ -1,4 +1,4 @@
-package ca.ubc.salt.assertionmodel.state;
+package ca.ubc.salt.model.state;
 
 import java.util.HashSet;
 import java.util.LinkedList;

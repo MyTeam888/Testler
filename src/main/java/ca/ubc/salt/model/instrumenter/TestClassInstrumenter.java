@@ -1,4 +1,4 @@
-package ca.ubc.ca.salt.assertionModel.instrumenter;
+package ca.ubc.salt.model.instrumenter;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -42,9 +42,8 @@ import org.eclipse.jface.text.Document;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
 
-import ca.ubc.salt.assertionmodel.TestSuiteComposer;
-import ca.ubs.salt.assertionModel.utils.FileUtils;
-import ca.ubs.salt.assertionModel.utils.Settings;
+import ca.ubc.salt.model.utils.FileUtils;
+import ca.ubc.salt.model.utils.Settings;
 
 public class TestClassInstrumenter
 {
