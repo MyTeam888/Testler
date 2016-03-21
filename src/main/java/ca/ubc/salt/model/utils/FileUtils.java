@@ -24,13 +24,15 @@ public class FileUtils
 	return set;
     }
 
-    public static String readFile(File file) throws FileNotFoundException
+    public static String readFile(File file, boolean skipFirstLine) throws FileNotFoundException
     {
 	Scanner sc = new Scanner(file);
 	StringBuffer sb = new StringBuffer();
-	while (sc.hasNext())
+	if (skipFirstLine && sc.hasNextLine())
+	    sc.nextLine();
+	while (sc.hasNextLine())
 	    sb.append(sc.nextLine());
-
+	sc.close();
 	return sb.toString();
     }
 
@@ -86,13 +88,31 @@ public class FileUtils
     {
 	try
 	{
-	    return FileUtils.readFile(file);
+	    return FileUtils.readFile(file, true);
 	} catch (IOException e)
 	{
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();
 	    return "";
 	}
+    }
+    
+    
+    
+    public static String getVars(String stateName)
+    {
+	Scanner sc = null;
+	try
+	{
+	    sc = new Scanner(new File(Settings.tracePaths+"/"+stateName));
+	} catch (FileNotFoundException e)
+	{
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
+	String vars = sc.nextLine();
+	sc.close();
+	return vars;
     }
     
     

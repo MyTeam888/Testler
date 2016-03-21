@@ -2,6 +2,7 @@ package ca.ubc.salt.model.instrumenter;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -44,6 +45,7 @@ import org.eclipse.text.edits.TextEdit;
 
 import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Settings;
+import ca.ubc.salt.model.utils.Utils;
 
 public class TestClassInstrumenter
 {
@@ -53,7 +55,7 @@ public class TestClassInstrumenter
 	File testClass = new File(testClassPath);
 	if (testClass.isFile())
 	{
-	    if (!isTestClass(testClass))
+	    if (!Utils.isTestClass(testClass))
 		return;
 
 	    String source = FileUtils.readFileToString(testClass);
@@ -250,11 +252,6 @@ public class TestClassInstrumenter
     //
     // }
 
-    public static boolean isTestClass(File classFile)
-    {
-	return true;
-    }
-
     public static void main(String[] args)
 	    throws IOException, IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException
     {
@@ -264,17 +261,21 @@ public class TestClassInstrumenter
 	// "/Users/arash/Library/Mobile
 	// Documents/com~apple~CloudDocs/Research/Calculator/src/calc/CalculatorTest.java");
 	instrumentClass(
-		"/Users/arash/Desktop/Research/Repos/commons-math/src/test/java/org/apache/commons/math4/fraction/FractionTest.java");
+		"/Users/Arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/fraction/FractionTest.java");
     }
 
     public static ASTNode generateInstrumentationHeader(int randomNumber, String methodName)
     {
-	String str = String.format("XStream xstream_%d = new XStream(new StaxDriver());", randomNumber);
-	str += String.format(
-		"try{ObjectOutputStream out_%d = xstream_%d.createObjectOutputStream(new FileWriter(\"traces/%s-%d.xml\"));",
-		randomNumber, randomNumber, methodName, 0);
-	str += String.format("out_%d.close();}catch (IOException e){e.printStackTrace();}", randomNumber);
-	return createBlockWithText(str);
+	StringBuilder sb = new StringBuilder();
+	sb.append(String.format("XStream xstream_%d = new XStream(new StaxDriver());", randomNumber));
+	sb.append(String.format("try{FileWriter fw_%d = new FileWriter(\"traces/%s-%d.xml\");", randomNumber,
+		methodName, 0));
+	sb.append(String.format("fw_%d.append(\"<vars></vars>\\n\");", randomNumber));
+	sb.append(String.format(
+		"ObjectOutputStream out_%d = xstream_%d.createObjectOutputStream(fw_%d);",
+		randomNumber, randomNumber, randomNumber));
+	sb.append(String.format("out_%d.close();}catch (IOException e){e.printStackTrace();}", randomNumber));
+	return createBlockWithText(sb.toString());
 
     }
 
@@ -303,10 +304,17 @@ public class TestClassInstrumenter
     public static ASTNode generateInstrumentationBlock(int randomNumber,
 	    LinkedList<VariableDeclarationFragment> varDecs, String methodName, int counter)
     {
+
 	StringBuilder sb = new StringBuilder();
-	sb.append(String.format(
-		"try{ObjectOutputStream out_%d = xstream_%d.createObjectOutputStream(new FileWriter(\"traces/%s-%d.xml\"));",
-		randomNumber, randomNumber, methodName, counter));
+	sb.append(String.format("try{FileWriter fw_%d = new FileWriter(\"traces/%s-%d.xml\");", randomNumber,
+		methodName, counter));
+	sb.append(String.format("fw_%d.append(\"<vars>\");", randomNumber));
+	for (VariableDeclarationFragment var : varDecs)
+	    sb.append(String.format("fw_%d.append(\"<var>%s</var>\");", randomNumber, var.getName()));
+	sb.append(String.format("fw_%d.append(\"</vars>\\n\");", randomNumber));
+
+	sb.append(String.format("ObjectOutputStream out_%d = xstream_%d.createObjectOutputStream(fw_%d);", randomNumber, randomNumber,
+		randomNumber));
 	for (VariableDeclarationFragment var : varDecs)
 	    sb.append(String.format("out_%d.writeObject(%s);", randomNumber, var.getName()));
 	sb.append(String.format("out_%d.close();}catch (IOException e){e.printStackTrace();}", randomNumber));

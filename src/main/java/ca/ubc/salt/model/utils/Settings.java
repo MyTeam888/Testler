@@ -17,6 +17,6 @@ public class Settings
 
     public final static Logger consoleLogger = LogManager.getRootLogger();
     public final static Logger fileLogger = LogManager.getLogger("FileLogger");
-    public final static String tracePaths = "/Users/arash/Desktop/newResearch/commons-math/traces";
+    public final static String tracePaths = "/Users/Arash/Research/repos/commons-math/traces";
     
 }

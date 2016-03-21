@@ -26,7 +26,7 @@ public class StateComparator
     {
 	long time = System.nanoTime();
 	TestState root = createGraph();
-//	System.out.println(root.printDot());
+	System.out.println(root.printDot());
 	
 	Settings.consoleLogger.info(String.format("took %d milliseconds", (System.nanoTime() - time) / 1000000));
     }

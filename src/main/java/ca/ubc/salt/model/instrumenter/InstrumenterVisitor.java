@@ -20,7 +20,7 @@ import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 
-public class Visitor extends ASTVisitor
+public class InstrumenterVisitor extends ASTVisitor
 {
     LinkedList<VariableDeclarationFragment> varDecs = new LinkedList<VariableDeclarationFragment>();
     Stack<Integer> varDecLen = new Stack<Integer>();
@@ -29,7 +29,7 @@ public class Visitor extends ASTVisitor
     int counter = 1;
     String methodName;
 
-    public Visitor(ASTRewrite astRewrite, int randomNumber, String methodName)
+    public InstrumenterVisitor(ASTRewrite astRewrite, int randomNumber, String methodName)
     {
 	this.astRewrite = astRewrite;
 	this.randomNumber = randomNumber;

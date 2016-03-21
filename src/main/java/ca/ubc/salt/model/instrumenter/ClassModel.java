@@ -30,18 +30,39 @@ public class ClassModel
 	this.typeDec = typeDec;
 	this.cu = cu;
     }
-
+    
+    
     public static List<ClassModel> getClasses(String source) throws IOException
     {
+	return getClasses(source, false, null, null, null);
+    }
+    public static List<ClassModel> getClasses(String source, boolean binding, String unitName, String[] sources,
+	    String[] classPath) throws IOException
+    {
 	ASTParser parser = ASTParser.newParser(AST.JLS8);
+	if (binding)
+	    parser.setResolveBindings(true);
 	parser.setKind(ASTParser.K_COMPILATION_UNIT);
+
+	if (binding)
+	    parser.setBindingsRecovery(true);
 	Map pOptions = JavaCore.getOptions();
 	pOptions.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_8);
 	pOptions.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_8);
 	pOptions.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_8);
 	parser.setCompilerOptions(pOptions);
 
-	
+	if (binding)
+	{
+	    // String unitName = "FractionTest.java";
+	    parser.setUnitName(unitName);
+
+	    // String[] sources = { "C:\\Users\\pc\\workspace\\asttester\\src"
+	    // };
+	    // String[] classpath = {"C:\\Program
+	    // Files\\Java\\jre1.8.0_25\\lib\\rt.jar"};
+	    parser.setEnvironment(classPath, sources, new String[] { "UTF-8"}, true);
+	}
 	parser.setSource(source.toCharArray());
 	CompilationUnit cu = (CompilationUnit) parser.createAST(null);
 
@@ -93,48 +114,46 @@ public class ClassModel
 
     public TypeDeclaration getTypeDec()
     {
-        return typeDec;
+	return typeDec;
     }
 
     public void setTypeDec(TypeDeclaration typeDec)
     {
-        this.typeDec = typeDec;
+	this.typeDec = typeDec;
     }
 
     public CompilationUnit getCu()
     {
-        return cu;
+	return cu;
     }
 
     public void setCu(CompilationUnit cu)
     {
-        this.cu = cu;
+	this.cu = cu;
     }
 
     public List<FieldDeclaration> getStaticFields()
     {
-        return staticFields;
+	return staticFields;
     }
 
     public void setStaticFields(List<FieldDeclaration> staticFields)
     {
 	if (staticFields == null)
 	    initStaticFields();
-        this.staticFields = staticFields;
+	this.staticFields = staticFields;
     }
 
     public List<Method> getMethods()
     {
 	if (methods == null)
 	    initMethods();
-        return methods;
+	return methods;
     }
 
     public void setMethods(List<Method> methods)
     {
-        this.methods = methods;
+	this.methods = methods;
     }
-    
-    
 
 }

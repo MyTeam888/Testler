@@ -1,5 +1,6 @@
 package ca.ubc.salt.model.utils;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -7,7 +8,7 @@ import java.util.Set;
 
 public class Utils
 {
-    static Set intersection(List<Set> sets)
+    public static Set intersection(List<Set> sets)
     {
 	Set common = new HashSet();
 	if (sets.size() != 0)
@@ -20,5 +21,11 @@ public class Utils
 	    }
 	}
 	return common;
+    }
+    
+    
+    public static boolean isTestClass(File classFile)
+    {
+	return true;
     }
 }
