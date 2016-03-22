@@ -26,7 +26,7 @@ public class InstrumenterVisitor extends ASTVisitor
     Stack<Integer> varDecLen = new Stack<Integer>();
     ASTRewrite astRewrite;
     int randomNumber;
-    int counter = 1;
+    int counter = 2;
     String methodName;
 
     public InstrumenterVisitor(ASTRewrite astRewrite, int randomNumber, String methodName)

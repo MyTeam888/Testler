@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -30,33 +31,87 @@ import ca.ubc.salt.model.utils.XMLUtils;
 public class StateCompatibilityChecker
 {
     HashMap<List<String>, Set<String>> varStateSet = new HashMap<List<String>, Set<String>>();
-    
 
     public static void main(String[] args) throws SAXException, IOException
     {
 	StateCompatibilityChecker scc = new StateCompatibilityChecker();
 	// scc.processState("testSubtract-17.xml");
 	scc.populateVarStateSet();
-	System.out.println(scc.varStateSet);
-	 Map<String, Set<SimpleName>> readVars =
-	 ReadVariableDetector.populateReadVarsForFile(
-	 "/Users/Arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/fraction/FractionTest.java");
-	 Map<String, Set<List<String>>> readValues = ReadVariableDetector.getReadValues(readVars);
-	 Map<String, Set<String>> compatibleStates = getCompatibleStates(scc.varStateSet, readValues);
+//	System.out.println(scc.varStateSet);
+	Map<String, Set<SimpleName>> readVars = ReadVariableDetector.populateReadVarsForFile(
+		"/Users/Arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/fraction/FractionTest.java");
+	Map<String, Set<List<String>>> readValues = ReadVariableDetector.getReadValues(readVars);
+//	System.out.println(readValues);
+	Map<String, Set<String>> compatibleStates = getCompatibleStates(scc.varStateSet, readValues);
+	System.out.println(compatibleStates);
+	
+	Map<String, TestState> graph = StateComparator.createGraph();
+	
+	setCompabilityFields(graph, compatibleStates);
+	
+	
+    }
+    
+    public static void setCompabilityFields(Map<String, TestState> graph, Map<String, Set<String>> compatibleStates)
+    {
+	for (Entry<String, Set<String>> entry : compatibleStates.entrySet())
+	{
+	    String stateName = entry.getKey();
+	    Set<String> compatibleState = entry.getValue();
+	    
+	    TestState parentTestState = graph.get(stateName);
+	    if (parentTestState != null)
+	    {
+		TestStatement testStatement = parentTestState.getChildren().get(stateName);
+		if (testStatement != null)
+		{
+		    for (String state : compatibleState)
+		    {
+			TestState compState = graph.get(state);
+			testStatement.getCompatibleStates().add(compState);
+		    }
+		}
+		else
+		{
+		    //!!!
+		}
+		
+	    }
+	    else
+	    {
+		//!!!
+	    }
+	}
     }
 
-    
-    public static Map<String, Set<String>> getCompatibleStates(HashMap<List<String>, Set<String>> varStateSet, Map<String, Set<List<String>>> readValues)
+    public static Map<String, Set<String>> getCompatibleStates(HashMap<List<String>, Set<String>> varStateSet,
+	    Map<String, Set<List<String>>> readValues)
     {
-	return null;
+	Map<String, Set<String>> compatibleStates = new HashMap<String, Set<String>>();
+	for (Entry<String, Set<List<String>>> entry : readValues.entrySet())
+	{
+	    String stateName = entry.getKey();
+	    Set<List<String>> readValue = entry.getValue();
+	    
+	    List<Set<String>> comp = new LinkedList<Set<String>>();
+	    for (List<String> varValue : readValue)
+	    {
+		comp.add(getAllStatesWithVariableValue(varStateSet, varValue));
+	    }
+	    
+	    Set<String> compatibleStatesOfState = Utils.intersection(comp);
+	    compatibleStates.put(stateName, compatibleStatesOfState);
+	    
+	}
+	return compatibleStates;
     }
-    
-    
-    public static Set<String> getAllStatesWithVariableValue(HashMap<List<String>, Set<String>> varStateSet, List<String> value)
+
+    public static Set<String> getAllStatesWithVariableValue(HashMap<List<String>, Set<String>> varStateSet,
+	    List<String> value)
     {
-	return null;
+	return varStateSet.get(value);
     }
-    
+
     private void populateVarStateSet()
     {
 	File folder = new File(Settings.tracePaths);
@@ -82,6 +137,8 @@ public class StateCompatibilityChecker
     public void processState(String stateName) throws SAXException, IOException
     {
 	NodeList nodeList = XMLUtils.getNodeList(stateName);
+	if (nodeList == null)
+	    return;
 
 	for (int i = 0; i < nodeList.getLength(); i++)
 	{
@@ -93,7 +150,8 @@ public class StateCompatibilityChecker
 	}
     }
 
-    public static void processObjectIndex(String stateName, int i, HashMap<List<String>, Set<String>> varStateSet, NodeList nodeList) throws SAXException, IOException
+    public static void processObjectIndex(String stateName, int i, HashMap<List<String>, Set<String>> varStateSet,
+	    NodeList nodeList) throws SAXException, IOException
     {
 	Node object = nodeList.item(i);
 	if (object instanceof Element)
@@ -101,8 +159,6 @@ public class StateCompatibilityChecker
 	    processObject(object, varStateSet, new LinkedList<String>(), stateName);
 	}
     }
-
-    
 
     public static void processObject(Node object, HashMap<List<String>, Set<String>> varStateSet,
 	    LinkedList<String> key, String stateName)
@@ -144,10 +200,10 @@ public class StateCompatibilityChecker
 
     private Set<String> getCompatibleStates(List<List<String>> vars)
     {
-	List<Set> stateSets = new LinkedList<Set>();
+	List<Set<String>> stateSets = new LinkedList<Set<String>>();
 	for (List<String> var : vars)
 	{
-	    Set states = varStateSet.get(var);
+	    Set<String> states = varStateSet.get(var);
 	    if (states != null)
 		stateSets.add(states);
 	}

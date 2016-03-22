@@ -25,17 +25,18 @@ import org.xml.sax.InputSource;
 import ca.ubc.salt.model.instrumenter.ClassModel;
 import ca.ubc.salt.model.instrumenter.Method;
 import ca.ubc.salt.model.utils.FileUtils;
+import ca.ubc.salt.model.utils.Settings;
 import ca.ubc.salt.model.utils.Utils;
 import ca.ubc.salt.model.utils.XMLUtils;
 
 public class ReadVariableDetector
 {
 
-    public static void main(String[] args) throws IOException
-    {
-	populateReadVarsForFile(
-		"/Users/Arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/fraction/FractionTest.java");
-    }
+    // public static void main(String[] args) throws IOException
+    // {
+    // populateReadVarsForFile(
+    // "/Users/Arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/fraction/FractionTest.java");
+    // }
 
     public static Map<String, Set<SimpleName>> populateReadVarsForFile(String path) throws IOException
     {
@@ -48,8 +49,7 @@ public class ReadVariableDetector
 	    String source = FileUtils.readFileToString(testClass);
 	    Document document = new Document(source);
 	    List<ClassModel> classes = ClassModel.getClasses(document.get(), true, "FractionTest.java",
-		    new String[] { "/Users/Arash/Research/repos/commons-math/src" },
-		    new String[] { "/Library/Java/JavaVirtualMachines/jdk1.8.0_20.jdk/Contents/Home/jre/lib/rt.jar" });
+		    new String[] { Settings.PROJECT_PATH }, new String[] { Settings.LIBRARY_JAVA });
 
 	    Map<String, Set<SimpleName>> readVars = new HashMap<String, Set<SimpleName>>();
 
@@ -101,6 +101,10 @@ public class ReadVariableDetector
 	Set<List<String>> varStateSet = new HashSet<List<String>>();
 
 	String varXML = FileUtils.getVars(stateName);
+	
+	//TODO double check what to return
+	if (varXML == null)
+	    return varStateSet;
 
 	Set<String> readVarNames = getNameSet(readVars);
 	List<String> stateVarNames = XMLUtils.getVars(varXML);

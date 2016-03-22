@@ -102,16 +102,17 @@ public class FileUtils
     public static String getVars(String stateName)
     {
 	Scanner sc = null;
+	String vars = null;
 	try
 	{
 	    sc = new Scanner(new File(Settings.tracePaths+"/"+stateName));
+	    vars = sc.nextLine();
+	    sc.close();
 	} catch (FileNotFoundException e)
 	{
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();
 	}
-	String vars = sc.nextLine();
-	sc.close();
 	return vars;
     }
     

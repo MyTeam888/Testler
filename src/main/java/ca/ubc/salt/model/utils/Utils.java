@@ -8,12 +8,12 @@ import java.util.Set;
 
 public class Utils
 {
-    public static Set intersection(List<Set> sets)
+    public static <T> Set intersection(List<Set<T>> sets)
     {
 	Set common = new HashSet();
 	if (sets.size() != 0)
 	{
-	    ListIterator<Set> iterator = sets.listIterator();
+	    ListIterator<Set<T>> iterator = sets.listIterator();
 	    common.addAll(iterator.next());
 	    while (iterator.hasNext())
 	    {

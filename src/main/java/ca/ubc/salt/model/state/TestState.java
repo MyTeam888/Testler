@@ -1,13 +1,14 @@
 package ca.ubc.salt.model.state;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
 public class TestState
 {
-    HashSet<TestState> children;
-    HashSet<TestState> parents;
+    HashMap<String, TestStatement> children;
+    HashMap<String, TestStatement> parents;
     List<String> states;
     List<String> asserts;
     
@@ -15,8 +16,8 @@ public class TestState
     
     public TestState()
     {
-	children = new HashSet<TestState>();
-	parents = new HashSet<TestState>();
+	children = new HashMap<String, TestStatement>();
+	parents = new HashMap<String, TestStatement>();
 	states = new LinkedList<String>();
 	asserts = new LinkedList<String>();
     }
@@ -37,11 +38,11 @@ public class TestState
     {
 //	System.out.println(root);
 	visited.add(root);
-	for (TestState child : root.getChildren())
+	for (TestStatement child : root.getChildren().values())
 	{
-	    sb.append(printEdge(root, child));
-	    if (!visited.contains(child))
-		DFSPrint(child, sb, visited);
+	    sb.append(printEdge(root, child.getEnd()));
+	    if (!visited.contains(child.getEnd()))
+		DFSPrint(child.getEnd(), sb, visited);
 	}
     }
     
@@ -58,25 +59,25 @@ public class TestState
     }
     
    
-    public HashSet<TestState> getChildren()
+    public HashMap<String, TestStatement> getChildren()
     {
         return children;
     }
 
 
-    public void setChildren(HashSet<TestState> children)
+    public void setChildren(HashMap<String, TestStatement> children)
     {
         this.children = children;
     }
 
 
-    public HashSet<TestState> getParents()
+    public HashMap<String, TestStatement> getParents()
     {
         return parents;
     }
 
 
-    public void setParents(HashSet<TestState> parents)
+    public void setParents(HashMap<String, TestStatement> parents)
     {
         this.parents = parents;
     }

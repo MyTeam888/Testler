@@ -25,13 +25,14 @@ public class StateComparator
     public static void main(String[] args) throws FileNotFoundException
     {
 	long time = System.nanoTime();
-	TestState root = createGraph();
+	Map<String, TestState> graph = createGraph();
+	TestState root = graph.get("init.xml");
 	System.out.println(root.printDot());
 	
 	Settings.consoleLogger.info(String.format("took %d milliseconds", (System.nanoTime() - time) / 1000000));
     }
     
-    private static TestState createGraph() throws FileNotFoundException
+    public static Map<String, TestState> createGraph() throws FileNotFoundException
     {
 	xmlHashes = createHashes();
 
@@ -46,7 +47,7 @@ public class StateComparator
 	
 	populateGraph(testStateOfState, testStates);
 	
-	return testStateOfState.get("init.xml");
+	return testStateOfState;
     }
     
     
@@ -61,14 +62,14 @@ public class StateComparator
 		String nextState = nextState(state);
 		if (testStateMap.containsKey(nextState))
 		{
-		    ts.getChildren().add(testStateMap.get(nextState));
+		    ts.getChildren().put(state, new TestStatement(ts, testStateMap.get(nextState), state));
 		}
 		
 		
 		String prevState = prevState(state);
 		if (testStateMap.containsKey(prevState))
 		{
-		    ts.getParents().add(testStateMap.get(prevState));
+		    ts.getParents().put(state, new TestStatement(ts,testStateMap.get(prevState), state));
 		}
 	    }
 	}

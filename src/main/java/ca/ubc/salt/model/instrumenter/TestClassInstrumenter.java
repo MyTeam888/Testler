@@ -269,7 +269,7 @@ public class TestClassInstrumenter
 	StringBuilder sb = new StringBuilder();
 	sb.append(String.format("XStream xstream_%d = new XStream(new StaxDriver());", randomNumber));
 	sb.append(String.format("try{FileWriter fw_%d = new FileWriter(\"traces/%s-%d.xml\");", randomNumber,
-		methodName, 0));
+		methodName, 1));
 	sb.append(String.format("fw_%d.append(\"<vars></vars>\\n\");", randomNumber));
 	sb.append(String.format(
 		"ObjectOutputStream out_%d = xstream_%d.createObjectOutputStream(fw_%d);",

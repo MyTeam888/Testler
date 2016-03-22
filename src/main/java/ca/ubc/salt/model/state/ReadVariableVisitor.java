@@ -30,10 +30,10 @@ public class ReadVariableVisitor extends ASTVisitor
     {
 	this.methodName = methodName;
     }
-    
+
     public boolean visit(ExpressionStatement node)
     {
-//	System.out.println(node.toString());
+	// System.out.println(node.toString());
 	getReadVars(node);
 	return false; // do not continue
     }
@@ -42,9 +42,9 @@ public class ReadVariableVisitor extends ASTVisitor
     {
 	// System.out.println(node.toString());
 	// System.out.println(varDecs);
-	
+
 	getReadVars(node.getInitializer());
-	
+
 	return false;
     }
 
@@ -52,67 +52,68 @@ public class ReadVariableVisitor extends ASTVisitor
     {
 	StatementReadVariableVisitor srvv = new StatementReadVariableVisitor();
 	node.accept(srvv);
-	readVars.put(methodName + counter, srvv.readVars);
+	readVars.put(methodName + "-" + counter + ".xml", srvv.readVars);
 	counter++;
     }
 
     public Map<String, Set<SimpleName>> getReadVars()
     {
-        return readVars;
+	return readVars;
     }
 
     public void setReadVars(Map<String, Set<SimpleName>> readVars)
     {
-        this.readVars = readVars;
+	this.readVars = readVars;
     }
-    
-    
+
 }
 
 class StatementReadVariableVisitor extends ASTVisitor
 {
     Set<SimpleName> readVars = new HashSet<SimpleName>();
 
-//    public boolean visit(MethodInvocation node)
-//    {
-//	Expression e = node.getExpression();
-//	ITypeBinding itb = e.resolveTypeBinding();
-//	if (e.getNodeType() == ASTNode.SIMPLE_NAME)
-//	{
-//	    readVars.add(itb.getQualifiedName());
-//	}
-//	
-//	for (Object n : node.arguments())
-//	{
-//	    if (n instanceof ASTNode)
-//	    {
-//		ASTNode nd = (ASTNode) n;
-//		if (nd.getNodeType() == ASTNode.SIMPLE_NAME)
-//		{
-//		    SimpleName sn = (SimpleName) nd;
-//		    readVars.add(sn.toString());
-//		}
-//
-//	    }
-//	}
-//
-//	return true;
-//    }
-    
+    // public boolean visit(MethodInvocation node)
+    // {
+    // Expression e = node.getExpression();
+    // ITypeBinding itb = e.resolveTypeBinding();
+    // if (e.getNodeType() == ASTNode.SIMPLE_NAME)
+    // {
+    // readVars.add(itb.getQualifiedName());
+    // }
+    //
+    // for (Object n : node.arguments())
+    // {
+    // if (n instanceof ASTNode)
+    // {
+    // ASTNode nd = (ASTNode) n;
+    // if (nd.getNodeType() == ASTNode.SIMPLE_NAME)
+    // {
+    // SimpleName sn = (SimpleName) nd;
+    // readVars.add(sn.toString());
+    // }
+    //
+    // }
+    // }
+    //
+    // return true;
+    // }
+
     public boolean visit(SimpleName node)
     {
-	if (!node.isDeclaration()) {
-		final IBinding nodeBinding = node.resolveBinding();
-		if (nodeBinding instanceof IVariableBinding) {
-		    IVariableBinding ivb = (IVariableBinding) nodeBinding;
-		    readVars.add(node);
-//		    System.out.println(ivb.getName());
-//		    System.out.println(ivb.getType().getQualifiedName());
-		}
-//		else
-//		{
-//		    System.out.println(node + " " + nodeBinding);
-//		}
+	if (!node.isDeclaration())
+	{
+	    final IBinding nodeBinding = node.resolveBinding();
+	    if (nodeBinding instanceof IVariableBinding)
+	    {
+		IVariableBinding ivb = (IVariableBinding) nodeBinding;
+		readVars.add(node);
+		// System.out.println(ivb.getName());
+		// System.out.println(ivb.getType().getQualifiedName());
+	    }
+	    // else
+	    // {
+	    // System.out.println(node + " " + nodeBinding);
+	    // }
 	}
 	return true;
     }
