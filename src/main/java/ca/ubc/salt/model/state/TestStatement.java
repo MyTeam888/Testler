@@ -1,5 +1,6 @@
 package ca.ubc.salt.model.state;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.Statement;
@@ -15,6 +16,7 @@ public class TestStatement
 	this.start = start;
 	this.end = end;
 	this.name = name;
+	compatibleStates = new HashSet<TestState>();
     }
 
     public Set<TestState> getCompatibleStates()
@@ -47,5 +49,11 @@ public class TestStatement
         this.end = end;
     }
     
+    @Override
+    public String toString()
+    {
+        // TODO Auto-generated method stub
+        return this.name;
+    }
     
 }

@@ -43,12 +43,14 @@ public class StateCompatibilityChecker
 	Map<String, Set<List<String>>> readValues = ReadVariableDetector.getReadValues(readVars);
 //	System.out.println(readValues);
 	Map<String, Set<String>> compatibleStates = getCompatibleStates(scc.varStateSet, readValues);
-	System.out.println(compatibleStates);
+//	System.out.println(compatibleStates);
 	
 	Map<String, TestState> graph = StateComparator.createGraph();
 	
 	setCompabilityFields(graph, compatibleStates);
 	
+	TestState root = graph.get("init.xml");
+	System.out.println(root.printDot(false));
 	
     }
     
