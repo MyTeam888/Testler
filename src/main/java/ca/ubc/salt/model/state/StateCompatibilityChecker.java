@@ -30,6 +30,7 @@ import ca.ubc.salt.model.utils.XMLUtils;
 
 public class StateCompatibilityChecker
 {
+
     HashMap<List<String>, Set<String>> varStateSet = new HashMap<List<String>, Set<String>>();
 
     public static void main(String[] args) throws SAXException, IOException
@@ -37,30 +38,35 @@ public class StateCompatibilityChecker
 	StateCompatibilityChecker scc = new StateCompatibilityChecker();
 	// scc.processState("testSubtract-17.xml");
 	scc.populateVarStateSet();
-//	System.out.println(scc.varStateSet);
-	Map<String, Set<SimpleName>> readVars = ReadVariableDetector.populateReadVarsForFile(
-		"/Users/Arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/fraction/FractionTest.java");
+	// System.out.println(scc.varStateSet);
+	Map<String, Set<SimpleName>> readVars = ReadVariableDetector.populateReadVarsForFile(Settings.TEST_CLASS);
 	Map<String, Set<List<String>>> readValues = ReadVariableDetector.getReadValues(readVars);
-//	System.out.println(readValues);
+	// System.out.println(readValues);
 	Map<String, Set<String>> compatibleStates = getCompatibleStates(scc.varStateSet, readValues);
-//	System.out.println(compatibleStates);
-	
+	// System.out.println(compatibleStates);
+
 	Map<String, TestState> graph = StateComparator.createGraph();
-	
+
 	setCompabilityFields(graph, compatibleStates);
-	
+
 	TestState root = graph.get("init.xml");
-	System.out.println(root.printDot(false));
+//	System.out.println(root.printDot(true));
 	
+	List<List<TestStatement>> paths = root.getAllPaths();
+	System.out.println(paths.size());
+	for (List<TestStatement> path : paths)
+	    System.out.println(path);
+	
+
     }
-    
+
     public static void setCompabilityFields(Map<String, TestState> graph, Map<String, Set<String>> compatibleStates)
     {
 	for (Entry<String, Set<String>> entry : compatibleStates.entrySet())
 	{
 	    String stateName = entry.getKey();
 	    Set<String> compatibleState = entry.getValue();
-	    
+
 	    TestState parentTestState = graph.get(stateName);
 	    if (parentTestState != null)
 	    {
@@ -71,17 +77,16 @@ public class StateCompatibilityChecker
 		    {
 			TestState compState = graph.get(state);
 			testStatement.getCompatibleStates().add(compState);
+			compState.compatibleStatements.add(testStatement);
 		    }
-		}
-		else
+		} else
 		{
-		    //!!!
+		    // !!!
 		}
-		
-	    }
-	    else
+
+	    } else
 	    {
-		//!!!
+		// !!!
 	    }
 	}
     }
@@ -94,16 +99,16 @@ public class StateCompatibilityChecker
 	{
 	    String stateName = entry.getKey();
 	    Set<List<String>> readValue = entry.getValue();
-	    
+
 	    List<Set<String>> comp = new LinkedList<Set<String>>();
 	    for (List<String> varValue : readValue)
 	    {
 		comp.add(getAllStatesWithVariableValue(varStateSet, varValue));
 	    }
-	    
+
 	    Set<String> compatibleStatesOfState = Utils.intersection(comp);
 	    compatibleStates.put(stateName, compatibleStatesOfState);
-	    
+
 	}
 	return compatibleStates;
     }

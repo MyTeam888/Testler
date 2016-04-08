@@ -20,5 +20,7 @@ public class Settings
     public final static String tracePaths = "/Users/Arash/Research/repos/commons-math/traces";
     public static final String LIBRARY_JAVA = "/Library/Java/JavaVirtualMachines/jdk1.8.0_25.jdk/Contents/Home/jre/lib/rt.jar";
     public static final String PROJECT_PATH = "/Users/Arash/Research/repos/commons-math/src";
+    public static final String TEST_CLASS = "/Users/arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/transform/FastFourierTransformerTest.java";
+//    public static final String TEST_CLASS = "/Users/Arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/fraction/FractionTest.java";
     
 }

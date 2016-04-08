@@ -12,7 +12,9 @@ import java.util.TreeMap;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
@@ -24,6 +26,7 @@ public class InstrumenterVisitor extends ASTVisitor
 {
     LinkedList<VariableDeclarationFragment> varDecs = new LinkedList<VariableDeclarationFragment>();
     Stack<Integer> varDecLen = new Stack<Integer>();
+    Map<String, VariableDeclarationFragment> unassignedVars = new HashMap<String, VariableDeclarationFragment>();
     ASTRewrite astRewrite;
     int randomNumber;
     int counter = 2;
@@ -51,15 +54,38 @@ public class InstrumenterVisitor extends ASTVisitor
 
     public boolean visit(VariableDeclarationFragment node)
     {
-	varDecs.add(node);
+	if (node.getInitializer() != null)
+	{
+	    varDecs.add(node);
+	    addDumpCode(node.getParent());
+	}
+	else
+	{
+	    unassignedVars.put(node.getName().toString(), node);
+	}
+	return false; // do not continue
 	// System.out.println(node.toString());
 	// System.out.println(varDecs);
-	addDumpCode(node.getParent());
-	return false; // do not continue
     }
 
     public boolean visit(ExpressionStatement node)
     {
+	Expression e = node.getExpression();
+	if (e instanceof Assignment)
+	{
+	    Assignment a = (Assignment) e;
+	    if(a.getLeftHandSide().getNodeType() == ASTNode.SIMPLE_NAME)
+	    {
+		SimpleName sn = (SimpleName) a.getLeftHandSide();
+		VariableDeclarationFragment vdf = unassignedVars.get(sn.toString());
+		if(vdf != null)
+		{
+		    varDecs.add(vdf);
+		    unassignedVars.remove(sn.toString());
+		}
+	    }
+	    
+	}
 	if (node.getNodeType() != ASTNode.RETURN_STATEMENT)
 	    addDumpCode(node);
 	// System.out.println(node.toString());
@@ -69,7 +95,8 @@ public class InstrumenterVisitor extends ASTVisitor
 
     private void addDumpCode(ASTNode node)
     {
-	ASTNode newCode = TestClassInstrumenter.generateInstrumentationBlock(randomNumber, varDecs, methodName, counter++ );
+	ASTNode newCode = TestClassInstrumenter.generateInstrumentationBlock(randomNumber, varDecs, methodName,
+		counter++);
 
 	ASTNode parent = node.getParent();
 	ListRewrite listRewrite;
@@ -77,10 +104,9 @@ public class InstrumenterVisitor extends ASTVisitor
 	{
 	    listRewrite = astRewrite.getListRewrite(parent, Block.STATEMENTS_PROPERTY);
 	    listRewrite.insertAfter(newCode, node, null);
-	}
-	else
+	} else
 	{
-	    //TODO fill here create a new node and replace it parent list
+	    // TODO fill here create a new node and replace it parent list
 	}
     }
 

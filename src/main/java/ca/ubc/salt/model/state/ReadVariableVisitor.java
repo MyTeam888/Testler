@@ -50,6 +50,8 @@ public class ReadVariableVisitor extends ASTVisitor
 
     public void getReadVars(ASTNode node)
     {
+	if (node == null)
+	    return;
 	StatementReadVariableVisitor srvv = new StatementReadVariableVisitor();
 	node.accept(srvv);
 	readVars.put(methodName + "-" + counter + ".xml", srvv.readVars);

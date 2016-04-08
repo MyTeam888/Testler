@@ -260,8 +260,7 @@ public class TestClassInstrumenter
 	// instrumentClass(
 	// "/Users/arash/Library/Mobile
 	// Documents/com~apple~CloudDocs/Research/Calculator/src/calc/CalculatorTest.java");
-	instrumentClass(
-		"/Users/Arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/fraction/FractionTest.java");
+	instrumentClass(Settings.TEST_CLASS);
     }
 
     public static ASTNode generateInstrumentationHeader(int randomNumber, String methodName)
@@ -271,9 +270,8 @@ public class TestClassInstrumenter
 	sb.append(String.format("try{FileWriter fw_%d = new FileWriter(\"traces/%s-%d.xml\");", randomNumber,
 		methodName, 1));
 	sb.append(String.format("fw_%d.append(\"<vars></vars>\\n\");", randomNumber));
-	sb.append(String.format(
-		"ObjectOutputStream out_%d = xstream_%d.createObjectOutputStream(fw_%d);",
-		randomNumber, randomNumber, randomNumber));
+	sb.append(String.format("ObjectOutputStream out_%d = xstream_%d.createObjectOutputStream(fw_%d);", randomNumber,
+		randomNumber, randomNumber));
 	sb.append(String.format("out_%d.close();}catch (IOException e){e.printStackTrace();}", randomNumber));
 	return createBlockWithText(sb.toString());
 
@@ -313,8 +311,8 @@ public class TestClassInstrumenter
 	    sb.append(String.format("fw_%d.append(\"<var>%s</var>\");", randomNumber, var.getName()));
 	sb.append(String.format("fw_%d.append(\"</vars>\\n\");", randomNumber));
 
-	sb.append(String.format("ObjectOutputStream out_%d = xstream_%d.createObjectOutputStream(fw_%d);", randomNumber, randomNumber,
-		randomNumber));
+	sb.append(String.format("ObjectOutputStream out_%d = xstream_%d.createObjectOutputStream(fw_%d);", randomNumber,
+		randomNumber, randomNumber));
 	for (VariableDeclarationFragment var : varDecs)
 	    sb.append(String.format("out_%d.writeObject(%s);", randomNumber, var.getName()));
 	sb.append(String.format("out_%d.close();}catch (IOException e){e.printStackTrace();}", randomNumber));

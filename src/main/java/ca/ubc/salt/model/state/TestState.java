@@ -4,6 +4,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class TestState
 {
@@ -11,6 +14,7 @@ public class TestState
     HashMap<String, TestStatement> parents;
     List<String> states;
     List<String> asserts;
+    Set<TestStatement> compatibleStatements;
 
     public TestState()
     {
@@ -18,6 +22,7 @@ public class TestState
 	parents = new HashMap<String, TestStatement>();
 	states = new LinkedList<String>();
 	asserts = new LinkedList<String>();
+	compatibleStatements = new HashSet<TestStatement>();
     }
 
     public String printDot(boolean printWithTestStatements)
@@ -30,6 +35,67 @@ public class TestState
 
 	return sb.toString();
     }
+    public List<List<TestStatement>> getAllPaths()
+    {
+	List<List<TestStatement>> paths = new LinkedList<List<TestStatement>>();
+	LinkedList<TestStatement> thisPath = new LinkedList<TestStatement>();
+	Set<TestStatement> visited = new HashSet<TestStatement>();
+	Map<TestState, Set<TestStatement>> compVisited = new HashMap<TestState, Set<TestStatement>>();
+	getAllPaths(paths, thisPath, visited, compVisited, this);
+	return paths;
+    }
+    
+    
+    public void getAllPaths(List<List<TestStatement>> paths, LinkedList<TestStatement> thisPath, Set<TestStatement> visited, Map<TestState, Set<TestStatement>> compVisited, TestState state)
+    {
+	boolean thisIsLeaf = true;
+	for (Entry<String, TestStatement> entry : state.getChildren().entrySet())
+	{
+	    TestStatement ts = entry.getValue();
+	    if (!visited.contains(ts))
+	    {
+		thisIsLeaf = false;
+		thisPath.add(ts);
+		visited.add(ts);
+		getAllPaths(paths, thisPath, visited, compVisited, ts.getEnd());
+		visited.remove(ts);
+		thisPath.removeLast();
+	    }
+	}
+	
+//	for (TestStatement ts : state.compatibleStatements)
+//	{
+//	    
+//	    Set<TestStatement> stateVisited = compVisited.get(state);
+//	    if (stateVisited == null)
+//	    {
+//		stateVisited = new HashSet<TestStatement>();
+//		compVisited.put(state, stateVisited);
+//	    }
+//	    
+//	    if (!stateVisited.contains(ts))
+//	    {
+//		thisIsLeaf = false;
+//		thisPath.add(ts);
+//		stateVisited.add(ts);
+//		getAllPaths(paths, thisPath, visited, compVisited, ts.getEnd());
+//		stateVisited.remove(ts);
+//		thisPath.removeLast();
+//	    }
+//	}
+	
+	if (thisIsLeaf)
+	{
+	    paths.add((List<TestStatement>)thisPath.clone());
+	}
+	
+	
+	
+	
+    }
+    
+    
+    
 
     public void DFSPrint(TestState root, StringBuilder sb, HashSet<TestState> visited, boolean printWithTestStatements)
     {
