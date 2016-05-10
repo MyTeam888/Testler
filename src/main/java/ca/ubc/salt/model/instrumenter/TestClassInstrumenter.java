@@ -63,7 +63,9 @@ public class TestClassInstrumenter
 	    List<ClassModel> classes = ClassModel.getClasses(document.get());
 
 	    for (ClassModel clazz : classes)
-		instrumentClass(clazz, null, document);
+		document = instrumentClass(clazz, null, document);
+
+	    System.out.println(document.get());
 
 	} else if (testClass.isDirectory())
 	{
@@ -76,7 +78,7 @@ public class TestClassInstrumenter
 
     }
 
-    public static void instrumentClass(ClassModel srcClass, List<ClassModel> loadedClasses, Document document)
+    public static Document instrumentClass(ClassModel srcClass, List<ClassModel> loadedClasses, Document document)
 	    throws IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException
     {
 	List<Method> methods = srcClass.getMethods();
@@ -86,7 +88,7 @@ public class TestClassInstrumenter
 	for (Method method : methods)
 	{
 	    if (isTestMethod(method))
-		method.instrumentMethod(rewriter, document, null);
+		method.instrumentTestMethod(rewriter, document, null, !method.getMethodDec().isConstructor());
 	}
 	TextEdit edits = rewriter.rewriteAST(document, null);
 	edits.apply(newDocument);
@@ -105,6 +107,8 @@ public class TestClassInstrumenter
 
 	addImports(newDocument);
 
+	return newDocument;
+
     }
 
     public static void addImports(Document document) throws MalformedTreeException, BadLocationException
@@ -122,16 +126,17 @@ public class TestClassInstrumenter
 
 	cu.recordModifications();
 
-	String[] imports = new String[] { "java.io.FileWriter", "java.io.IOException", "java.io.ObjectOutputStream",
-		"com.thoughtworks.xstream.XStream", "com.thoughtworks.xstream.io.xml.StaxDriver" };
+	// String[] imports = new String[] { "java.io.FileWriter",
+	// "java.io.IOException", "java.io.ObjectOutputStream",
+	// "com.thoughtworks.xstream.XStream",
+	// "com.thoughtworks.xstream.io.xml.StaxDriver" };
+	String[] imports = new String[] { "instrument.InstrumentClassGenerator" };
 	for (String name : imports)
 	    addImport(cu, name);
 
 	TextEdit edits = cu.rewrite(document, null);
 
 	edits.apply(document);
-
-	System.out.println(document.get());
 
     }
 
@@ -265,38 +270,15 @@ public class TestClassInstrumenter
 
     public static ASTNode generateInstrumentationHeader(int randomNumber, String methodName)
     {
-	StringBuilder sb = new StringBuilder();
-	sb.append(String.format("XStream xstream_%d = new XStream(new StaxDriver());", randomNumber));
-	sb.append(String.format("try{FileWriter fw_%d = new FileWriter(\"traces/%s-%d.xml\");", randomNumber,
-		methodName, 1));
-	sb.append(String.format("fw_%d.append(\"<vars></vars>\\n\");", randomNumber));
-	sb.append(String.format("ObjectOutputStream out_%d = xstream_%d.createObjectOutputStream(fw_%d);", randomNumber,
-		randomNumber, randomNumber));
-	sb.append(String.format("out_%d.close();}catch (IOException e){e.printStackTrace();}", randomNumber));
-	return createBlockWithText(sb.toString());
+	return Utils.createBlockWithText(String.format(
+		"InstrumentClassGenerator.init(\"%s\");InstrumentClassGenerator.initTestStatement(0);InstrumentClassGenerator.traceTestStatementExecution();InstrumentClassGenerator.initTestStatement(1);",
+		methodName));
 
     }
 
     public static ASTNode generateFooterBlock(int randomNumber)
     {
-	String str = String.format("out_%d.close();", randomNumber);
-	return createBlockWithText(str);
-    }
-
-    public static ASTNode createBlockWithText(String str)
-    {
-	ASTParser parser = ASTParser.newParser(AST.JLS8);
-	parser.setKind(ASTParser.K_STATEMENTS);
-	Map pOptions = JavaCore.getOptions();
-	pOptions.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_8);
-	pOptions.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_8);
-	pOptions.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_8);
-	parser.setCompilerOptions(pOptions);
-
-	parser.setSource(str.toCharArray());
-	ASTNode cu = parser.createAST(null);
-
-	return cu;
+	return Utils.createBlockWithText("InstrumentClassGenerator.close()");
     }
 
     public static ASTNode generateInstrumentationBlock(int randomNumber,
@@ -304,20 +286,81 @@ public class TestClassInstrumenter
     {
 
 	StringBuilder sb = new StringBuilder();
-	sb.append(String.format("try{FileWriter fw_%d = new FileWriter(\"traces/%s-%d.xml\");", randomNumber,
-		methodName, counter));
-	sb.append(String.format("fw_%d.append(\"<vars>\");", randomNumber));
+	sb.append(String.format("InstrumentClassGenerator.traceTestStatementExecution("));
 	for (VariableDeclarationFragment var : varDecs)
-	    sb.append(String.format("fw_%d.append(\"<var>%s</var>\");", randomNumber, var.getName()));
-	sb.append(String.format("fw_%d.append(\"</vars>\\n\");", randomNumber));
+	{
+	    sb.append("\"");
+	    sb.append(var.getName());
+	    sb.append("\"");
+	    sb.append(',');
+	}
+	sb.setLength(sb.length() - 1);
+	sb.append(");");
 
-	sb.append(String.format("ObjectOutputStream out_%d = xstream_%d.createObjectOutputStream(fw_%d);", randomNumber,
-		randomNumber, randomNumber));
+	sb.append("InstrumentClassGenerator.writeObjects(");
 	for (VariableDeclarationFragment var : varDecs)
-	    sb.append(String.format("out_%d.writeObject(%s);", randomNumber, var.getName()));
-	sb.append(String.format("out_%d.close();}catch (IOException e){e.printStackTrace();}", randomNumber));
-	return createBlockWithText(sb.toString());
+	{
+	    sb.append(var.getName());
+	    sb.append(',');
+	}
+	sb.setLength(sb.length() - 1);
+	sb.append(");");
+	sb.append(String.format("InstrumentClassGenerator.initTestStatement(%d);", counter));
+
+	return Utils.createBlockWithText(sb.toString());
 
     }
+    // public static ASTNode generateInstrumentationHeader(int randomNumber,
+    // String methodName)
+    // {
+    // StringBuilder sb = new StringBuilder();
+    // sb.append(String.format("XStream xstream_%d = new XStream(new
+    // StaxDriver());", randomNumber));
+    // sb.append(String.format("try{FileWriter fw_%d = new
+    // FileWriter(\"traces/%s-%d.xml\");", randomNumber,
+    // methodName, 1));
+    // sb.append(String.format("fw_%d.append(\"<vars></vars>\\n\");",
+    // randomNumber));
+    // sb.append(String.format("ObjectOutputStream out_%d =
+    // xstream_%d.createObjectOutputStream(fw_%d);", randomNumber,
+    // randomNumber, randomNumber));
+    // sb.append(String.format("out_%d.close();}catch (IOException
+    // e){e.printStackTrace();}", randomNumber));
+    // return Utils.createBlockWithText(sb.toString());
+    //
+    // }
+    //
+    // public static ASTNode generateFooterBlock(int randomNumber)
+    // {
+    // String str = String.format("out_%d.close();", randomNumber);
+    // return Utils.createBlockWithText(str);
+    // }
+    //
+    // public static ASTNode generateInstrumentationBlock(int randomNumber,
+    // LinkedList<VariableDeclarationFragment> varDecs, String methodName, int
+    // counter)
+    // {
+    //
+    // StringBuilder sb = new StringBuilder();
+    // sb.append(String.format("try{FileWriter fw_%d = new
+    // FileWriter(\"traces/%s-%d.xml\");", randomNumber,
+    // methodName, counter));
+    // sb.append(String.format("fw_%d.append(\"<vars>\");", randomNumber));
+    // for (VariableDeclarationFragment var : varDecs)
+    // sb.append(String.format("fw_%d.append(\"<var>%s</var>\");", randomNumber,
+    // var.getName()));
+    // sb.append(String.format("fw_%d.append(\"</vars>\\n\");", randomNumber));
+    //
+    // sb.append(String.format("ObjectOutputStream out_%d =
+    // xstream_%d.createObjectOutputStream(fw_%d);", randomNumber,
+    // randomNumber, randomNumber));
+    // for (VariableDeclarationFragment var : varDecs)
+    // sb.append(String.format("out_%d.writeObject(%s);", randomNumber,
+    // var.getName()));
+    // sb.append(String.format("out_%d.close();}catch (IOException
+    // e){e.printStackTrace();}", randomNumber));
+    // return Utils.createBlockWithText(sb.toString());
+    //
+    // }
 
 }
