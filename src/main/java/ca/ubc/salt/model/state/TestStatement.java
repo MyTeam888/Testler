@@ -11,6 +11,9 @@ public class TestStatement
     TestState start, end;
     String name;
     Statement statement;
+    String methodCall;
+    String input;
+
     public TestStatement(TestState start, TestState end, String name)
     {
 	this.start = start;
@@ -21,39 +24,39 @@ public class TestStatement
 
     public Set<TestState> getCompatibleStates()
     {
-        return compatibleStates;
+	return compatibleStates;
     }
 
     public void setCompatibleStates(Set<TestState> compatibleStates)
     {
-        this.compatibleStates = compatibleStates;
+	this.compatibleStates = compatibleStates;
     }
 
     public TestState getStart()
     {
-        return start;
+	return start;
     }
 
     public void setStart(TestState start)
     {
-        this.start = start;
+	this.start = start;
     }
 
     public TestState getEnd()
     {
-        return end;
+	return end;
     }
 
     public void setEnd(TestState end)
     {
-        this.end = end;
+	this.end = end;
     }
-    
+
     @Override
     public String toString()
     {
-        // TODO Auto-generated method stub
-        return this.name;
+	// TODO Auto-generated method stub
+	return this.name;
     }
-    
+
 }

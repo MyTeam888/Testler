@@ -14,6 +14,7 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.VariableDeclaration;
@@ -86,7 +87,8 @@ public class Method
 	List params = this.methodDec.parameters();
 
 	List<String> paramStrs = new LinkedList<String>();
-
+	if (!Modifier.isStatic(methodDec.getModifiers()) && !methodDec.isConstructor())
+	    paramStrs.add("this");
 	for (Object paramObj : params)
 	{
 	    if (paramObj instanceof VariableDeclaration)

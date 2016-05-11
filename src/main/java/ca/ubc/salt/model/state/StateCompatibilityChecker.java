@@ -50,12 +50,12 @@ public class StateCompatibilityChecker
 	setCompabilityFields(graph, compatibleStates);
 
 	TestState root = graph.get("init.xml");
-//	System.out.println(root.printDot(true));
+	System.out.println(root.printDot(true));
 	
-	List<List<TestStatement>> paths = root.getAllPaths();
-	System.out.println(paths.size());
-	for (List<TestStatement> path : paths)
-	    System.out.println(path);
+//	List<List<TestStatement>> paths = root.getAllPaths();
+//	System.out.println(paths.size());
+//	for (List<TestStatement> path : paths)
+//	    System.out.println(path);
 	
 
     }

@@ -7,6 +7,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -24,12 +26,10 @@ public class FileUtils
 	return set;
     }
 
-    public static String readFile(File file, boolean skipFirstLine) throws FileNotFoundException
+    public static String readFile(File file) throws FileNotFoundException
     {
 	Scanner sc = new Scanner(file);
 	StringBuffer sb = new StringBuffer();
-	if (skipFirstLine && sc.hasNextLine())
-	    sc.nextLine();
 	while (sc.hasNextLine())
 	    sb.append(sc.nextLine());
 	sc.close();
@@ -43,78 +43,91 @@ public class FileUtils
 		iterator.remove();
 
     }
-    
-    
-    public static String readFileToString(String filePath) throws IOException {
+
+    public static String readFileToString(String filePath) throws IOException
+    {
 	StringBuilder fileData = new StringBuilder(1000);
 	BufferedReader reader = new BufferedReader(new FileReader(filePath));
 
-	char[] buf = new char[10];
+	char[] buf = new char[1024];
 	int numRead = 0;
-	while ((numRead = reader.read(buf)) != -1) {
-		String readData = String.valueOf(buf, 0, numRead);
-		fileData.append(readData);
-		buf = new char[1024];
-	}
-
-	reader.close();
-
-	return  fileData.toString();	
-}
-    public static String readFileToString(File file) throws IOException {
-	StringBuilder fileData = new StringBuilder(1000);
-	BufferedReader reader = new BufferedReader(new FileReader(file));
-	
-	char[] buf = new char[10];
-	int numRead = 0;
-	while ((numRead = reader.read(buf)) != -1) {
+	while ((numRead = reader.read(buf)) != -1)
+	{
 	    String readData = String.valueOf(buf, 0, numRead);
 	    fileData.append(readData);
-	    buf = new char[1024];
 	}
-	
+
 	reader.close();
-	
-	return  fileData.toString();	
+
+	return fileData.toString();
     }
-    
+
+    public static String readFileToString(File file) throws IOException
+    {
+	StringBuilder fileData = new StringBuilder(1000);
+	BufferedReader reader = new BufferedReader(new FileReader(file));
+
+	char[] buf = new char[1024];
+	int numRead = 0;
+	while ((numRead = reader.read(buf)) != -1)
+	{
+	    String readData = String.valueOf(buf, 0, numRead);
+	    fileData.append(readData);
+	}
+
+	reader.close();
+
+	return fileData.toString();
+    }
+
     public static String getState(String stateName)
     {
-	
-	return getState(new File(Settings.tracePaths+"/"+stateName));
+
+	return getState(new File(Settings.tracePaths + "/" + stateName));
     }
-    
+
     public static String getState(File file)
     {
-	try
-	{
-	    return FileUtils.readFile(file, true);
-	} catch (IOException e)
-	{
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
-	    return "";
-	}
+	List<String> lines = FileUtils.getLines(file);
+	return lines.get(lines.size() - 1);
     }
-    
-    
-    
+
     public static String getVars(String stateName)
     {
-	Scanner sc = null;
-	String vars = null;
+	List<String> lines = FileUtils.getLines(new File(Settings.tracePaths + "/" + stateName));
+	return lines.get(lines.size() - 2);
+    }
+
+    public static String getMethodCalled(String stateName)
+    {
+	return getMethodCalled(new File(Settings.tracePaths + "/" + stateName));
+    }
+
+    static List<String> getLines(File fileName)
+    {
+
 	try
 	{
-	    sc = new Scanner(new File(Settings.tracePaths+"/"+stateName));
-	    vars = sc.nextLine();
-	    sc.close();
+	    Scanner sc = new Scanner(fileName);
+	    List<String> lines = new LinkedList<String>();
+	    while (sc.hasNextLine())
+		lines.add(sc.nextLine());
+	    return lines;
 	} catch (FileNotFoundException e)
 	{
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();
 	}
-	return vars;
+
+	return null;
     }
-    
-    
+
+    public static String getMethodCalled(File stateFile)
+    {
+	List<String> lines = getLines(stateFile);
+	if (lines.size() > 2)
+	    return lines.get(0) + "\n" + lines.get(1);
+	return null;
+    }
+
 }
