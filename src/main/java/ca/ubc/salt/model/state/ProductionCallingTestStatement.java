@@ -30,6 +30,7 @@ public class ProductionCallingTestStatement
 
 	File folder = new File(Settings.tracePaths);
 	File[] traces = folder.listFiles();
+	int counter = 1;
 
 	for (File trace : traces)
 	{
@@ -42,6 +43,10 @@ public class ProductionCallingTestStatement
 		uniqueTestStatements.put(methodCalled, states);
 	    } else
 		states.add(trace.getName());
+	    
+	    counter++;
+	    if (counter % 1000 == 0)
+		Settings.consoleLogger.error(String.format("processed %d logs", counter));
 
 	}
 

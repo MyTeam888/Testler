@@ -112,6 +112,7 @@ public class FileUtils
 	    List<String> lines = new LinkedList<String>();
 	    while (sc.hasNextLine())
 		lines.add(sc.nextLine());
+	    sc.close();
 	    return lines;
 	} catch (FileNotFoundException e)
 	{
@@ -124,10 +125,24 @@ public class FileUtils
 
     public static String getMethodCalled(File stateFile)
     {
-	List<String> lines = getLines(stateFile);
-	if (lines.size() > 2)
-	    return lines.get(0) + "\n" + lines.get(1);
+	String str;
+	try
+	{
+	    str = readFileToString(stateFile);
+	    int index = str.indexOf("<vars>");
+	    if (index == 0)
+		return null;
+	    if (index == -1)
+		return str;
+	    return str.substring(0, index);
+	} catch (IOException e)
+	{
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
 	return null;
+	
+	
     }
 
 }

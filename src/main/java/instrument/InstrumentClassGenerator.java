@@ -1,31 +1,36 @@
 package instrument;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.util.LinkedList;
+import java.util.List;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
 
 public class InstrumentClassGenerator
 {
-    static boolean firstCall;
+    static LinkedList<String> callStack = new LinkedList<String>();
     static String methodName;
     static String fileName;
     static XStream xstream = new XStream(new StaxDriver());
     static FileWriter fw = null;
     static ObjectOutputStream out;
+    static boolean exists = false;
 
     public static void init(String methodName)
     {
 	InstrumentClassGenerator.methodName = methodName;
-	firstCall = true;
+	callStack.clear();
 
     }
 
-    public static void traceMethodCall(String methodName, Object... input)
+    public static void traceMethodCallEntry(String methodName, Object... input)
     {
-	if (firstCall == true)
+	callStack.add(methodName);
+	if (callStack.size() == 1 && !exists)
 	{
 	    try
 	    {
@@ -40,9 +45,15 @@ public class InstrumentClassGenerator
 		// TODO Auto-generated catch block
 		e.printStackTrace();
 	    }
-	    firstCall = false;
 	}
 
+    }
+    
+    
+    public static void traceMethodCallExit()
+    {
+	callStack.removeLast();
+	close();
     }
 
     public static void close()
@@ -62,6 +73,12 @@ public class InstrumentClassGenerator
 
 	fileName = String.format("traces/%s-%d.xml", methodName, lineNumber);
 
+	if (new File(fileName).exists())
+	{
+	    exists = true;
+	    return;
+	}
+	exists = false;
 	try
 	{
 	    if (fw != null)
@@ -76,7 +93,9 @@ public class InstrumentClassGenerator
 
     public static void traceTestStatementExecution(String... vars)
     {
-	firstCall = true;
+	callStack.clear();
+	if(exists)
+	    return;
 	try
 	{
 	    fw.append("<vars>");
@@ -95,6 +114,8 @@ public class InstrumentClassGenerator
 
     public static void writeObjects(Object... input)
     {
+	if(exists)
+	    return;
 	try
 	{
 	    out = xstream.createObjectOutputStream(fw);
@@ -102,11 +123,20 @@ public class InstrumentClassGenerator
 	    {
 		out.writeObject(obj);
 	    }
-	    out.close();
-	} catch (IOException e)
+	} catch (Exception e)
 	{
 	    // TODO Auto-generated catch block
-	    e.printStackTrace();
+	    // e.printStackTrace();
+	} finally
+	{
+	    try
+	    {
+		out.close();
+	    } catch (IOException e)
+	    {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	    }
 	}
 
     }

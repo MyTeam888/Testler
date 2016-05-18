@@ -75,6 +75,21 @@ public class Utils
     
         return cu;
     }
+    public static ASTNode createExpWithText(String str)
+    {
+        ASTParser parser = ASTParser.newParser(AST.JLS8);
+        parser.setKind(ASTParser.K_EXPRESSION);
+        Map pOptions = JavaCore.getOptions();
+        pOptions.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_8);
+        pOptions.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_8);
+        pOptions.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_8);
+        parser.setCompilerOptions(pOptions);
+    
+        parser.setSource(str.toCharArray());
+        ASTNode cu = parser.createAST(null);
+    
+        return cu;
+    }
     
     public static String runCommand(String[] commands, String path) throws IOException, InterruptedException
     {

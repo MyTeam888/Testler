@@ -17,6 +17,7 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jdt.core.dom.TryStatement;
 import org.eclipse.jdt.core.dom.VariableDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
@@ -98,17 +99,39 @@ public class Method
 		paramStrs.add(name);
 	    }
 	}
+	AST ast = methodDec.getAST();
 
-	Block header = (Block) ProductionClassInstrumenter.generateInstrumentationHeader(methodDec.getName().toString(),
-		paramStrs);
+	Block header = (Block) ASTNode.copySubtree(ast,
+		ProductionClassInstrumenter.generateInstrumentationHeader(methodDec.getName().toString(), paramStrs));
 	List<Statement> stmts = header.statements();
-	if (start)
-	    for (int i = stmts.size() - 1; i >= 0; i--)
-		listRewrite.insertFirst(stmts.get(i), null);
-	else
-	    for (int i = 0; i < stmts.size(); i++)
-		listRewrite.insertLast(stmts.get(i), null);
 
+
+	TryStatement trystmt = ast.newTryStatement();
+	// Block newBlock = ast.newBlock();
+	Block blk = (Block) ASTNode.copySubtree(ast, block);
+	
+	trystmt.setBody(blk);
+	Block footer = (Block) ASTNode.copySubtree(ast, ProductionClassInstrumenter.generateFooterBlock());
+	trystmt.setFinally(footer);
+
+	removeAllFromBlock(block, listRewrite);
+	listRewrite.insertFirst(trystmt, null);
+	if (!start && block.statements().size() > 0)
+	{
+	    ASTNode firstStmt = (ASTNode) blk.statements().remove(0);
+	    listRewrite.insertFirst(firstStmt, null);
+	}
+
+	ListRewrite tryList = rewriter.getListRewrite(trystmt.getBody(), Block.STATEMENTS_PROPERTY);
+	
+	for (int i = stmts.size() - 1; i >= 0; i--)
+	    tryList.insertFirst(stmts.get(i), null);
+    }
+
+    private void removeAllFromBlock(Block block, ListRewrite listRewrite)
+    {
+	for (Object obj : block.statements())
+	    listRewrite.remove((ASTNode) obj, null);
     }
 
     public void populateReadVars(Document document, List<String> loadedClassVars, Map<String, Set<SimpleName>> readVars)

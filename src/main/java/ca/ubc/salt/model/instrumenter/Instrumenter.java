@@ -6,9 +6,11 @@ import java.io.IOException;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.text.edits.MalformedTreeException;
+import org.eclipse.text.edits.TextEdit;
 
 import ca.ubc.salt.model.productionCodeInstrumenter.ProductionClassInstrumenter;
 import ca.ubc.salt.model.utils.FileUtils;
@@ -17,11 +19,10 @@ import ca.ubc.salt.model.utils.Utils;
 
 public class Instrumenter
 {
-    
-    
+
     public static void main(String[] args)
     {
-//	Utils.copyProject();
+	// Utils.copyProject();
 	try
 	{
 	    instrumentClass(Settings.PROJECT_PATH);
@@ -39,24 +40,35 @@ public class Instrumenter
 	File fClass = new File(classPath);
 	if (fClass.isFile() && fClass.getAbsolutePath().endsWith("java"))
 	{
-	    
+
 	    String source = FileUtils.readFileToString(fClass);
 	    Document document = new Document(source);
 	    List<ClassModel> classes = ClassModel.getClasses(document.get());
 
 	    if (!Utils.isTestClass(fClass))
 	    {
-		Settings.consoleLogger.debug(String.format("prod : %s", classPath));
-		for (ClassModel clazz : classes)
-		    document = ProductionClassInstrumenter.instrumentClass(clazz, null, document);
-	    }
-	    else
+		Settings.consoleLogger.error(String.format("prod : %s", classPath));
+		if (classes.size() > 0)
+		{
+		    ASTRewrite rewriter = ASTRewrite.create(classes.get(0).getCu().getAST());
+		    for (ClassModel clazz : classes)
+			ProductionClassInstrumenter.instrumentClass(clazz, null, document, rewriter);
+
+		    Document newDocument = new Document(document.get());
+		    TextEdit edits = rewriter.rewriteAST(document, null);
+		    edits.apply(newDocument);
+
+		    ProductionClassInstrumenter.addImports(newDocument);
+		    document = newDocument;
+		}
+
+	    } else
 	    {
-		Settings.consoleLogger.debug(String.format("test : %s", classPath));
+		Settings.consoleLogger.info(String.format("test : %s", classPath));
 		for (ClassModel clazz : classes)
 		    document = TestClassInstrumenter.instrumentClass(clazz, null, document);
 	    }
-	    
+
 	    writebackInstrumentedCode(document, Settings.getInstrumentedCodePath(classPath));
 
 	} else if (fClass.isDirectory())
@@ -83,6 +95,5 @@ public class Instrumenter
 	    e.printStackTrace();
 	}
     }
-
 
 }

@@ -26,21 +26,20 @@ import ca.ubc.salt.model.utils.Utils;
 
 public class ProductionClassInstrumenter
 {
-    
+
     public static void main(String[] args)
 	    throws IOException, IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException
     {
 	instrumentClass(Settings.PROD_TEST_CLASS);
     }
-    
-    
+
     public static void instrumentClass(String testClassPath)
 	    throws IOException, IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException
     {
 	File testClass = new File(testClassPath);
 	if (testClass.isFile())
 	{
-	    
+
 	    if (Utils.isTestClass(testClass))
 		return;
 
@@ -48,10 +47,20 @@ public class ProductionClassInstrumenter
 	    Document document = new Document(source);
 	    List<ClassModel> classes = ClassModel.getClasses(document.get());
 
-	    for (ClassModel clazz : classes)
-		document = instrumentClass(clazz, null, document);
-	    
-	    System.out.println(document.get());
+	    Document newDocument = new Document(document.get());
+	    if (classes.size() > 0)
+	    {
+		ASTRewrite rewriter = ASTRewrite.create(classes.get(0).getCu().getAST());
+		for (ClassModel clazz : classes)
+		    ProductionClassInstrumenter.instrumentClass(clazz, null, document, rewriter);
+
+		TextEdit edits = rewriter.rewriteAST(document, null);
+		edits.apply(newDocument);
+
+		ProductionClassInstrumenter.addImports(newDocument);
+	    }
+
+	    System.out.println(newDocument.get());
 
 	} else if (testClass.isDirectory())
 	{
@@ -63,27 +72,16 @@ public class ProductionClassInstrumenter
 	}
 
     }
-    
-    
-    
 
-    public static Document instrumentClass(ClassModel srcClass, List<ClassModel> loadedClasses, Document document)
+    public static void instrumentClass(ClassModel srcClass, List<ClassModel> loadedClasses, Document document,
+	    ASTRewrite rewriter)
 	    throws IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException
     {
 	List<Method> methods = srcClass.getMethods();
-
-	Document newDocument = new Document(document.get());
-	ASTRewrite rewriter = ASTRewrite.create(srcClass.getCu().getAST());
 	for (Method method : methods)
 	{
-		method.instrumentProductionMethod(rewriter, document, null, !method.getMethodDec().isConstructor());
+	    method.instrumentProductionMethod(rewriter, document, null, !method.getMethodDec().isConstructor());
 	}
-	TextEdit edits = rewriter.rewriteAST(document, null);
-	edits.apply(newDocument);
-
-	addImports(newDocument);
-	
-	return newDocument;
 
     }
 
@@ -110,7 +108,6 @@ public class ProductionClassInstrumenter
 
 	edits.apply(document);
 
-
     }
 
     private static void addImport(CompilationUnit cu, String name)
@@ -120,24 +117,28 @@ public class ProductionClassInstrumenter
 	imp.setName(ast.newName(name));
 	cu.imports().add(imp);
     }
-    
+
     public static ASTNode generateInstrumentationHeader(String methodName, List<String> varNames)
     {
 	StringBuilder sb = new StringBuilder();
-	sb.append(String.format("InstrumentClassGenerator.traceMethodCall(\"%s\"", methodName));
+	sb.append(String.format("InstrumentClassGenerator.traceMethodCallEntry(\"%s\"", methodName));
 
 	sb.append(',');
-	for(String var : varNames)
+	for (String var : varNames)
 	{
 	    sb.append(var);
 	    sb.append(',');
 	}
-	sb.setLength(sb.length()-1);
+	sb.setLength(sb.length() - 1);
 	sb.append(");");
-	
-	
+
 	return Utils.createBlockWithText(sb.toString());
 
     }
-    
+
+    public static ASTNode generateFooterBlock()
+    {
+	return Utils.createBlockWithText("InstrumentClassGenerator.traceMethodCallExit();");
+    }
+
 }
