@@ -3,6 +3,7 @@ package ca.ubc.salt.model.state;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -30,8 +31,8 @@ import ca.ubc.salt.model.utils.XMLUtils;
 
 public class StateCompatibilityChecker
 {
-
-    HashMap<List<String>, Set<String>> varStateSet = new HashMap<List<String>, Set<String>>();
+    // eg. <Object1, objField1, objobjField1, ..., int, 2> -> <state1, state2, state3,...>
+    public HashMap<List<String>, Set<String>> varStateSet = new HashMap<List<String>, Set<String>>();
 
     public static void main(String[] args) throws SAXException, IOException
     {
@@ -42,7 +43,8 @@ public class StateCompatibilityChecker
 	Map<String, Set<SimpleName>> readVars = ReadVariableDetector.populateReadVarsForFile(Settings.TEST_CLASS);
 	Map<String, Set<List<String>>> readValues = ReadVariableDetector.getReadValues(readVars);
 	// System.out.println(readValues);
-	Map<String, Set<String>> compatibleStates = getCompatibleStates(scc.varStateSet, readValues);
+	Map<String, Set<String>> compatibleStates = new HashMap<String, Set<String>>();
+	getCompatibleStates(compatibleStates, scc.varStateSet, readValues);
 	// System.out.println(compatibleStates);
 
 	Map<String, TestState> graph = StateComparator.createGraph();
@@ -91,10 +93,9 @@ public class StateCompatibilityChecker
 	}
     }
 
-    public static Map<String, Set<String>> getCompatibleStates(HashMap<List<String>, Set<String>> varStateSet,
+    public static void getCompatibleStates(Map<String, Set<String>> compatibleStates, HashMap<List<String>, Set<String>> varStateSet,
 	    Map<String, Set<List<String>>> readValues)
     {
-	Map<String, Set<String>> compatibleStates = new HashMap<String, Set<String>>();
 	for (Entry<String, Set<List<String>>> entry : readValues.entrySet())
 	{
 	    String stateName = entry.getKey();
@@ -108,9 +109,7 @@ public class StateCompatibilityChecker
 
 	    Set<String> compatibleStatesOfState = Utils.intersection(comp);
 	    compatibleStates.put(stateName, compatibleStatesOfState);
-
 	}
-	return compatibleStates;
     }
 
     public static Set<String> getAllStatesWithVariableValue(HashMap<List<String>, Set<String>> varStateSet,
@@ -119,25 +118,27 @@ public class StateCompatibilityChecker
 	return varStateSet.get(value);
     }
 
-    private void populateVarStateSet()
+    public void populateVarStateSet()
     {
 	File folder = new File(Settings.tracePaths);
 	String[] traces = folder.list();
+	populateVarStateSet(Arrays.asList(traces));
+    }
+    
+    
+    public void populateVarStateSet(List<String> states)
+    {
 
-	for (String state : traces)
+	for (String state : states)
 	{
-	    try
-	    {
-		processState(state);
-	    } catch (SAXException e)
-	    {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	    } catch (IOException e)
-	    {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	    }
+		try
+		{
+		    processState(state);
+		} catch (Exception e)
+		{
+		    // TODO Auto-generated catch block
+		    e.printStackTrace();
+		}
 	}
     }
 

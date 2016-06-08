@@ -37,7 +37,7 @@ public class Method
 	this.methodDec = methodDec;
     }
 
-    public void instrumentTestMethod(ASTRewrite rewriter, Document document, List<String> loadedClassVars,
+    public void instrumentTestMethod(ASTRewrite rewriter, Document document, List<String> loadedClassVars, String fileName,
 	    boolean start)
 	    throws JavaModelException, IllegalArgumentException, MalformedTreeException, BadLocationException
     {
@@ -47,7 +47,7 @@ public class Method
 	    return;
 	ListRewrite listRewrite = rewriter.getListRewrite(block, Block.STATEMENTS_PROPERTY);
 
-	Block header = (Block) TestClassInstrumenter.generateInstrumentationHeader(randomNumber,
+	Block header = (Block) TestClassInstrumenter.generateInstrumentationHeader(randomNumber, fileName,
 		methodDec.getName().toString());
 	List<Statement> stmts = header.statements();
 	if (start)

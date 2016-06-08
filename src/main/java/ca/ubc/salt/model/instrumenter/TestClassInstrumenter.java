@@ -63,7 +63,7 @@ public class TestClassInstrumenter
 	    List<ClassModel> classes = ClassModel.getClasses(document.get());
 
 	    for (ClassModel clazz : classes)
-		document = instrumentClass(clazz, null, document);
+		document = instrumentClass(clazz, null, document, clazz.typeDec.getName().toString());
 
 	    System.out.println(document.get());
 
@@ -78,7 +78,7 @@ public class TestClassInstrumenter
 
     }
 
-    public static Document instrumentClass(ClassModel srcClass, List<ClassModel> loadedClasses, Document document)
+    public static Document instrumentClass(ClassModel srcClass, List<ClassModel> loadedClasses, Document document, String fileName)
 	    throws IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException
     {
 	List<Method> methods = srcClass.getMethods();
@@ -88,7 +88,7 @@ public class TestClassInstrumenter
 	for (Method method : methods)
 	{
 	    if (isTestMethod(method))
-		method.instrumentTestMethod(rewriter, document, null, !method.getMethodDec().isConstructor());
+		method.instrumentTestMethod(rewriter, document, null, fileName, !method.getMethodDec().isConstructor());
 	}
 	TextEdit edits = rewriter.rewriteAST(document, null);
 	edits.apply(newDocument);
@@ -268,11 +268,11 @@ public class TestClassInstrumenter
 	instrumentClass(Settings.TEST_CLASS);
     }
 
-    public static ASTNode generateInstrumentationHeader(int randomNumber, String methodName)
+    public static ASTNode generateInstrumentationHeader(int randomNumber,String fileName, String methodName)
     {
 	return Utils.createBlockWithText(String.format(
-		"InstrumentClassGenerator.init(\"%s\");InstrumentClassGenerator.initTestStatement(0);InstrumentClassGenerator.traceTestStatementExecution();InstrumentClassGenerator.initTestStatement(1);",
-		methodName));
+		"InstrumentClassGenerator.init(\"%s.%s\");InstrumentClassGenerator.initTestStatement(0);InstrumentClassGenerator.traceTestStatementExecution();InstrumentClassGenerator.initTestStatement(1);",
+		fileName, methodName));
 
     }
 

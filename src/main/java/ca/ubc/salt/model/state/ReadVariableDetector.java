@@ -69,6 +69,39 @@ public class ReadVariableDetector
 	// }
 	// }
     }
+    
+    
+    public static Map<String, Set<SimpleName>> populateReadVarsForTestCaseOfFile(String path, String testcase) throws IOException
+    {
+	File testClass = new File(path);
+	if (testClass.isFile())
+	{
+	    if (!Utils.isTestClass(testClass))
+		return null;
+
+	    String source = FileUtils.readFileToString(testClass);
+	    Document document = new Document(source);
+	    List<ClassModel> classes = ClassModel.getClasses(document.get(), true, "FractionTest.java",
+		    new String[] { Settings.PROJECT_PATH }, new String[] { Settings.LIBRARY_JAVA });
+
+	    Map<String, Set<SimpleName>> readVars = new HashMap<String, Set<SimpleName>>();
+
+	    for (ClassModel clazz : classes)
+		populateReadVarsForTestCaseOfClass(clazz, null, document, readVars, testcase);
+	    return readVars;
+
+	}
+	return null;
+	// TODO Do I need to handle it ?!
+	// else if (testClass.isDirectory())
+	// {
+	// File[] listOfFiles = testClass.listFiles();
+	// for (int i = 0; i < listOfFiles.length; i++)
+	// {
+	// populateReadVarsForFile(listOfFiles[i].getAbsolutePath());
+	// }
+	// }
+    }
 
     public static void populateReadVarsForClass(ClassModel srcClass, List<String> loadedClasses, Document document,
 	    Map<String, Set<SimpleName>> readVars)
@@ -80,6 +113,21 @@ public class ReadVariableDetector
 	for (Method m : methods)
 	{
 	    m.populateReadVars(document, loadedClasses, readVars);
+	}
+
+    }
+
+    public static void populateReadVarsForTestCaseOfClass(ClassModel srcClass, List<String> loadedClasses,
+	    Document document, Map<String, Set<SimpleName>> readVars, String testcase)
+    {
+	if (readVars == null)
+	    readVars = new HashMap<String, Set<SimpleName>>();
+	List<Method> methods = srcClass.getMethods();
+
+	for (Method m : methods)
+	{
+	    if (m.getMethodDec().getName().toString().equals(testcase))
+		m.populateReadVars(document, loadedClasses, readVars);
 	}
 
     }
@@ -101,8 +149,8 @@ public class ReadVariableDetector
 	Set<List<String>> varStateSet = new HashSet<List<String>>();
 
 	String varXML = FileUtils.getVars(stateName);
-	
-	//TODO double check what to return
+
+	// TODO double check what to return
 	if (varXML == null)
 	    return varStateSet;
 
@@ -115,8 +163,7 @@ public class ReadVariableDetector
 	for (String stateVar : stateVarNames)
 	{
 	    if (readVarNames.contains(stateVar))
-		;
-	    processObjectValues(nodeList.item(index), varStateSet, key, stateName);
+		processObjectValues(nodeList.item(index), varStateSet, key, stateName);
 	    index++;
 	}
 	return varStateSet;

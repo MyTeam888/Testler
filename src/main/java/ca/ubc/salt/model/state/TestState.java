@@ -8,13 +8,24 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-public class TestState
+public class TestState extends TestModelNode
 {
     HashMap<String, TestStatement> children;
     HashMap<String, TestStatement> parents;
     List<String> states;
     List<String> asserts;
     Set<TestStatement> compatibleStatements;
+    
+    
+    public Set<TestStatement> getCompatibleStatements()
+    {
+        return compatibleStatements;
+    }
+
+    public void setCompatibleStatements(Set<TestStatement> compatibleStatements)
+    {
+        this.compatibleStatements = compatibleStatements;
+    }
 
     public TestState()
     {
@@ -181,6 +192,13 @@ public class TestState
     public void setAsserts(List<String> asserts)
     {
 	this.asserts = asserts;
+    }
+    
+    @Override
+    protected Object clone() throws CloneNotSupportedException
+    {
+        // TODO Auto-generated method stub
+        return super.clone();
     }
 
 }

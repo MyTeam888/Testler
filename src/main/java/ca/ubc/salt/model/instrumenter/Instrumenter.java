@@ -3,7 +3,10 @@ package ca.ubc.salt.model.instrumenter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
@@ -11,6 +14,9 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
+
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.StaxDriver;
 
 import ca.ubc.salt.model.productionCodeInstrumenter.ProductionClassInstrumenter;
 import ca.ubc.salt.model.utils.FileUtils;
@@ -20,12 +26,17 @@ import ca.ubc.salt.model.utils.Utils;
 public class Instrumenter
 {
 
+    static HashMap<String, String> classFileMapping = new HashMap<String, String>();
     public static void main(String[] args)
     {
-	// Utils.copyProject();
+//	 Utils.copyProject();
 	try
 	{
 	    instrumentClass(Settings.PROJECT_PATH);
+	    XStream xstream = new XStream(new StaxDriver());
+	    FileWriter fw = new FileWriter(Settings.classFileMappingPath);
+	    fw.write(xstream.toXML(classFileMapping));
+	    fw.close();
 	} catch (IllegalArgumentException | MalformedTreeException | IOException | BadLocationException
 		| CoreException e)
 	{
@@ -66,7 +77,10 @@ public class Instrumenter
 	    {
 		Settings.consoleLogger.info(String.format("test : %s", classPath));
 		for (ClassModel clazz : classes)
-		    document = TestClassInstrumenter.instrumentClass(clazz, null, document);
+		{
+		    classFileMapping.put(clazz.typeDec.getName().toString(), fClass.getAbsolutePath());
+		    document = TestClassInstrumenter.instrumentClass(clazz, null, document, clazz.typeDec.getName().toString());
+		}
 	    }
 
 	    writebackInstrumentedCode(document, Settings.getInstrumentedCodePath(classPath));
