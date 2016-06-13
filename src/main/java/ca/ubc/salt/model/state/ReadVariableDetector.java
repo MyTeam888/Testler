@@ -81,7 +81,7 @@ public class ReadVariableDetector
 
 	    String source = FileUtils.readFileToString(testClass);
 	    Document document = new Document(source);
-	    List<ClassModel> classes = ClassModel.getClasses(document.get(), true, "FractionTest.java",
+	    List<ClassModel> classes = ClassModel.getClasses(document.get(), true, path,
 		    new String[] { Settings.PROJECT_PATH }, new String[] { Settings.LIBRARY_JAVA });
 
 	    Map<String, Set<SimpleName>> readVars = new HashMap<String, Set<SimpleName>>();
@@ -126,10 +126,16 @@ public class ReadVariableDetector
 
 	for (Method m : methods)
 	{
-	    if (m.getMethodDec().getName().toString().equals(testcase))
+	    if (m.getMethodDec().getName().toString().equals(getTestCaseName(testcase)))
 		m.populateReadVars(document, loadedClasses, readVars);
 	}
 
+    }
+    
+    public static String getTestCaseName(String testCase)
+    {
+	int index = testCase.lastIndexOf('.');
+	return testCase.substring(index + 1);
     }
 
     public static Map<String, Set<List<String>>> getReadValues(Map<String, Set<SimpleName>> readVars)

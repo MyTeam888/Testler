@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -95,7 +96,7 @@ public class FileUtils
     public static String getVars(String stateName)
     {
 	List<String> lines = FileUtils.getLines(new File(Settings.tracePaths + "/" + stateName));
-	return lines.get(lines.size() - 2);
+	return lines == null ? null : lines.get(lines.size() - 2);
     }
 
     public static String getMethodCalled(String stateName)
@@ -141,8 +142,52 @@ public class FileUtils
 	    e.printStackTrace();
 	}
 	return null;
-	
-	
+
+    }
+    
+    public static List<String> getStatesForTestCase(List<String> testCases)
+    {
+	List<String> states = new LinkedList<String>();
+	for (String testCase : testCases)
+	{
+	    getStatesForTestCase(testCase, states);
+	}
+	return states;
+    }
+    
+
+    public static List<String> getStatesForTestCase(String testCase, List<String> states)
+    {
+	File[] stateFiles = getStateFilesForTestCase(testCase);
+	if (states == null)
+	    states = new LinkedList<String>();
+	for (File file : stateFiles)
+	{
+	    // String name = file.getName();
+	    // int index = name.lastIndexOf('.');
+	    // String state = name.substring(0, index);
+	    // states.add(state);
+	    states.add(file.getName());
+	}
+
+	return states;
+    }
+
+    public static File[] getStateFilesForTestCase(final String testCase)
+    {
+	File folder = new File(Settings.tracePaths);
+	FilenameFilter filter = new FilenameFilter()
+	{
+
+	    @Override
+	    public boolean accept(File dir, String name)
+	    {
+		return name.contains(testCase);
+	    }
+	};
+
+	File[] traces = folder.listFiles(filter);
+	return traces;
     }
 
 }

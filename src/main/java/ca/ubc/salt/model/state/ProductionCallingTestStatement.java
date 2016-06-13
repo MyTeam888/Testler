@@ -19,12 +19,15 @@ import ca.ubc.salt.model.utils.Settings;
 public class ProductionCallingTestStatement
 {
 
-    public static Map<String, List<String>> uniqueTestStatements;
-    
     public static List<Set<String>> getTestCasesThatShareTestStatement(int cutOff)
     {
-	uniqueTestStatements = getUniqueTestStatements();
+	return getTestCasesThatShareTestStatement(cutOff, getUniqueTestStatements());
 
+    }
+
+    public static List<Set<String>> getTestCasesThatShareTestStatement(int cutOff,
+	    Map<String, List<String>> uniqueTestStatements)
+    {
 	Map<String, Map<String, Integer>> conGraph = getConnectivityGraph(uniqueTestStatements);
 
 	Set<String> visited = new HashSet<String>();
@@ -32,10 +35,9 @@ public class ProductionCallingTestStatement
 
 	for (Entry<String, Map<String, Integer>> entry : conGraph.entrySet())
 	{
-	    Set<String> connectedComponent = BFS(entry.getKey(), conGraph, visited, cutOff);
-	    System.out.println(connectedComponent.size());
-	    for (String testCase : connectedComponent)
+	    if (!visited.contains(entry.getKey()))
 	    {
+		Set<String> connectedComponent = BFS(entry.getKey(), conGraph, visited, cutOff);
 		connectedComponents.add(connectedComponent);
 	    }
 	}
@@ -44,15 +46,15 @@ public class ProductionCallingTestStatement
 
     }
 
-    public static Map<String, Set<String>> convertTheSetToMap(List<Set<String>> connectedComponents)
+    public static Map<String, List<String>> convertTheSetToMap(Map<String, List<String>> uniqueTestStatements)
     {
-	Map<String, Set<String>> connectedComponentMap = new HashMap<String, Set<String>>();
-	for (Set<String> connectedComponent : connectedComponents)
-	    for (String testCase : connectedComponent)
+	Map<String, List<String>> connectedComponentMap = new HashMap<String, List<String>>();
+	for (Entry<String, List<String>> connectedComponent : uniqueTestStatements.entrySet())
+	    for (String testState : connectedComponent.getValue())
 	    {
-		connectedComponentMap.put(testCase, connectedComponent);
+		connectedComponentMap.put(testState, connectedComponent.getValue());
 	    }
-	
+
 	return connectedComponentMap;
 
     }
@@ -131,12 +133,18 @@ public class ProductionCallingTestStatement
 	}
 	return null;
     }
+    
+    
+    public static void main(String[] args) throws FileNotFoundException
+    {
+	writeStatToFile();
+    }
 
     private static void writeStatToFile() throws FileNotFoundException
     {
 	Map<String, List<String>> uniqueTestStatements = getUniqueTestStatements();
 
-	Formatter fw = new Formatter("expn.csv");
+	Formatter fw = new Formatter("expn2.csv");
 
 	for (Entry<String, List<String>> entry : uniqueTestStatements.entrySet())
 	{

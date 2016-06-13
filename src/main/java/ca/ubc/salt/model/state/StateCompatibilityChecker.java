@@ -31,10 +31,11 @@ import ca.ubc.salt.model.utils.XMLUtils;
 
 public class StateCompatibilityChecker
 {
-    // eg. <Object1, objField1, objobjField1, ..., int, 2> -> <state1, state2, state3,...>
+    // eg. <Object1, objField1, objobjField1, ..., int, 2> -> <state1, state2,
+    // state3,...>
     public HashMap<List<String>, Set<String>> varStateSet = new HashMap<List<String>, Set<String>>();
 
-    public static void main(String[] args) throws SAXException, IOException
+    /*public static void main(String[] args) throws SAXException, IOException
     {
 	StateCompatibilityChecker scc = new StateCompatibilityChecker();
 	// scc.processState("testSubtract-17.xml");
@@ -53,14 +54,13 @@ public class StateCompatibilityChecker
 
 	TestState root = graph.get("init.xml");
 	System.out.println(root.printDot(true));
-	
-//	List<List<TestStatement>> paths = root.getAllPaths();
-//	System.out.println(paths.size());
-//	for (List<TestStatement> path : paths)
-//	    System.out.println(path);
-	
 
-    }
+	// List<List<TestStatement>> paths = root.getAllPaths();
+	// System.out.println(paths.size());
+	// for (List<TestStatement> path : paths)
+	// System.out.println(path);
+
+    }*/
 
     public static void setCompabilityFields(Map<String, TestState> graph, Map<String, Set<String>> compatibleStates)
     {
@@ -93,8 +93,8 @@ public class StateCompatibilityChecker
 	}
     }
 
-    public static void getCompatibleStates(Map<String, Set<String>> compatibleStates, HashMap<List<String>, Set<String>> varStateSet,
-	    Map<String, Set<List<String>>> readValues)
+    public static void getCompatibleStates(Map<String, Set<String>> compatibleStates,
+	    HashMap<List<String>, Set<String>> varStateSet, Map<String, Set<List<String>>> readValues)
     {
 	for (Entry<String, Set<List<String>>> entry : readValues.entrySet())
 	{
@@ -124,13 +124,15 @@ public class StateCompatibilityChecker
 	String[] traces = folder.list();
 	populateVarStateSet(Arrays.asList(traces));
     }
-    
-    
-    public void populateVarStateSet(List<String> states)
+
+    public void populateVarStateSet(List<String> testCases)
     {
 
-	for (String state : states)
+	for (String testCase : testCases)
 	{
+	    List<String> states = FileUtils.getStatesForTestCase(testCase, null);
+	    for (String state : states)
+	    {
 		try
 		{
 		    processState(state);
@@ -139,6 +141,7 @@ public class StateCompatibilityChecker
 		    // TODO Auto-generated catch block
 		    e.printStackTrace();
 		}
+	    }
 	}
     }
 

@@ -88,12 +88,12 @@ public class TestStatement extends TestModelNode
 	return false;
     }
 
-    @Override
-    public int hashCode()
-    {
-
-	return this.start.hashCode() * 13 + this.end.hashCode() * 17 + this.methodCall.hashCode();
-
-    }
+//    @Override
+//    public int hashCode()
+//    {
+//
+//	return this.start.hashCode() * 13 + this.end.hashCode() * 17 + this.methodCall == null ? 0 : this.methodCall.hashCode();
+//
+//    }
 
 }

@@ -1,7 +1,13 @@
 package ca.ubc.salt.model.merger;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -23,20 +29,61 @@ import ca.ubc.salt.model.state.StateComparator;
 import ca.ubc.salt.model.state.StateCompatibilityChecker;
 import ca.ubc.salt.model.state.TestState;
 import ca.ubc.salt.model.state.TestStatement;
+import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Settings;
 
 public class TestMerger
 {
     static Map<String, String> classFileMapping;
 
-    public static void main(String[] args) throws SAXException, IOException
+    public static void main(String[] args) throws SAXException, IOException, ClassNotFoundException
     {
 
 	classFileMapping = getClassFileMapping();
+	XStream xstream = new XStream(new StaxDriver());
 
-	long setupCost = 10;
-	List<Set<String>> connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(10);
-	connectedComponents.remove(0);
+	File file = new File("components.txt");
+	List<Set<String>> connectedComponents = null;
+	Map<String, List<String>> connectedComponentsMap = null;
+	if (!file.exists())
+	{
+	    long setupCost = 10;
+	    Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
+	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(10, uniqueTestStatements);
+	    connectedComponents.remove(0);
+	    
+	 
+	    connectedComponentsMap = ProductionCallingTestStatement.convertTheSetToMap(uniqueTestStatements);
+
+	    String components = xstream.toXML(connectedComponents);
+
+	    FileWriter fw = new FileWriter("components.txt");
+	    fw.write(components);
+	    fw.close();
+	    
+	    ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("unique.txt"));
+	    out.writeObject(connectedComponentsMap);
+	    out.close();
+	    
+	    
+	} else
+	{
+	    connectedComponents = (List<Set<String>>) xstream.fromXML(new File("components.txt"));
+	    ObjectInputStream in = new ObjectInputStream( new FileInputStream("unique.txt"));
+	    connectedComponentsMap = (Map<String, List<String>>) in.readObject();
+	    in.close();
+	}
+
+	
+	Formatter fr = new Formatter("stat.csv");
+	for (Set<String> connectedComponent : connectedComponents)
+	{
+	    fr.format("%d,%s\n", connectedComponent.size(), connectedComponent.toString());
+	}
+	fr.close();
+	
+	
+	
 	for (Set<String> connectedComponent : connectedComponents)
 	{
 	    if (connectedComponent.size() < 2)
@@ -44,8 +91,9 @@ public class TestMerger
 	    List testCases = new LinkedList<String>();
 	    testCases.addAll(connectedComponent);
 	    Map<String, TestState> graph = createModelForTestCases(testCases);
-	    TestState root = graph.get("init.txt");
-	    TestStatement first = dijkstra(root, false);
+	    TestState root = graph.get("init.init.xml");
+	    System.out.println(root.printDot(true));
+	    TestStatement first = dijkstra(root, false, connectedComponentsMap);
 
 	    LinkedList<TestState> firstPath = new LinkedList<TestState>();
 	    firstPath.add(root);
@@ -56,8 +104,10 @@ public class TestMerger
 	    TestStatement frontier = first;
 	    while (frontier != null)
 	    {
-		frontier = dijkstra(frontier.getEnd(), true);
-		markAsCovered(frontier);
+		frontier = dijkstra(frontier.getEnd(), true, connectedComponentsMap);
+		if (frontier == null)
+		    break;
+		markAsCovered(frontier, connectedComponentsMap);
 		firstPath.add(frontier.getEnd());
 	    }
 
@@ -72,18 +122,21 @@ public class TestMerger
 	return (Map<String, String>) xstream.fromXML(new File(Settings.classFileMappingPath));
     }
 
-    public static void markAsCovered(TestStatement stmt)
+    public static void markAsCovered(TestStatement stmt, Map<String, List<String>> connectedComponentsMap)
     {
-	List<String> equivalentStatements = ProductionCallingTestStatement.uniqueTestStatements.get(stmt.getName());
+	if (stmt == null)
+	    return;
+	List<String> equivalentStatements = connectedComponentsMap.get(stmt.getName());
 	for (String st : equivalentStatements)
 	{
-	    ProductionCallingTestStatement.uniqueTestStatements.remove(st);
+	    connectedComponentsMap.remove(st);
 	}
     }
 
-    public static TestStatement dijkstra(TestState root, boolean returnFirst)
+    public static TestStatement dijkstra(TestState root, boolean returnFirst, Map<String, List<String>> connectedComponentsMap)
     {
 	Set<TestState> visited = new HashSet<TestState>();
+	root.curStart = root;
 	root.distFrom.put(root, (long) 0);
 	PriorityQueue<TestState> queue = new PriorityQueue<TestState>();
 
@@ -105,7 +158,7 @@ public class TestMerger
 		if (!visited.contains(child))
 		{
 		    if (first == null
-			    && ProductionCallingTestStatement.uniqueTestStatements.containsKey(stmt.getName()))
+			    && connectedComponentsMap.containsKey(stmt.getName()))
 		    {
 			if (returnFirst)
 			    return stmt;
@@ -122,7 +175,7 @@ public class TestMerger
 		if (!visited.contains(child))
 		{
 		    if (first == null
-			    && ProductionCallingTestStatement.uniqueTestStatements.containsKey(stmt.getName()))
+			    && connectedComponentsMap.containsKey(stmt.getName()))
 		    {
 			if (returnFirst)
 			    return stmt;
@@ -143,11 +196,13 @@ public class TestMerger
 	    TestState child)
     {
 	long newD = parent.distFrom.get(root) + stmt.time;
-	if (newD < child.distFrom.get(root))
+	Long childDist = child.distFrom.get(root);
+	if (childDist == null || newD < childDist)
 	{
 	    child.distFrom.put(root, newD);
 	    child.parent.put(root, stmt);
 	    stmt.parent.put(root, parent);
+	    child.curStart = root;
 	    queue.remove(child);
 	    queue.add(child);
 	    // queue.add(child.clone());
@@ -176,12 +231,13 @@ public class TestMerger
 	    StateCompatibilityChecker.getCompatibleStates(compatibleStates, scc.varStateSet, readValues);
 
 	}
+	testCases.add("init.init");
 	Map<String, TestState> graph = StateComparator.createGraph(testCases);
 
 	StateCompatibilityChecker.setCompabilityFields(graph, compatibleStates);
 
-	TestState root = graph.get("init.xml");
-	System.out.println(root.printDot(true));
+	// TestState root = graph.get("init.xml");
+	// System.out.println(root.printDot(true));
 
 	return graph;
 	// List<List<TestStatement>> paths = root.getAllPaths();

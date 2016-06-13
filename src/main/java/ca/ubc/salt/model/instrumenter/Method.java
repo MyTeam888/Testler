@@ -31,10 +31,12 @@ import ca.ubc.salt.model.state.ReadVariableVisitor;
 public class Method
 {
     MethodDeclaration methodDec = null;
+    String className;
 
-    public Method(MethodDeclaration methodDec)
+    public Method(MethodDeclaration methodDec, String className)
     {
 	this.methodDec = methodDec;
+	this.className = className;
     }
 
     public void instrumentTestMethod(ASTRewrite rewriter, Document document, List<String> loadedClassVars, String fileName,
@@ -136,7 +138,7 @@ public class Method
 
     public void populateReadVars(Document document, List<String> loadedClassVars, Map<String, Set<SimpleName>> readVars)
     {
-	ReadVariableVisitor visitor = new ReadVariableVisitor(methodDec.getName().toString());
+	ReadVariableVisitor visitor = new ReadVariableVisitor(className + "." + methodDec.getName().toString());
 	visitor.setReadVars(readVars);
 	this.methodDec.accept(visitor);
 	// System.out.println(visitor.getReadVars());
