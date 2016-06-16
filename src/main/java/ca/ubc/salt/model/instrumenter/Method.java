@@ -13,8 +13,12 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.MarkerAnnotation;
+import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.TryStatement;
@@ -25,7 +29,6 @@ import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
 
-import ca.ubc.salt.model.productionCodeInstrumenter.ProductionClassInstrumenter;
 import ca.ubc.salt.model.state.ReadVariableVisitor;
 
 public class Method
@@ -43,6 +46,9 @@ public class Method
 	    boolean start)
 	    throws JavaModelException, IllegalArgumentException, MalformedTreeException, BadLocationException
     {
+	
+	addTimeOut(rewriter);
+	
 	int randomNumber = (int) (Math.random() * (Integer.MAX_VALUE - 1));
 	Block block = methodDec.getBody();
 	if (block == null)
@@ -104,7 +110,7 @@ public class Method
 	AST ast = methodDec.getAST();
 
 	Block header = (Block) ASTNode.copySubtree(ast,
-		ProductionClassInstrumenter.generateInstrumentationHeader(methodDec.getName().toString(), paramStrs));
+		ProductionClassInstrumenter.generateInstrumentationHeader(className + "." + methodDec.getName().toString(), paramStrs));
 	List<Statement> stmts = header.statements();
 
 
@@ -153,5 +159,39 @@ public class Method
     {
 	this.methodDec = methodDec;
     }
+    
+    public void addTimeOut(ASTRewrite rewrite)
+    {
+
+//	if (method.methodDec.getName().toString().toLowerCase().contains("test"))
+//	    return true;
+	
+	ListRewrite listRewrite = rewrite.getListRewrite(this.methodDec, MethodDeclaration.MODIFIERS2_PROPERTY);
+	List<NormalAnnotation> modifs = this.methodDec.modifiers();
+	AST ast = this.methodDec.getAST();
+	for (Object obj : modifs)
+	{
+	    if (obj instanceof MarkerAnnotation)
+	    {
+		MarkerAnnotation ma = (MarkerAnnotation) obj;
+		if (ma.getTypeName().getFullyQualifiedName().contains("Test"))
+		{
+		    listRewrite.remove(ma, null);
+//		    ma = (MarkerAnnotation)ASTNode.copySubtree(method.methodDec.getAST(), ma);
+		    NormalAnnotation na = ast.newNormalAnnotation();
+		    Name name = ast.newName(ma.getTypeName().getFullyQualifiedName());
+		    na.setTypeName(name);
+		    MemberValuePair pair = ast.newMemberValuePair();
+		    pair.setName(ast.newSimpleName("timeout"));
+		    pair.setValue(ast.newNumberLiteral("600000"));
+		    na.values().add(pair);
+		    listRewrite.insertFirst(na, null);
+		}
+	    }
+	}
+
+    }
+    
+    
 
 }

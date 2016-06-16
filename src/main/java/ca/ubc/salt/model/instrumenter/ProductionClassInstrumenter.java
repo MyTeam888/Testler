@@ -1,4 +1,4 @@
-package ca.ubc.salt.model.productionCodeInstrumenter;
+package ca.ubc.salt.model.instrumenter;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,8 +18,6 @@ import org.eclipse.jface.text.Document;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
 
-import ca.ubc.salt.model.instrumenter.ClassModel;
-import ca.ubc.salt.model.instrumenter.Method;
 import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Settings;
 import ca.ubc.salt.model.utils.Utils;

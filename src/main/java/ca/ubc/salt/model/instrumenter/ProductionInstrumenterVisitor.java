@@ -1,4 +1,4 @@
-package ca.ubc.salt.model.productionCodeInstrumenter;
+package ca.ubc.salt.model.instrumenter;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.MethodDeclaration;

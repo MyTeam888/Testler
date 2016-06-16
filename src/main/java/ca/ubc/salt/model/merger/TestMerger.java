@@ -31,15 +31,13 @@ import ca.ubc.salt.model.state.TestState;
 import ca.ubc.salt.model.state.TestStatement;
 import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Settings;
+import ca.ubc.salt.model.utils.Utils;
 
 public class TestMerger
 {
-    static Map<String, String> classFileMapping;
-
     public static void main(String[] args) throws SAXException, IOException, ClassNotFoundException
     {
 
-	classFileMapping = getClassFileMapping();
 	XStream xstream = new XStream(new StaxDriver());
 
 	File file = new File("components.txt");
@@ -49,7 +47,7 @@ public class TestMerger
 	{
 	    long setupCost = 10;
 	    Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
-	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(10, uniqueTestStatements);
+	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(4, uniqueTestStatements);
 	    connectedComponents.remove(0);
 	    
 	 
@@ -94,11 +92,9 @@ public class TestMerger
 	    TestState root = graph.get("init.init.xml");
 	    System.out.println(root.printDot(true));
 	    TestStatement first = dijkstra(root, false, connectedComponentsMap);
-
-	    LinkedList<TestState> firstPath = new LinkedList<TestState>();
-	    firstPath.add(root);
-	    firstPath.add(first.getEnd());
-	    List<LinkedList<TestState>> paths = new LinkedList<LinkedList<TestState>>();
+	    LinkedList<TestStatement> firstPath = new LinkedList<TestStatement>();
+	    firstPath.add(first);
+	    List<LinkedList<TestStatement>> paths = new LinkedList<LinkedList<TestStatement>>();
 	    paths.add(firstPath);
 
 	    TestStatement frontier = first;
@@ -108,7 +104,7 @@ public class TestMerger
 		if (frontier == null)
 		    break;
 		markAsCovered(frontier, connectedComponentsMap);
-		firstPath.add(frontier.getEnd());
+		firstPath.add(frontier);
 	    }
 
 	    System.out.println(firstPath);
@@ -116,11 +112,7 @@ public class TestMerger
 	}
     }
 
-    public static Map<String, String> getClassFileMapping()
-    {
-	XStream xstream = new XStream(new StaxDriver());
-	return (Map<String, String>) xstream.fromXML(new File(Settings.classFileMappingPath));
-    }
+    
 
     public static void markAsCovered(TestStatement stmt, Map<String, List<String>> connectedComponentsMap)
     {
@@ -221,7 +213,7 @@ public class TestMerger
 	{
 	    // state1 -> <a, b, c>
 	    Map<String, Set<SimpleName>> readVars = ReadVariableDetector
-		    .populateReadVarsForTestCaseOfFile(getTestCaseFile(testCase), testCase);
+		    .populateReadVarsForTestCaseOfFile(Utils.getTestCaseFile(testCase), testCase);
 	    // state1 ->
 	    // <object1(a), field 1, field 2, ... >
 	    // <object2(a), field 1, field 2, ... >
@@ -244,13 +236,6 @@ public class TestMerger
 	// System.out.println(paths.size());
 	// for (List<TestStatement> path : paths)
 	// System.out.println(path);
-    }
-
-    public static String getTestCaseFile(String testCase)
-    {
-	int index = testCase.lastIndexOf('.');
-	String className = testCase.substring(0, index);
-	return classFileMapping.get(className);
     }
 
 }

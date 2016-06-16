@@ -18,7 +18,6 @@ import org.eclipse.text.edits.TextEdit;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
 
-import ca.ubc.salt.model.productionCodeInstrumenter.ProductionClassInstrumenter;
 import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Settings;
 import ca.ubc.salt.model.utils.Utils;

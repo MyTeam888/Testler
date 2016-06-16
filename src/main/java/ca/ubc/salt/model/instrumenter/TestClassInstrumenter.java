@@ -30,14 +30,20 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
+import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.TextElement;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
+import org.eclipse.jdt.internal.compiler.ast.NumberLiteral;
+import org.eclipse.jdt.internal.compiler.lookup.BlockScope;
+import org.eclipse.jdt.internal.compiler.lookup.TypeBinding;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.text.edits.MalformedTreeException;
@@ -115,7 +121,7 @@ public class TestClassInstrumenter
     {
 	ASTParser parser = ASTParser.newParser(AST.JLS8);
 	parser.setKind(ASTParser.K_COMPILATION_UNIT);
-	Map pOptions = JavaCore.getOptions();
+	Map<String, String> pOptions = JavaCore.getOptions();
 	pOptions.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_8);
 	pOptions.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_8);
 	pOptions.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_8);
@@ -151,15 +157,21 @@ public class TestClassInstrumenter
     public static boolean isTestMethod(Method method)
     {
 
-	if (method.methodDec.getName().toString().toLowerCase().contains("test"))
-	    return true;
-	for (Object obj : method.methodDec.modifiers())
+//	if (method.methodDec.getName().toString().toLowerCase().contains("test"))
+//	    return true;
+	
+	
+	List<NormalAnnotation> modifs = method.methodDec.modifiers();
+	AST ast = method.methodDec.getAST();
+	for (Object obj : modifs)
 	{
 	    if (obj instanceof MarkerAnnotation)
 	    {
 		MarkerAnnotation ma = (MarkerAnnotation) obj;
 		if (ma.getTypeName().getFullyQualifiedName().contains("Test"))
+		{
 		    return true;
+		}
 	    }
 	}
 

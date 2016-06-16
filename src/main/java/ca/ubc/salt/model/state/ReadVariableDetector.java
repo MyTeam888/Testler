@@ -126,18 +126,12 @@ public class ReadVariableDetector
 
 	for (Method m : methods)
 	{
-	    if (m.getMethodDec().getName().toString().equals(getTestCaseName(testcase)))
+	    if (m.getMethodDec().getName().toString().equals(Utils.getTestCaseName(testcase)))
 		m.populateReadVars(document, loadedClasses, readVars);
 	}
 
     }
     
-    public static String getTestCaseName(String testCase)
-    {
-	int index = testCase.lastIndexOf('.');
-	return testCase.substring(index + 1);
-    }
-
     public static Map<String, Set<List<String>>> getReadValues(Map<String, Set<SimpleName>> readVars)
     {
 	Map<String, Set<List<String>>> readValues = new HashMap<String, Set<List<String>>>();

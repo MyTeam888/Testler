@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -17,8 +18,18 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.StaxDriver;
+
 public class Utils
 {
+    
+    public static Map<String, String> classFileMapping;
+    static {
+	classFileMapping = getClassFileMapping();
+    }
+    
+    
     public static <T> Set intersection(List<Set<T>> sets)
     {
 	Set common = new HashSet();
@@ -111,4 +122,40 @@ public class Utils
 	return result.toString();
 
     }
+    
+    
+    public static Map<String, String> getClassFileMapping()
+    {
+	XStream xstream = new XStream(new StaxDriver());
+	return (Map<String, String>) xstream.fromXML(new File(Settings.classFileMappingPath));
+    }
+
+
+    public static String getTestCaseFile(String testCase)
+    {
+        int index = testCase.lastIndexOf('.');
+        String className = testCase.substring(0, index);
+        return Utils.classFileMapping.get(className);
+    }
+    
+    public static <K, V> void addToTheCollectionInMap(Map<K, List<V>> map, K key, V value)
+    {
+	List<V> list = map.get(key);
+	if (list == null)
+	{
+	    list = new LinkedList<V>();
+	    map.put(key, list);
+	}
+	list.add(value);
+    }
+
+
+    public static String getTestCaseName(String testCase)
+    {
+        int index = testCase.lastIndexOf('.');
+        return testCase.substring(index + 1);
+    }
+
+
+    
 }

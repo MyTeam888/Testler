@@ -12,9 +12,10 @@ public class TestStatement extends TestModelNode
     Set<TestState> compatibleStates;
     TestState start, end;
     String name;
-    Statement statement;
+    public Statement statement;
     String methodCall;
     String input;
+    
     public long time = 1;
     
     

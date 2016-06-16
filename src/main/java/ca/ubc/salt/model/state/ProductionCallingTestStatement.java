@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Scanner;
 import java.util.Set;
 
 import ca.ubc.salt.model.utils.FileUtils;
@@ -133,20 +134,62 @@ public class ProductionCallingTestStatement
 	}
 	return null;
     }
-    
-    
+
     public static void main(String[] args) throws FileNotFoundException
     {
-	writeStatToFile();
+	File f = new File(Settings.PROJECT_INSTRUMENTED_PATH + "/time");
+
+	File[] files = f.listFiles();
+
+	long sum = 0;
+	for (File file : files)
+	{
+	    try
+	    {
+		Scanner sc = new Scanner(file);
+		long l = sc.nextLong();
+		sum += l;
+		sc.close();
+	    } catch (Exception e)
+	    {
+
+	    }
+	}
+	System.out.println(sum);
+
+	// writeStatToFile();
+    }
+
+    private static Map<String, Set<String>> splitMethodCalls(Map<String, List<String>> uniqueTestStatements)
+    {
+	Map<String, Set<String>> uniqueMethodCalls = new HashMap<String, Set<String>>();
+
+	for (Entry<String, List<String>> entry : uniqueTestStatements.entrySet())
+	{
+	    String methodCall = entry.getKey();
+	    String[] methodCalls = methodCall.split("<methodCall>");
+	    for (String call : methodCalls)
+	    {
+		Set<String> testStatements = uniqueMethodCalls.get(call);
+		if (testStatements == null)
+		{
+		    testStatements = new HashSet<String>();
+		    uniqueMethodCalls.put(call, testStatements);
+		}
+		testStatements.addAll(entry.getValue());
+	    }
+	}
+
+	return uniqueMethodCalls;
     }
 
     private static void writeStatToFile() throws FileNotFoundException
     {
-	Map<String, List<String>> uniqueTestStatements = getUniqueTestStatements();
+	Map<String, Set<String>> uniqueTestStatements = splitMethodCalls(getUniqueTestStatements());
 
-	Formatter fw = new Formatter("expn2.csv");
+	Formatter fw = new Formatter("expnmethod2.csv");
 
-	for (Entry<String, List<String>> entry : uniqueTestStatements.entrySet())
+	for (Entry<String, Set<String>> entry : uniqueTestStatements.entrySet())
 	{
 	    // System.out.println(entry.getKey()+","+entry.getValue().size());
 	    String key = entry.getKey();
@@ -164,6 +207,63 @@ public class ProductionCallingTestStatement
 	}
 	fw.close();
 	// System.out.println(uniqueTestStatements.size());
+    }
+    // private static void writeStatToFile() throws FileNotFoundException
+    // {
+    // Map<String, List<String>> uniqueTestStatements =
+    // getUniqueTestStatements();
+    //
+    // Formatter fw = new Formatter("expntimed.csv");
+    //
+    // for (Entry<String, List<String>> entry : uniqueTestStatements.entrySet())
+    // {
+    // // System.out.println(entry.getKey()+","+entry.getValue().size());
+    // String key = entry.getKey();
+    // int limit = 1000;
+    // if (key != null)
+    // {
+    // if (key.length() > limit)
+    // key = key.substring(0, limit);
+    // key = key.replaceAll("\n", "");
+    // key = key.replaceAll(",", "");
+    // }
+    //
+    //
+    // long min = Long.MAX_VALUE;
+    // long sum = 0;
+    // for (String stmt : entry.getValue())
+    // {
+    // long time = getTime(stmt);
+    // sum += time;
+    // if (time != 0)
+    // min = Math.min(min, time);
+    // }
+    //
+    // if (min == Long.MAX_VALUE)
+    // min = 0;
+    //
+    //
+    // String entr = entry.getValue().toString().replaceAll(",", " ");
+    // fw.format("%s,%s,%d,%d,%d\n", key, entr, entry.getValue().size(), min,
+    // sum - min);
+    // }
+    // fw.close();
+    // // System.out.println(uniqueTestStatements.size());
+    // }
+
+    public static long getTime(String stmt)
+    {
+	try
+	{
+	    Scanner sc = new Scanner(new File(Settings.PROJECT_INSTRUMENTED_PATH + "/time/" + stmt));
+	    return sc.nextLong();
+	} catch (Exception e)
+	{
+	    // TODO Auto-generated catch block
+	    // e.printStackTrace();
+	}
+	return 0;
+
     }
 
     // returns the map from each test statement to set of equivalent test

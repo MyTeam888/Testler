@@ -90,7 +90,10 @@ public class FileUtils
     public static String getState(File file)
     {
 	List<String> lines = FileUtils.getLines(file);
-	return lines.get(lines.size() - 1);
+	if(lines.size() > 0)
+	    return lines.get(lines.size() - 1);
+	else
+	    return "";
     }
 
     public static String getVars(String stateName)
