@@ -1,7 +1,7 @@
 # TestModel
 This tool creates a test model from existing test suites for various test refactoring purposes
 
-In order to create the test model first you need to instrument the project first.
+In order to create the test model first you need to instrument the project.
 
 **Instruction to Build the Test Model**
 
