@@ -18,13 +18,24 @@ import ca.ubc.salt.model.utils.Utils;
 public class TestCaseComposer
 {
 
-    public String composeTestCase(List<TestStatement> path)
+    public static String composeTestCase(List<TestStatement> path)
     {
 
+	populateStateField(path);
+
+	StringBuilder sb = new StringBuilder();
+	for (TestStatement statement : path)
+	{
+	    sb.append(statement.statement == null ? "null" : statement.statement.toString());
+	    sb.append('\n');
+	}
+
+	return sb.toString();
     }
 
-    public void populateStateField(List<TestStatement> path)
+    public static void populateStateField(List<TestStatement> path)
     {
+	// file path to list of statements
 	Map<String, List<TestStatement>> fileTestStatementMapping = new HashMap<String, List<TestStatement>>();
 	for (TestStatement stmt : path)
 	{
@@ -36,12 +47,15 @@ public class TestCaseComposer
 
 	for (Entry<String, List<TestStatement>> entry : fileTestStatementMapping.entrySet())
 	{
+	    String filePath = entry.getKey();
+	    List<TestStatement> statements = entry.getValue();
 
+	    populateForFile(filePath, statements);
 	}
 
     }
 
-    private String getTestCaseName(TestStatement stmt)
+    private static String getTestCaseName(TestStatement stmt)
     {
 	String stmtStr = stmt.getName();
 	int index = stmtStr.lastIndexOf('-');
@@ -49,7 +63,7 @@ public class TestCaseComposer
 	return testCaseStr;
     }
 
-    public void populateForFile(String filePath, List<TestStatement> statements)
+    public static void populateForFile(String filePath, List<TestStatement> statements)
     {
 	try
 	{
@@ -57,16 +71,23 @@ public class TestCaseComposer
 
 	    for (TestStatement stmt : statements)
 	    {
+		String stmtMethodName = Utils.getTestCaseName(Utils.getTestCaseNameFromTestStatement(stmt.getName()));
 		for (ClassModel clazz : clazzs)
 		{
 		    List<Method> methods = clazz.getMethods();
 
 		    for (Method m : methods)
 		    {
-			if (m.getMethodDec().getName().toString().equals(Utils.getTestCaseName(stmt.getName())))
+
+			String methodName = m.getMethodDec().getName().toString();
+			if (methodName.equals(stmtMethodName))
 			{
-			    
-			    stmt.statement = (Statement) m.getMethodDec().getBody().statements().get(getTestStatementNumber(stmt.getName()));
+
+			    List stmts = m.getMethodDec().getBody().statements();
+			    int index = getTestStatementNumber(stmt.getName()) - 1;
+			    if (index < stmts.size())
+				stmt.statement = (Statement) stmts.get(index);
+			    break;
 			}
 		    }
 		}
@@ -78,9 +99,8 @@ public class TestCaseComposer
 	    e.printStackTrace();
 	}
     }
-    
-    
-    public int getTestStatementNumber(String xmlTestStatementStr)
+
+    public static int getTestStatementNumber(String xmlTestStatementStr)
     {
 	int index = xmlTestStatementStr.lastIndexOf('-');
 	int endIndex = xmlTestStatementStr.lastIndexOf('.');

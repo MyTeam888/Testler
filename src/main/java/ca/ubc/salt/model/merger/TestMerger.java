@@ -10,6 +10,7 @@ import java.io.ObjectOutputStream;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import org.xml.sax.SAXException;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
 
+import ca.ubc.salt.model.composer.TestCaseComposer;
 import ca.ubc.salt.model.state.ProductionCallingTestStatement;
 import ca.ubc.salt.model.state.ReadVariableDetector;
 import ca.ubc.salt.model.state.StateComparator;
@@ -47,7 +49,7 @@ public class TestMerger
 	{
 	    long setupCost = 10;
 	    Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
-	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(4, uniqueTestStatements);
+	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(15, uniqueTestStatements);
 	    connectedComponents.remove(0);
 	    
 	 
@@ -106,13 +108,26 @@ public class TestMerger
 		markAsCovered(frontier, connectedComponentsMap);
 		firstPath.add(frontier);
 	    }
+	    
+	    
+	    
 
-	    System.out.println(firstPath);
+	    System.out.println(TestCaseComposer.composeTestCase(firstPath));
 
 	}
     }
 
-    
+    public static LinkedList<TestStatement> returnThePath(LinkedList<TestStatement> frontierPaths)
+    {
+	LinkedList<TestStatement> path = new LinkedList<TestStatement>();
+	Iterator it = frontierPaths.descendingIterator();
+	while (it.hasNext())
+	{
+//	    TestStatement 
+	}
+	
+	return path;
+    }
 
     public static void markAsCovered(TestStatement stmt, Map<String, List<String>> connectedComponentsMap)
     {

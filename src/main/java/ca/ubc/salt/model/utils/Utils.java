@@ -156,6 +156,11 @@ public class Utils
         return testCase.substring(index + 1);
     }
 
+    public static String getTestCaseNameFromTestStatement(String testStatement)
+    {
+        int index = testStatement.lastIndexOf('-');
+        return testStatement.substring(0, index);
+    }
 
     
 }
