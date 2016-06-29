@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,6 +18,7 @@ import java.util.Set;
 
 import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Settings;
+import ca.ubc.salt.model.utils.Utils;
 
 public class ProductionCallingTestStatement
 {
@@ -276,14 +279,22 @@ public class ProductionCallingTestStatement
 	File[] traces = folder.listFiles();
 	int counter = 1;
 
+	String [] tracesNames = folder.list();
+	List<String> tracesStrs = Arrays.asList(tracesNames);
+	Collections.sort(tracesStrs);
+	
 	for (File trace : traces)
 	{
 	    String methodCalled = FileUtils.getMethodCalled(trace);
+	    if (methodCalled == null || methodCalled == "")
+		continue;
 	    List<String> states = uniqueTestStatements.get(methodCalled);
 	    if (states == null)
 	    {
 		states = new LinkedList<String>();
-		states.add(trace.getName());
+		String traceName = Utils.nextOrPrevState(trace.getName(), tracesStrs, false);
+		if (!traceName.equals(""))
+		    states.add(traceName);
 		uniqueTestStatements.put(methodCalled, states);
 	    } else
 		states.add(trace.getName());
@@ -294,8 +305,8 @@ public class ProductionCallingTestStatement
 
 	}
 
-	uniqueTestStatements.remove(null);
-	uniqueTestStatements.remove("");
+//	uniqueTestStatements.remove(null);
+//	uniqueTestStatements.remove("");
 
 	return uniqueTestStatements;
     }

@@ -17,6 +17,7 @@ import org.eclipse.core.internal.utils.FileUtil;
 
 import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Settings;
+import ca.ubc.salt.model.utils.Utils;
 
 public class StateComparator
 {
@@ -74,13 +75,13 @@ public class StateComparator
 	    TestState ts = testStates.get(i);
 	    for (String state : ts.getStates())
 	    {
-		String nextState = nextOrPrevState(state, sortedTestStates, true);
+		String nextState = Utils.nextOrPrevState(state, sortedTestStates, true);
 		if (testStateMap.containsKey(nextState))
 		{
 		    ts.getChildren().put(state, new TestStatement(ts, testStateMap.get(nextState), state));
 		}
 
-		String prevState = nextOrPrevState(state, sortedTestStates, false);
+		String prevState = Utils.nextOrPrevState(state, sortedTestStates, false);
 		if (testStateMap.containsKey(prevState))
 		{
 		    ts.getParents().put(state, new TestStatement(ts, testStateMap.get(prevState), state));
@@ -88,36 +89,6 @@ public class StateComparator
 	    }
 	}
 
-    }
-
-    private static String nextOrPrevState(String state, List<String> sortedTestCases, boolean next)
-    {
-	int index = sortedTestCases.indexOf(state);
-	if (index == -1 || (next && index == sortedTestCases.size() - 1) || (!next && index == 0))
-	    return "";
-
-	String[] split = splitState(state);
-
-	if (split.length != 2)
-	    return "";
-
-	String nextState = sortedTestCases.get(index + (next ? 1 : -1));
-	String[] splitNext = splitState(nextState);
-
-	if (splitNext.length != 2)
-	    return "";
-
-	if (split[0].equals(splitNext[0]))
-	    return nextState;
-	else
-	    return "";
-    }
-
-    private static String[] splitState(String state)
-    {
-	state = state.substring(0, state.lastIndexOf('.'));
-	String[] split = state.split("-");
-	return split;
     }
 
     private static void compareStates(int hash, Map<String, TestState> testStateOfState, List<TestState> testStates)

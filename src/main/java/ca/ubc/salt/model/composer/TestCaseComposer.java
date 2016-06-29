@@ -26,7 +26,8 @@ public class TestCaseComposer
 	StringBuilder sb = new StringBuilder();
 	for (TestStatement statement : path)
 	{
-	    sb.append(statement.statement == null ? "null" : statement.statement.toString());
+	    sb.append(statement.getName() + "  :  "
+		    + (statement.statement == null ? "null" : statement.statement.toString()));
 	    sb.append('\n');
 	}
 
@@ -84,8 +85,8 @@ public class TestCaseComposer
 			{
 
 			    List stmts = m.getMethodDec().getBody().statements();
-			    int index = getTestStatementNumber(stmt.getName()) - 1;
-			    if (index < stmts.size())
+			    int index = getTestStatementNumber(stmt.getName());
+			    if (0 <= index && index < stmts.size())
 				stmt.statement = (Statement) stmts.get(index);
 			    break;
 			}

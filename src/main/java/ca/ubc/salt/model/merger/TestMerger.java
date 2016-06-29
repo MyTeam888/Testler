@@ -49,10 +49,10 @@ public class TestMerger
 	{
 	    long setupCost = 10;
 	    Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
-	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(15, uniqueTestStatements);
+	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(2,
+		    uniqueTestStatements);
 	    connectedComponents.remove(0);
-	    
-	 
+
 	    connectedComponentsMap = ProductionCallingTestStatement.convertTheSetToMap(uniqueTestStatements);
 
 	    String components = xstream.toXML(connectedComponents);
@@ -60,30 +60,26 @@ public class TestMerger
 	    FileWriter fw = new FileWriter("components.txt");
 	    fw.write(components);
 	    fw.close();
-	    
+
 	    ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("unique.txt"));
 	    out.writeObject(connectedComponentsMap);
 	    out.close();
-	    
-	    
+
 	} else
 	{
 	    connectedComponents = (List<Set<String>>) xstream.fromXML(new File("components.txt"));
-	    ObjectInputStream in = new ObjectInputStream( new FileInputStream("unique.txt"));
+	    ObjectInputStream in = new ObjectInputStream(new FileInputStream("unique.txt"));
 	    connectedComponentsMap = (Map<String, List<String>>) in.readObject();
 	    in.close();
 	}
 
-	
 	Formatter fr = new Formatter("stat.csv");
 	for (Set<String> connectedComponent : connectedComponents)
 	{
 	    fr.format("%d,%s\n", connectedComponent.size(), connectedComponent.toString());
 	}
 	fr.close();
-	
-	
-	
+
 	for (Set<String> connectedComponent : connectedComponents)
 	{
 	    if (connectedComponent.size() < 2)
@@ -108,24 +104,43 @@ public class TestMerger
 		markAsCovered(frontier, connectedComponentsMap);
 		firstPath.add(frontier);
 	    }
-	    
-	    
-	    
 
+//	    System.out.println(TestCaseComposer.composeTestCase(returnThePath(root, firstPath)));
 	    System.out.println(TestCaseComposer.composeTestCase(firstPath));
 
 	}
     }
 
-    public static LinkedList<TestStatement> returnThePath(LinkedList<TestStatement> frontierPaths)
+    public static LinkedList<TestStatement> returnThePath(TestState root, LinkedList<TestStatement> frontierPaths)
     {
+
 	LinkedList<TestStatement> path = new LinkedList<TestStatement>();
-	Iterator it = frontierPaths.descendingIterator();
+	Iterator<TestStatement> it = frontierPaths.descendingIterator();
+	TestStatement cur = it.next();
+	if (cur != null)
+	    path.addLast(cur);
 	while (it.hasNext())
 	{
-//	    TestStatement 
+	    TestStatement parent = it.next();
+
+	    while (cur != parent && cur != null)
+	    {
+		cur = (TestStatement) cur.getStart().parent.get(parent.getEnd());
+		if (cur != null)
+		    path.addFirst(cur);
+	    }
+	    path.addFirst(parent);
+
+	    cur = parent;
 	}
-	
+
+	while (cur != null)
+	{
+	    cur = (TestStatement) cur.getStart().parent.get(root);
+	    if (cur != null)
+		path.addFirst(cur);
+	}
+
 	return path;
     }
 
@@ -140,7 +155,8 @@ public class TestMerger
 	}
     }
 
-    public static TestStatement dijkstra(TestState root, boolean returnFirst, Map<String, List<String>> connectedComponentsMap)
+    public static TestStatement dijkstra(TestState root, boolean returnFirst,
+	    Map<String, List<String>> connectedComponentsMap)
     {
 	Set<TestState> visited = new HashSet<TestState>();
 	root.curStart = root;
@@ -164,15 +180,14 @@ public class TestMerger
 		TestState child = stmt.getEnd();
 		if (!visited.contains(child))
 		{
-		    if (first == null
-			    && connectedComponentsMap.containsKey(stmt.getName()))
+		    relaxChild(root, queue, parent, stmt, child);
+		    if (first == null && connectedComponentsMap.containsKey(stmt.getName()))
 		    {
 			if (returnFirst)
 			    return stmt;
 			first = stmt;
 		    }
 
-		    relaxChild(root, queue, parent, stmt, child);
 		}
 	    }
 
@@ -181,8 +196,7 @@ public class TestMerger
 		TestState child = stmt.getEnd();
 		if (!visited.contains(child))
 		{
-		    if (first == null
-			    && connectedComponentsMap.containsKey(stmt.getName()))
+		    if (first == null && connectedComponentsMap.containsKey(stmt.getName()))
 		    {
 			if (returnFirst)
 			    return stmt;

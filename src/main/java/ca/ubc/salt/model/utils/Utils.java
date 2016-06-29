@@ -162,5 +162,37 @@ public class Utils
         return testStatement.substring(0, index);
     }
 
+
+    public static String nextOrPrevState(String state, List<String> sortedTestCases, boolean next)
+    {
+        int index = sortedTestCases.indexOf(state);
+        if (index == -1 || (next && index == sortedTestCases.size() - 1) || (!next && index == 0))
+            return "";
+    
+        String[] split = Utils.splitState(state);
+    
+        if (split.length != 2)
+            return "";
+    
+        String nextState = sortedTestCases.get(index + (next ? 1 : -1));
+        String[] splitNext = Utils.splitState(nextState);
+    
+        if (splitNext.length != 2)
+            return "";
+    
+        if (split[0].equals(splitNext[0]))
+            return nextState;
+        else
+            return "";
+    }
+
+
+    public static String[] splitState(String state)
+    {
+        state = state.substring(0, state.lastIndexOf('.'));
+        String[] split = state.split("-");
+        return split;
+    }
+
     
 }
