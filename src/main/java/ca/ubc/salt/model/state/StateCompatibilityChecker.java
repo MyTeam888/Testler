@@ -33,7 +33,7 @@ public class StateCompatibilityChecker
 {
     // eg. <Object1, objField1, objobjField1, ..., int, 2> -> <state1, state2,
     // state3,...>
-    public HashMap<List<String>, Set<String>> varStateSet = new HashMap<List<String>, Set<String>>();
+    public HashMap<String, Set<String>> varStateSet = new HashMap<String, Set<String>>();
 
     /*public static void main(String[] args) throws SAXException, IOException
     {
@@ -94,15 +94,15 @@ public class StateCompatibilityChecker
     }
 
     public static void getCompatibleStates(Map<String, Set<String>> compatibleStates,
-	    HashMap<List<String>, Set<String>> varStateSet, Map<String, Set<List<String>>> readValues)
+	    HashMap<String, Set<String>> varStateSet, Map<String, Set<String>> readValues)
     {
-	for (Entry<String, Set<List<String>>> entry : readValues.entrySet())
+	for (Entry<String, Set<String>> entry : readValues.entrySet())
 	{
 	    String stateName = entry.getKey();
-	    Set<List<String>> readValue = entry.getValue();
+	    Set<String> readValue = entry.getValue();
 
 	    List<Set<String>> comp = new LinkedList<Set<String>>();
-	    for (List<String> varValue : readValue)
+	    for (String varValue : readValue)
 	    {
 		comp.add(getAllStatesWithVariableValue(varStateSet, varValue));
 	    }
@@ -112,8 +112,8 @@ public class StateCompatibilityChecker
 	}
     }
 
-    public static Set<String> getAllStatesWithVariableValue(HashMap<List<String>, Set<String>> varStateSet,
-	    List<String> value)
+    public static Set<String> getAllStatesWithVariableValue(HashMap<String, Set<String>> varStateSet,
+	    String value)
     {
 	return varStateSet.get(value);
     }
@@ -156,7 +156,8 @@ public class StateCompatibilityChecker
 	    Node object = nodeList.item(i);
 	    if (object instanceof Element)
 	    {
-		processObject(object, this.varStateSet, new LinkedList<String>(), stateName);
+		Utils.addToTheSetInMap(this.varStateSet, XMLUtils.getXMLString(object), stateName);
+//		processObject(object, this.varStateSet, new LinkedList<String>(), stateName);
 	    }
 	}
     }

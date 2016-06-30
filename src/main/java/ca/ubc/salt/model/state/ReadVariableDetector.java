@@ -69,9 +69,9 @@ public class ReadVariableDetector
 	// }
 	// }
     }
-    
-    
-    public static Map<String, Set<SimpleName>> populateReadVarsForTestCaseOfFile(String path, String testcase) throws IOException
+
+    public static Map<String, Set<SimpleName>> populateReadVarsForTestCaseOfFile(String path, String testcase)
+	    throws IOException
     {
 	File testClass = new File(path);
 	if (testClass.isFile())
@@ -131,22 +131,22 @@ public class ReadVariableDetector
 	}
 
     }
-    
-    public static Map<String, Set<List<String>>> getReadValues(Map<String, Set<SimpleName>> readVars)
+
+    public static Map<String, Set<String>> getReadValues(Map<String, Set<SimpleName>> readVars)
     {
-	Map<String, Set<List<String>>> readValues = new HashMap<String, Set<List<String>>>();
+	Map<String, Set<String>> readValues = new HashMap<String, Set<String>>();
 	for (Entry<String, Set<SimpleName>> entry : readVars.entrySet())
 	{
 	    String stateName = entry.getKey();
-	    Set<List<String>> readValuesForState = getReadValuesOfState(stateName, entry.getValue());
+	    Set<String> readValuesForState = getReadValuesOfState(stateName, entry.getValue());
 	    readValues.put(stateName, readValuesForState);
 	}
 	return readValues;
     }
 
-    public static Set<List<String>> getReadValuesOfState(String stateName, Set<SimpleName> readVars)
+    public static Set<String> getReadValuesOfState(String stateName, Set<SimpleName> readVars)
     {
-	Set<List<String>> varStateSet = new HashSet<List<String>>();
+	Set<String> varStateSet = new HashSet<String>();
 
 	String varXML = FileUtils.getVars(stateName);
 
@@ -163,7 +163,11 @@ public class ReadVariableDetector
 	for (String stateVar : stateVarNames)
 	{
 	    if (readVarNames.contains(stateVar))
-		processObjectValues(nodeList.item(index), varStateSet, key, stateName);
+	    {
+		varStateSet.add(nodeList.item(index).toString());
+		// processObjectValues(nodeList.item(index), varStateSet, key,
+		// stateName);
+	    }
 	    index++;
 	}
 	return varStateSet;

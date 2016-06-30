@@ -43,7 +43,7 @@ public class TestCaseComposer
 
 	    String testCaseStr = getTestCaseName(stmt);
 	    String filePath = Utils.getTestCaseFile(testCaseStr);
-	    Utils.addToTheCollectionInMap(fileTestStatementMapping, filePath, stmt);
+	    Utils.addToTheListInMap(fileTestStatementMapping, filePath, stmt);
 	}
 
 	for (Entry<String, List<TestStatement>> entry : fileTestStatementMapping.entrySet())

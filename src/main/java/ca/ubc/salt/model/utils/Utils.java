@@ -138,12 +138,22 @@ public class Utils
         return Utils.classFileMapping.get(className);
     }
     
-    public static <K, V> void addToTheCollectionInMap(Map<K, List<V>> map, K key, V value)
+    public static <K, V> void addToTheListInMap(Map<K, List<V>> map, K key, V value)
     {
 	List<V> list = map.get(key);
 	if (list == null)
 	{
 	    list = new LinkedList<V>();
+	    map.put(key, list);
+	}
+	list.add(value);
+    }
+    public static <K, V> void addToTheSetInMap(Map<K, Set<V>> map, K key, V value)
+    {
+	Set<V> list = map.get(key);
+	if (list == null)
+	{
+	    list = new HashSet<V>();
 	    map.put(key, list);
 	}
 	list.add(value);

@@ -248,7 +248,7 @@ public class TestMerger
 	    // <object2(a), field 1, field 2, ... >
 	    // <object3(a), field 1, field 2, ... >
 
-	    Map<String, Set<List<String>>> readValues = ReadVariableDetector.getReadValues(readVars);
+	    Map<String, Set<String>> readValues = ReadVariableDetector.getReadValues(readVars);
 	    StateCompatibilityChecker.getCompatibleStates(compatibleStates, scc.varStateSet, readValues);
 
 	}

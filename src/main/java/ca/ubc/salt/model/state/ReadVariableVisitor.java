@@ -24,7 +24,7 @@ public class ReadVariableVisitor extends ASTVisitor
 
     Map<String, Set<SimpleName>> readVars;
     String methodName;
-    int counter = 1;
+    int counter = 0;
 
     public ReadVariableVisitor(String methodName)
     {

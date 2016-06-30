@@ -99,7 +99,11 @@ public class FileUtils
     public static String getVars(String stateName)
     {
 	List<String> lines = FileUtils.getLines(new File(Settings.tracePaths + "/" + stateName));
-	return lines == null ? null : lines.get(lines.size() - 2);
+	if (lines == null)
+	    return null;
+	if (lines.size() < 2)
+	    return null;
+	return lines.get(lines.size() - 2);
     }
 
     public static String getMethodCalled(String stateName)
