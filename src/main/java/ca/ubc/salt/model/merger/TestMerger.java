@@ -89,7 +89,7 @@ public class TestMerger
 	    Map<String, TestState> graph = createModelForTestCases(testCases);
 	    TestState root = graph.get("init.init.xml");
 	    System.out.println(root.printDot(true));
-	    TestStatement first = dijkstra(root, false, connectedComponentsMap);
+	    TestStatement first = dijkstra(new TestStatement(root, root, "init.xml"), false, connectedComponentsMap);
 	    LinkedList<TestStatement> firstPath = new LinkedList<TestStatement>();
 	    firstPath.add(first);
 	    List<LinkedList<TestStatement>> paths = new LinkedList<LinkedList<TestStatement>>();
@@ -100,7 +100,7 @@ public class TestMerger
 	    
 	    while (frontier != null)
 	    {
-		frontier = dijkstra(frontier.getEnd(), true, connectedComponentsMap);
+		frontier = dijkstra(frontier, true, connectedComponentsMap);
 		if (frontier == null)
 		    break;
 		markAsCovered(frontier, connectedComponentsMap);
@@ -157,17 +157,15 @@ public class TestMerger
 	}
     }
 
-    public static TestStatement dijkstra(TestState root, boolean returnFirst,
+    public static TestStatement dijkstra(TestStatement root, boolean returnFirst,
 	    Map<String, List<String>> connectedComponentsMap)
     {
 	Set<TestStatement> visited = new HashSet<TestStatement>();
-	TestStatement initstmt = new TestStatement(null, root, "init.xml");
-	initstmt.distFrom.put(root, (long) 0);
 	root.curStart = root;
 	root.distFrom.put(root, (long) 0);
 	PriorityQueue<TestStatement> queue = new PriorityQueue<TestStatement>();
 
-	queue.add(initstmt);
+	queue.add(root);
 	TestStatement first = null;
 
 	while (queue.size() != 0)
@@ -181,10 +179,9 @@ public class TestMerger
 	    for (Entry<String, TestStatement> edge : parent.getEnd().getChildren().entrySet())
 	    {
 		TestStatement stmt = edge.getValue();
-		TestState child = stmt.getEnd();
 		if (!visited.contains(stmt))
 		{
-		    relaxChild(root, queue, parent.getEnd(), stmt, child);
+		    relaxChild(root, queue, parent, stmt);
 		    if (first == null && connectedComponentsMap.containsKey(stmt.getName()))
 		    {
 			if (returnFirst)
@@ -197,7 +194,6 @@ public class TestMerger
 
 	    for (TestStatement stmt : parent.getEnd().getCompatibleStatements())
 	    {
-		TestState child = stmt.getEnd();
 		if (!visited.contains(stmt))
 		{
 		    if (first == null && connectedComponentsMap.containsKey(stmt.getName()))
@@ -207,7 +203,7 @@ public class TestMerger
 			first = stmt;
 		    }
 
-		    relaxChild(root, queue, parent.getEnd(), stmt, child);
+		    relaxChild(root, queue, parent, stmt);
 		}
 	    }
 
@@ -217,18 +213,14 @@ public class TestMerger
 
     }
 
-    private static void relaxChild(TestState root, PriorityQueue<TestStatement> queue, TestState parent, TestStatement stmt,
-	    TestState child)
+    private static void relaxChild(TestStatement root, PriorityQueue<TestStatement> queue, TestStatement parent, TestStatement stmt)
     {
 	long newD = parent.distFrom.get(root) + stmt.time;
-	Long childDist = child.distFrom.get(root);
+	Long childDist = stmt.distFrom.get(root);
 	if (childDist == null || newD < childDist)
 	{
-	    child.distFrom.put(root, newD);
-	    child.parent.put(root, stmt);
 	    stmt.parent.put(root, parent);
 	    stmt.distFrom.put(root, newD);
-	    child.curStart = root;
 	    stmt.curStart = root;
 	    queue.remove(stmt);
 	    queue.add(stmt);
