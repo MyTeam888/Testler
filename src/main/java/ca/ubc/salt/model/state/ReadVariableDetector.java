@@ -164,7 +164,7 @@ public class ReadVariableDetector
 	{
 	    if (readVarNames.contains(stateVar))
 	    {
-		varStateSet.add(nodeList.item(index).toString());
+		varStateSet.add(XMLUtils.getXMLString(nodeList.item(index)));
 		// processObjectValues(nodeList.item(index), varStateSet, key,
 		// stateName);
 	    }

@@ -96,6 +96,8 @@ public class TestMerger
 	    paths.add(firstPath);
 
 	    TestStatement frontier = first;
+	    markAsCovered(frontier, connectedComponentsMap);
+	    
 	    while (frontier != null)
 	    {
 		frontier = dijkstra(frontier.getEnd(), true, connectedComponentsMap);
@@ -105,8 +107,8 @@ public class TestMerger
 		firstPath.add(frontier);
 	    }
 
-//	    System.out.println(TestCaseComposer.composeTestCase(returnThePath(root, firstPath)));
-	    System.out.println(TestCaseComposer.composeTestCase(firstPath));
+	    System.out.println(TestCaseComposer.composeTestCase(returnThePath(root, firstPath)));
+//	    System.out.println(TestCaseComposer.composeTestCase(firstPath));
 
 	}
     }
@@ -158,29 +160,31 @@ public class TestMerger
     public static TestStatement dijkstra(TestState root, boolean returnFirst,
 	    Map<String, List<String>> connectedComponentsMap)
     {
-	Set<TestState> visited = new HashSet<TestState>();
+	Set<TestStatement> visited = new HashSet<TestStatement>();
+	TestStatement initstmt = new TestStatement(null, root, "init.xml");
+	initstmt.distFrom.put(root, (long) 0);
 	root.curStart = root;
 	root.distFrom.put(root, (long) 0);
-	PriorityQueue<TestState> queue = new PriorityQueue<TestState>();
+	PriorityQueue<TestStatement> queue = new PriorityQueue<TestStatement>();
 
-	queue.add(root);
+	queue.add(initstmt);
 	TestStatement first = null;
 
 	while (queue.size() != 0)
 	{
-	    TestState parent = queue.poll();
+	    TestStatement parent = queue.poll();
 	    if (visited.contains(parent))
 		continue;
 
 	    visited.add(parent);
 
-	    for (Entry<String, TestStatement> edge : parent.getChildren().entrySet())
+	    for (Entry<String, TestStatement> edge : parent.getEnd().getChildren().entrySet())
 	    {
 		TestStatement stmt = edge.getValue();
 		TestState child = stmt.getEnd();
-		if (!visited.contains(child))
+		if (!visited.contains(stmt))
 		{
-		    relaxChild(root, queue, parent, stmt, child);
+		    relaxChild(root, queue, parent.getEnd(), stmt, child);
 		    if (first == null && connectedComponentsMap.containsKey(stmt.getName()))
 		    {
 			if (returnFirst)
@@ -191,10 +195,10 @@ public class TestMerger
 		}
 	    }
 
-	    for (TestStatement stmt : parent.getCompatibleStatements())
+	    for (TestStatement stmt : parent.getEnd().getCompatibleStatements())
 	    {
 		TestState child = stmt.getEnd();
-		if (!visited.contains(child))
+		if (!visited.contains(stmt))
 		{
 		    if (first == null && connectedComponentsMap.containsKey(stmt.getName()))
 		    {
@@ -203,7 +207,7 @@ public class TestMerger
 			first = stmt;
 		    }
 
-		    relaxChild(root, queue, parent, stmt, child);
+		    relaxChild(root, queue, parent.getEnd(), stmt, child);
 		}
 	    }
 
@@ -213,7 +217,7 @@ public class TestMerger
 
     }
 
-    private static void relaxChild(TestState root, PriorityQueue<TestState> queue, TestState parent, TestStatement stmt,
+    private static void relaxChild(TestState root, PriorityQueue<TestStatement> queue, TestState parent, TestStatement stmt,
 	    TestState child)
     {
 	long newD = parent.distFrom.get(root) + stmt.time;
@@ -223,21 +227,30 @@ public class TestMerger
 	    child.distFrom.put(root, newD);
 	    child.parent.put(root, stmt);
 	    stmt.parent.put(root, parent);
+	    stmt.distFrom.put(root, newD);
 	    child.curStart = root;
-	    queue.remove(child);
-	    queue.add(child);
+	    stmt.curStart = root;
+	    queue.remove(stmt);
+	    queue.add(stmt);
 	    // queue.add(child.clone());
 	}
     }
+    
 
     public static Map<String, TestState> createModelForTestCases(List<String> testCases) throws IOException
     {
+	
+	
+	
 	StateCompatibilityChecker scc = new StateCompatibilityChecker();
 	// scc.processState("testSubtract-17.xml");
 	scc.populateVarStateSet(testCases);
 	// System.out.println(scc.varStateSet);
 
 	Map<String, Set<String>> compatibleStates = new HashMap<String, Set<String>>();
+	
+	
+	Set<String> allStates = new HashSet<String>(FileUtils.getStatesForTestCase(testCases));
 	for (String testCase : testCases)
 	{
 	    // state1 -> <a, b, c>
@@ -249,7 +262,7 @@ public class TestMerger
 	    // <object3(a), field 1, field 2, ... >
 
 	    Map<String, Set<String>> readValues = ReadVariableDetector.getReadValues(readVars);
-	    StateCompatibilityChecker.getCompatibleStates(compatibleStates, scc.varStateSet, readValues);
+	    StateCompatibilityChecker.getCompatibleStates(compatibleStates, scc.varStateSet, readValues, allStates);
 
 	}
 	testCases.add("init.init");

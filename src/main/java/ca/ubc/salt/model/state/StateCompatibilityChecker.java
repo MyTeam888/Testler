@@ -35,32 +35,33 @@ public class StateCompatibilityChecker
     // state3,...>
     public HashMap<String, Set<String>> varStateSet = new HashMap<String, Set<String>>();
 
-    /*public static void main(String[] args) throws SAXException, IOException
-    {
-	StateCompatibilityChecker scc = new StateCompatibilityChecker();
-	// scc.processState("testSubtract-17.xml");
-	scc.populateVarStateSet();
-	// System.out.println(scc.varStateSet);
-	Map<String, Set<SimpleName>> readVars = ReadVariableDetector.populateReadVarsForFile(Settings.TEST_CLASS);
-	Map<String, Set<List<String>>> readValues = ReadVariableDetector.getReadValues(readVars);
-	// System.out.println(readValues);
-	Map<String, Set<String>> compatibleStates = new HashMap<String, Set<String>>();
-	getCompatibleStates(compatibleStates, scc.varStateSet, readValues);
-	// System.out.println(compatibleStates);
-
-	Map<String, TestState> graph = StateComparator.createGraph();
-
-	setCompabilityFields(graph, compatibleStates);
-
-	TestState root = graph.get("init.xml");
-	System.out.println(root.printDot(true));
-
-	// List<List<TestStatement>> paths = root.getAllPaths();
-	// System.out.println(paths.size());
-	// for (List<TestStatement> path : paths)
-	// System.out.println(path);
-
-    }*/
+    /*
+     * public static void main(String[] args) throws SAXException, IOException {
+     * StateCompatibilityChecker scc = new StateCompatibilityChecker(); //
+     * scc.processState("testSubtract-17.xml"); scc.populateVarStateSet(); //
+     * System.out.println(scc.varStateSet); Map<String, Set<SimpleName>>
+     * readVars =
+     * ReadVariableDetector.populateReadVarsForFile(Settings.TEST_CLASS);
+     * Map<String, Set<List<String>>> readValues =
+     * ReadVariableDetector.getReadValues(readVars); //
+     * System.out.println(readValues); Map<String, Set<String>> compatibleStates
+     * = new HashMap<String, Set<String>>();
+     * getCompatibleStates(compatibleStates, scc.varStateSet, readValues); //
+     * System.out.println(compatibleStates);
+     * 
+     * Map<String, TestState> graph = StateComparator.createGraph();
+     * 
+     * setCompabilityFields(graph, compatibleStates);
+     * 
+     * TestState root = graph.get("init.xml");
+     * System.out.println(root.printDot(true));
+     * 
+     * // List<List<TestStatement>> paths = root.getAllPaths(); //
+     * System.out.println(paths.size()); // for (List<TestStatement> path :
+     * paths) // System.out.println(path);
+     * 
+     * }
+     */
 
     public static void setCompabilityFields(Map<String, TestState> graph, Map<String, Set<String>> compatibleStates)
     {
@@ -94,7 +95,7 @@ public class StateCompatibilityChecker
     }
 
     public static void getCompatibleStates(Map<String, Set<String>> compatibleStates,
-	    HashMap<String, Set<String>> varStateSet, Map<String, Set<String>> readValues)
+	    HashMap<String, Set<String>> varStateSet, Map<String, Set<String>> readValues, Set<String> allStates)
     {
 	for (Entry<String, Set<String>> entry : readValues.entrySet())
 	{
@@ -107,13 +108,19 @@ public class StateCompatibilityChecker
 		comp.add(getAllStatesWithVariableValue(varStateSet, varValue));
 	    }
 
-	    Set<String> compatibleStatesOfState = Utils.intersection(comp);
-	    compatibleStates.put(stateName, compatibleStatesOfState);
+	    if (comp.size() > 0)
+	    {
+		Set<String> compatibleStatesOfState = Utils.intersection(comp);
+		compatibleStates.put(stateName, compatibleStatesOfState);
+	    } else
+	    {
+		compatibleStates.put(stateName, allStates);
+		
+	    }
 	}
     }
 
-    public static Set<String> getAllStatesWithVariableValue(HashMap<String, Set<String>> varStateSet,
-	    String value)
+    public static Set<String> getAllStatesWithVariableValue(HashMap<String, Set<String>> varStateSet, String value)
     {
 	return varStateSet.get(value);
     }
@@ -157,7 +164,8 @@ public class StateCompatibilityChecker
 	    if (object instanceof Element)
 	    {
 		Utils.addToTheSetInMap(this.varStateSet, XMLUtils.getXMLString(object), stateName);
-//		processObject(object, this.varStateSet, new LinkedList<String>(), stateName);
+		// processObject(object, this.varStateSet, new
+		// LinkedList<String>(), stateName);
 	    }
 	}
     }

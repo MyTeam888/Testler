@@ -289,15 +289,16 @@ public class ProductionCallingTestStatement
 	    if (methodCalled == null || methodCalled == "")
 		continue;
 	    List<String> states = uniqueTestStatements.get(methodCalled);
+	    String traceName = Utils.nextOrPrevState(trace.getName(), tracesStrs, false);
 	    if (states == null)
 	    {
 		states = new LinkedList<String>();
-		String traceName = Utils.nextOrPrevState(trace.getName(), tracesStrs, false);
 		if (!traceName.equals(""))
+		{
 		    states.add(traceName);
-		uniqueTestStatements.put(methodCalled, states);
+		uniqueTestStatements.put(methodCalled, states);}
 	    } else
-		states.add(trace.getName());
+		states.add(traceName);
 
 	    counter++;
 	    if (counter % 1000 == 0)
