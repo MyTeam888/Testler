@@ -3,7 +3,9 @@ package ca.ubc.salt.model.state;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -70,6 +72,27 @@ public class ReadVariableDetector
 	// }
     }
 
+    
+    public static void accumulateReadVars(Map<String, Set<SimpleName>> readVars)
+    {
+	List <String> statements = new ArrayList(readVars.keySet());
+	Collections.sort(statements);
+	
+	for (int i = statements.size() - 2; i >= 0; i--)
+	{
+	    String statement = statements.get(i);
+//	    String testCase = Utils.getTestCaseNameFromTestStatement(statement);
+
+	    String childStmt = statements.get(i+1);
+//	    String childStmtTestCase = Utils.getTestCaseNameFromTestStatement(childStmt);
+
+//	    if (testCase.equals(childStmtTestCase))
+		readVars.get(statement).addAll(readVars.get(childStmt));
+	}
+	
+    }
+    
+    
     public static Map<String, Set<SimpleName>> populateReadVarsForTestCaseOfFile(String path, String testcase)
 	    throws IOException
     {

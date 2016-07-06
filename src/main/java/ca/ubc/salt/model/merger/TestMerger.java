@@ -248,11 +248,15 @@ public class TestMerger
 	    // state1 -> <a, b, c>
 	    Map<String, Set<SimpleName>> readVars = ReadVariableDetector
 		    .populateReadVarsForTestCaseOfFile(Utils.getTestCaseFile(testCase), testCase);
+	    
+	    ReadVariableDetector.accumulateReadVars(readVars);
+
+	    
+	    
 	    // state1 ->
 	    // <object1(a), field 1, field 2, ... >
 	    // <object2(a), field 1, field 2, ... >
 	    // <object3(a), field 1, field 2, ... >
-
 	    Map<String, Set<String>> readValues = ReadVariableDetector.getReadValues(readVars);
 	    StateCompatibilityChecker.getCompatibleStates(compatibleStates, scc.varStateSet, readValues, allStates);
 

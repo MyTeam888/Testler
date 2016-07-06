@@ -6,23 +6,79 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
+import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jface.text.Document;
 
 import ca.ubc.salt.model.instrumenter.ClassModel;
 import ca.ubc.salt.model.instrumenter.Method;
+import ca.ubc.salt.model.state.StatementReadVariableVisitor;
+import ca.ubc.salt.model.state.StatementVariableVisitor;
 import ca.ubc.salt.model.state.TestStatement;
 import ca.ubc.salt.model.utils.FileUtils;
+import ca.ubc.salt.model.utils.Settings;
 import ca.ubc.salt.model.utils.Utils;
 
 public class TestCaseComposer
 {
+    
+    
+    
+    
+    public static Set<SimpleName> getAllVars(TestStatement statement)
+    {
+	if (statement.statement == null)
+	    return null;
+	StatementVariableVisitor srvv = new StatementVariableVisitor();
+	statement.statement.accept(srvv);
+	return srvv.getVars();
+	
+    }
+    
+    
+    public static void rename(Statement stmt, Map<String, String> renameSet)
+    {
+	
+    }
 
     public static String composeTestCase(List<TestStatement> path)
     {
 
 	populateStateField(path);
 
+	
+	Map<String, String> valueNamePair = new HashMap<String, String>();
+	for (TestStatement statement : path)
+	{
+	    Set<SimpleName> vars = getAllVars(statement);
+	    Map<String, String> nameValuePairOfStmt = FileUtils.getNameValuePairs(statement.getName());
+	    Map<String, String> renameSet = new HashMap<String, String>();
+	    for (Entry<String, String> entry : nameValuePairOfStmt.entrySet())
+	    {
+		String varNameInStmt = entry.getKey();
+		String value = entry.getValue();
+		
+		String varNameInState = valueNamePair.get(value);
+		if (varNameInState == null)
+		{
+		    valueNamePair.put(value, varNameInStmt);
+		}
+		else if (!varNameInState.equals(varNameInStmt))
+		{
+		    renameSet.put(varNameInStmt, varNameInState);
+		}
+	    }
+	    
+	    
+	    rename(statement.statement, renameSet);
+	}
+	
+	
+	
+	
+	
 	StringBuilder sb = new StringBuilder();
 	for (TestStatement statement : path)
 	{
@@ -68,12 +124,15 @@ public class TestCaseComposer
     {
 	try
 	{
-	    List<ClassModel> clazzs = ClassModel.getClasses(FileUtils.readFileToString(filePath));
+	    String source = FileUtils.readFileToString(filePath);
+	    Document document = new Document(source);
+	    List<ClassModel> classes = ClassModel.getClasses(document.get(), true, filePath,
+		    new String[] { Settings.PROJECT_PATH }, new String[] { Settings.LIBRARY_JAVA });
 
 	    for (TestStatement stmt : statements)
 	    {
 		String stmtMethodName = Utils.getTestCaseName(Utils.getTestCaseNameFromTestStatement(stmt.getName()));
-		for (ClassModel clazz : clazzs)
+		for (ClassModel clazz : classes)
 		{
 		    List<Method> methods = clazz.getMethods();
 

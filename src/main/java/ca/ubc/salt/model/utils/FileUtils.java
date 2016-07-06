@@ -6,12 +6,17 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+
+import org.eclipse.jdt.core.dom.SimpleName;
+import org.w3c.dom.NodeList;
 
 public class FileUtils
 {
@@ -90,7 +95,7 @@ public class FileUtils
     public static String getState(File file)
     {
 	List<String> lines = FileUtils.getLines(file);
-	if(lines.size() > 0)
+	if (lines.size() > 0)
 	    return lines.get(lines.size() - 1);
 	else
 	    return "";
@@ -151,7 +156,7 @@ public class FileUtils
 	return null;
 
     }
-    
+
     public static List<String> getStatesForTestCase(List<String> testCases)
     {
 	List<String> states = new LinkedList<String>();
@@ -161,7 +166,6 @@ public class FileUtils
 	}
 	return states;
     }
-    
 
     public static List<String> getStatesForTestCase(String testCase, List<String> states)
     {
@@ -195,6 +199,29 @@ public class FileUtils
 
 	File[] traces = folder.listFiles(filter);
 	return traces;
+    }
+
+    public static Map<String, String> getNameValuePairs(String stateName)
+    {
+	Map<String, String> nameValuePair = new HashMap<String, String>();
+
+	String varXML = FileUtils.getVars(stateName);
+
+	// TODO double check what to return
+	if (varXML == null)
+	    return nameValuePair;
+
+	List<String> stateVarNames = XMLUtils.getVars(varXML);
+
+	int index = 0;
+	NodeList nodeList = XMLUtils.getNodeList(stateName);
+	for (String stateVar : stateVarNames)
+	{
+	    nameValuePair.put(stateVar, XMLUtils.getXMLString(nodeList.item(index)));
+	    index++;
+	}
+	
+	return nameValuePair;
     }
 
 }

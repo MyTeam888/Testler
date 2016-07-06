@@ -15,18 +15,16 @@ public class TestStatement extends TestModelNode
     public Statement statement;
     String methodCall;
     String input;
-    
+
     public long time = 1;
-    
-    
-    
+
     public TestStatement(TestState start, TestState end, String name)
     {
 	this.start = start;
 	this.end = end;
 	this.name = name;
 	compatibleStates = new HashSet<TestState>();
-	
+
     }
 
     public Set<TestState> getCompatibleStates()
@@ -65,16 +63,15 @@ public class TestStatement extends TestModelNode
 	// TODO Auto-generated method stub
 	return this.name;
     }
-    
 
     public String getName()
     {
-        return name;
+	return name;
     }
 
     public void setName(String name)
     {
-        this.name = name;
+	this.name = name;
     }
 
     @Override
@@ -83,18 +80,21 @@ public class TestStatement extends TestModelNode
 	if (obj instanceof TestStatement)
 	{
 	    TestStatement tst = (TestStatement) obj;
-	    if (tst.start.equals(this.start) && tst.end.equals(this.end) && tst.methodCall.equals(this.methodCall))
+	    if (tst.start.equals(this.start) && tst.end.equals(this.end) // &&
+									 // tst.methodCall.equals(this.methodCall)
+	    )
 		return true;
 	}
 	return false;
     }
 
-//    @Override
-//    public int hashCode()
-//    {
-//
-//	return this.start.hashCode() * 13 + this.end.hashCode() * 17 + this.methodCall == null ? 0 : this.methodCall.hashCode();
-//
-//    }
+    // @Override
+    // public int hashCode()
+    // {
+    //
+    // return this.start.hashCode() * 13 + this.end.hashCode() * 17 +
+    // this.methodCall == null ? 0 : this.methodCall.hashCode();
+    //
+    // }
 
 }
