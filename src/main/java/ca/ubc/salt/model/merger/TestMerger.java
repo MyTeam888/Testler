@@ -49,7 +49,7 @@ public class TestMerger
 	{
 	    long setupCost = 10;
 	    Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
-	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(2,
+	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(1,
 		    uniqueTestStatements);
 	    connectedComponents.remove(0);
 

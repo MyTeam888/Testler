@@ -200,6 +200,23 @@ public class FileUtils
 	File[] traces = folder.listFiles(filter);
 	return traces;
     }
+    
+    public static String[] getStatesForTestCase(final String testCase)
+    {
+	File folder = new File(Settings.tracePaths);
+	FilenameFilter filter = new FilenameFilter()
+	{
+	    
+	    @Override
+	    public boolean accept(File dir, String name)
+	    {
+		return name.contains(testCase);
+	    }
+	};
+	
+	String[] traces = folder.list(filter);
+	return traces;
+    }
 
     public static Map<String, String> getNameValuePairs(String stateName)
     {

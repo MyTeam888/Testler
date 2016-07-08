@@ -15,8 +15,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.eclipse.jdt.core.dom.IBinding;
-import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jface.text.Document;
 import org.w3c.dom.Element;
@@ -177,7 +175,7 @@ public class ReadVariableDetector
 	if (varXML == null)
 	    return varStateSet;
 
-	Set<String> readVarNames = getNameSet(readVars);
+	Set<String> readVarNames = Utils.getNameSet(readVars);
 	List<String> stateVarNames = XMLUtils.getVars(varXML);
 
 	int index = 0;
@@ -194,18 +192,6 @@ public class ReadVariableDetector
 	    index++;
 	}
 	return varStateSet;
-    }
-
-    public static Set<String> getNameSet(Set<SimpleName> readVars)
-    {
-	Set<String> varNames = new HashSet<String>();
-	for (SimpleName var : readVars)
-	{
-	    IBinding nodeBinding = var.resolveBinding();
-	    IVariableBinding ivb = (IVariableBinding) nodeBinding;
-	    varNames.add(ivb.getName());
-	}
-	return varNames;
     }
 
     public static void processObjectValues(Node object, Set<List<String>> varStateSet, LinkedList<String> key,

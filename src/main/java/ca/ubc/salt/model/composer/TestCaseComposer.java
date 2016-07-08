@@ -2,6 +2,7 @@ package ca.ubc.salt.model.composer;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,10 +24,7 @@ import ca.ubc.salt.model.utils.Utils;
 
 public class TestCaseComposer
 {
-    
-    
-    
-    
+
     public static Set<SimpleName> getAllVars(TestStatement statement)
     {
 	if (statement.statement == null)
@@ -34,13 +32,19 @@ public class TestCaseComposer
 	StatementVariableVisitor srvv = new StatementVariableVisitor();
 	statement.statement.accept(srvv);
 	return srvv.getVars();
-	
+
     }
-    
-    
-    public static void rename(Statement stmt, Map<String, String> renameSet)
+
+    public static void rename(Statement stmt, Set<SimpleName> vars, Map<String, String> renameSet)
     {
-	
+	for (SimpleName var : vars)
+	{
+	    String renamedVar = renameSet.get(var.getIdentifier());
+	    if (renamedVar != null)
+		var.setIdentifier(renamedVar);
+	}
+
+	System.out.println(stmt);
     }
 
     public static String composeTestCase(List<TestStatement> path)
@@ -48,37 +52,38 @@ public class TestCaseComposer
 
 	populateStateField(path);
 
-	
-	Map<String, String> valueNamePair = new HashMap<String, String>();
+	RunningState valueNamePairForCurrentState = new RunningState();
 	for (TestStatement statement : path)
 	{
+	    if (statement.statement == null)
+		continue;
 	    Set<SimpleName> vars = getAllVars(statement);
-	    Map<String, String> nameValuePairOfStmt = FileUtils.getNameValuePairs(statement.getName());
-	    Map<String, String> renameSet = new HashMap<String, String>();
-	    for (Entry<String, String> entry : nameValuePairOfStmt.entrySet())
+	    Set<String> varsName = Utils.getNameSet(vars);
+
+	    Map<String, String> nameValuePairOfStmtBefore = FileUtils.getNameValuePairs(statement.getName());
+	    Map<String, String> renameMap = new HashMap<String, String>();
+	    for (Entry<String, String> entry : nameValuePairOfStmtBefore.entrySet())
 	    {
 		String varNameInStmt = entry.getKey();
+		if (!varsName.contains(varNameInStmt))
+		    continue;
+
 		String value = entry.getValue();
-		
-		String varNameInState = valueNamePair.get(value);
+
+		String varNameInState = valueNamePairForCurrentState.getName(value);
 		if (varNameInState == null)
 		{
-		    valueNamePair.put(value, varNameInStmt);
-		}
-		else if (!varNameInState.equals(varNameInStmt))
+		    valueNamePairForCurrentState.put(value, varNameInStmt);
+		} else if (!varNameInState.equals(varNameInStmt))
 		{
-		    renameSet.put(varNameInStmt, varNameInState);
+		    renameMap.put(varNameInStmt, varNameInState);
 		}
 	    }
-	    
-	    
-	    rename(statement.statement, renameSet);
+
+	    valueNamePairForCurrentState.update(statement.getName(), renameMap, varsName);
+	    rename(statement.statement, vars, renameMap);
 	}
-	
-	
-	
-	
-	
+
 	StringBuilder sb = new StringBuilder();
 	for (TestStatement statement : path)
 	{
@@ -167,4 +172,56 @@ public class TestCaseComposer
 	return Integer.valueOf(xmlTestStatementStr.substring(index + 1, endIndex));
     }
 
+}
+
+class RunningState
+{
+    Map<String, String> nameValuePairForCurrentState;
+    Map<String, String> valueNamePairForCurrentState;
+
+    public RunningState()
+    {
+	nameValuePairForCurrentState = new HashMap<String, String>();
+	valueNamePairForCurrentState = new HashMap<String, String>();
+    }
+
+    public String getValue(String name)
+    {
+	return nameValuePairForCurrentState.get(name);
+    }
+
+    public String getName(String value)
+    {
+	return valueNamePairForCurrentState.get(value);
+    }
+
+    public void put(String name, String value)
+    {
+	nameValuePairForCurrentState.put(name, value);
+	valueNamePairForCurrentState.put(value, name);
+    }
+
+    public void update(String prevState, Map<String, String> renameMap, Set<String> varsName)
+    {
+	String nextState = Utils.nextOrPrevState(prevState,
+		Arrays.asList(FileUtils.getStatesForTestCase(Utils.getTestCaseNameFromTestStatement(prevState))), true);
+	Map<String, String> nameValuePair = FileUtils.getNameValuePairs(nextState);
+
+	for (Entry<String, String> entry : nameValuePair.entrySet())
+	{
+	    String name = entry.getKey();
+	    if (varsName.contains(name))
+	    {
+		String value = entry.getValue();
+
+		String renamedName = renameMap.get(name);
+
+		if (renamedName != null)
+		    name = renamedName;
+
+		this.put(name, value);
+	    }
+	}
+
+    }
 }

@@ -17,6 +17,9 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.core.dom.SimpleName;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
@@ -202,6 +205,19 @@ public class Utils
         state = state.substring(0, state.lastIndexOf('.'));
         String[] split = state.split("-");
         return split;
+    }
+
+
+    public static Set<String> getNameSet(Set<SimpleName> readVars)
+    {
+        Set<String> varNames = new HashSet<String>();
+        for (SimpleName var : readVars)
+        {
+            IBinding nodeBinding = var.resolveBinding();
+            IVariableBinding ivb = (IVariableBinding) nodeBinding;
+            varNames.add(ivb.getName());
+        }
+        return varNames;
     }
 
     

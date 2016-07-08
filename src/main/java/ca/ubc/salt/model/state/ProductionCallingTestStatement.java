@@ -276,12 +276,13 @@ public class ProductionCallingTestStatement
 	Map<String, List<String>> uniqueTestStatements = new HashMap<String, List<String>>();
 
 	File folder = new File(Settings.tracePaths);
-	File[] traces = folder.listFiles();
-	int counter = 1;
 
 	String [] tracesNames = folder.list();
 	List<String> tracesStrs = Arrays.asList(tracesNames);
 	Collections.sort(tracesStrs);
+	
+	File[] traces = folder.listFiles();
+	int counter = 1;
 	
 	for (File trace : traces)
 	{
