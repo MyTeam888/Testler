@@ -28,7 +28,7 @@ public class Instrumenter
     static HashMap<String, String> classFileMapping = new HashMap<String, String>();
     public static void main(String[] args)
     {
-//	 Utils.copyProject();
+	 Utils.copyProject(Settings.PROJECT_PATH, Settings.PROJECT_INSTRUMENTED_PATH);
 	try
 	{
 	    instrumentClass(Settings.PROJECT_PATH);
@@ -82,7 +82,7 @@ public class Instrumenter
 		}
 	    }
 
-	    writebackInstrumentedCode(document, Settings.getInstrumentedCodePath(classPath));
+	    Utils.writebackSourceCode(document, Settings.getInstrumentedCodePath(classPath));
 
 	} else if (fClass.isDirectory())
 	{
@@ -93,20 +93,6 @@ public class Instrumenter
 	    }
 	}
 
-    }
-
-    public static void writebackInstrumentedCode(Document document, String newPath)
-    {
-	try
-	{
-	    FileWriter fw = new FileWriter(newPath);
-	    fw.write(document.get());
-	    fw.close();
-	} catch (IOException e)
-	{
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
-	}
     }
 
 }

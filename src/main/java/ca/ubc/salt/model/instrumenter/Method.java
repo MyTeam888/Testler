@@ -42,13 +42,13 @@ public class Method
 	this.className = className;
     }
 
-    public void instrumentTestMethod(ASTRewrite rewriter, Document document, List<String> loadedClassVars, String fileName,
-	    boolean start)
+    public void instrumentTestMethod(ASTRewrite rewriter, Document document, List<String> loadedClassVars,
+	    String fileName, boolean start)
 	    throws JavaModelException, IllegalArgumentException, MalformedTreeException, BadLocationException
     {
-	
+
 	addTimeOut(rewriter);
-	
+
 	int randomNumber = (int) (Math.random() * (Integer.MAX_VALUE - 1));
 	Block block = methodDec.getBody();
 	if (block == null)
@@ -109,15 +109,14 @@ public class Method
 	}
 	AST ast = methodDec.getAST();
 
-	Block header = (Block) ASTNode.copySubtree(ast,
-		ProductionClassInstrumenter.generateInstrumentationHeader(className + "." + methodDec.getName().toString(), paramStrs));
+	Block header = (Block) ASTNode.copySubtree(ast, ProductionClassInstrumenter
+		.generateInstrumentationHeader(className + "." + methodDec.getName().toString(), paramStrs));
 	List<Statement> stmts = header.statements();
-
 
 	TryStatement trystmt = ast.newTryStatement();
 	// Block newBlock = ast.newBlock();
 	Block blk = (Block) ASTNode.copySubtree(ast, block);
-	
+
 	trystmt.setBody(blk);
 	Block footer = (Block) ASTNode.copySubtree(ast, ProductionClassInstrumenter.generateFooterBlock());
 	trystmt.setFinally(footer);
@@ -131,7 +130,7 @@ public class Method
 	}
 
 	ListRewrite tryList = rewriter.getListRewrite(trystmt.getBody(), Block.STATEMENTS_PROPERTY);
-	
+
 	for (int i = stmts.size() - 1; i >= 0; i--)
 	    tryList.insertFirst(stmts.get(i), null);
     }
@@ -159,13 +158,14 @@ public class Method
     {
 	this.methodDec = methodDec;
     }
-    
+
     public void addTimeOut(ASTRewrite rewrite)
     {
 
-//	if (method.methodDec.getName().toString().toLowerCase().contains("test"))
-//	    return true;
-	
+	// if
+	// (method.methodDec.getName().toString().toLowerCase().contains("test"))
+	// return true;
+
 	ListRewrite listRewrite = rewrite.getListRewrite(this.methodDec, MethodDeclaration.MODIFIERS2_PROPERTY);
 	List<NormalAnnotation> modifs = this.methodDec.modifiers();
 	AST ast = this.methodDec.getAST();
@@ -177,7 +177,9 @@ public class Method
 		if (ma.getTypeName().getFullyQualifiedName().contains("Test"))
 		{
 		    listRewrite.remove(ma, null);
-//		    ma = (MarkerAnnotation)ASTNode.copySubtree(method.methodDec.getAST(), ma);
+		    // ma =
+		    // (MarkerAnnotation)ASTNode.copySubtree(method.methodDec.getAST(),
+		    // ma);
 		    NormalAnnotation na = ast.newNormalAnnotation();
 		    Name name = ast.newName(ma.getTypeName().getFullyQualifiedName());
 		    na.setTypeName(name);
@@ -191,7 +193,10 @@ public class Method
 	}
 
     }
-    
-    
+
+    public String getFullMethodName()
+    {
+	return this.className + "." + this.methodDec.getName().toString();
+    }
 
 }

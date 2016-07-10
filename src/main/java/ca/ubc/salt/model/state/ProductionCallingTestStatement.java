@@ -13,6 +13,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import Comparator.NaturalOrderComparator;
+
 import java.util.Scanner;
 import java.util.Set;
 
@@ -33,7 +36,8 @@ public class ProductionCallingTestStatement
 	    Map<String, List<String>> uniqueTestStatements)
     {
 	Map<String, Map<String, Integer>> conGraph = getConnectivityGraph(uniqueTestStatements);
-
+	
+	System.out.println(conGraph);
 	Set<String> visited = new HashSet<String>();
 	List<Set<String>> connectedComponents = new LinkedList<Set<String>>();
 
@@ -279,7 +283,7 @@ public class ProductionCallingTestStatement
 
 	String [] tracesNames = folder.list();
 	List<String> tracesStrs = Arrays.asList(tracesNames);
-	Collections.sort(tracesStrs);
+	Collections.sort(tracesStrs, new NaturalOrderComparator());
 	
 	File[] traces = folder.listFiles();
 	int counter = 1;

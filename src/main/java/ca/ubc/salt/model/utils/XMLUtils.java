@@ -79,6 +79,8 @@ public class XMLUtils
 	String state = FileUtils.getState(stateName);
 	// Document document = builder.parse(Settings.tracePaths + "/" +
 	// stateName);
+	if (state.equals(""))
+	    return null;
 	try
 	{
 	    Document document = XMLUtils.builder.parse(new InputSource(new StringReader(state)));
@@ -88,6 +90,7 @@ public class XMLUtils
 	{
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();
+	    System.out.println(stateName);
 	    return null;
 	} catch (IOException e)
 	{

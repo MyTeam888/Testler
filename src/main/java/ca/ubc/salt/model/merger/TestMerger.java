@@ -32,6 +32,7 @@ import ca.ubc.salt.model.state.StateCompatibilityChecker;
 import ca.ubc.salt.model.state.TestState;
 import ca.ubc.salt.model.state.TestStatement;
 import ca.ubc.salt.model.utils.FileUtils;
+import ca.ubc.salt.model.utils.Pair;
 import ca.ubc.salt.model.utils.Settings;
 import ca.ubc.salt.model.utils.Utils;
 
@@ -49,9 +50,9 @@ public class TestMerger
 	{
 	    long setupCost = 10;
 	    Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
-	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(1,
+	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(2,
 		    uniqueTestStatements);
-	    connectedComponents.remove(0);
+	    // connectedComponents.remove(0);
 
 	    connectedComponentsMap = ProductionCallingTestStatement.convertTheSetToMap(uniqueTestStatements);
 
@@ -80,35 +81,58 @@ public class TestMerger
 	}
 	fr.close();
 
+	
+	List<Pair<Set<String>, List<List<TestStatement>>>> mergedTestCases = new LinkedList<Pair<Set<String>, List<List<TestStatement>>>>();
+	
 	for (Set<String> connectedComponent : connectedComponents)
 	{
-	    if (connectedComponent.size() < 2)
+	    if (connectedComponent.size() < 2 || connectedComponent.size() > 4)
 		continue;
-	    List testCases = new LinkedList<String>();
+
+	    // System.out.println(connectedComponentsMap);
+
+	    List<String> testCases = new LinkedList<String>();
 	    testCases.addAll(connectedComponent);
 	    Map<String, TestState> graph = createModelForTestCases(testCases);
-	    TestState root = graph.get("init.init.xml");
+	    TestState root = graph.get("init.init-.xml");
 	    System.out.println(root.printDot(true));
-	    TestStatement first = dijkstra(new TestStatement(root, root, "init.xml"), false, connectedComponentsMap);
-	    LinkedList<TestStatement> firstPath = new LinkedList<TestStatement>();
-	    firstPath.add(first);
-	    List<LinkedList<TestStatement>> paths = new LinkedList<LinkedList<TestStatement>>();
-	    paths.add(firstPath);
 
-	    TestStatement frontier = first;
-	    markAsCovered(frontier, connectedComponentsMap);
+	    TestStatement first = null;
+	    List<List<TestStatement>> paths = new LinkedList<List<TestStatement>>();
 	    
-	    while (frontier != null)
+	    Pair<Set<String>, List<List<TestStatement>>> pair = new Pair<Set<String>, List<List<TestStatement>>>(connectedComponent, paths);
+	    mergedTestCases.add(pair);
+	    
+	    do
 	    {
-		frontier = dijkstra(frontier, true, connectedComponentsMap);
-		if (frontier == null)
-		    break;
-		markAsCovered(frontier, connectedComponentsMap);
-		firstPath.add(frontier);
-	    }
+		LinkedList<TestStatement> path = new LinkedList<TestStatement>();
 
-	    System.out.println(TestCaseComposer.composeTestCase(returnThePath(root, firstPath)));
-//	    System.out.println(TestCaseComposer.composeTestCase(firstPath));
+		first = dijkstra(new TestStatement(root, root, "init.xml"), false,
+			connectedComponentsMap);
+		path.add(first);
+
+		TestStatement frontier = first;
+		markAsCovered(frontier, connectedComponentsMap);
+
+		while (frontier != null)
+		{
+		    frontier = dijkstra(frontier, true, connectedComponentsMap);
+		    if (frontier == null)
+			break;
+		    markAsCovered(frontier, connectedComponentsMap);
+		    path.add(frontier);
+		}
+		
+		paths.add(returnThePath(root, path));
+		
+	    } while (first != null);
+
+	    
+	    TestCaseComposer.composeTestCases(mergedTestCases);
+
+//	    System.out.println(TestCaseComposer.composeTestCase(returnThePath(root, firstPath), connectedComponent,
+//		    TestCaseComposer.generateTestCaseName(connectedComponent)));
+	    // System.out.println(TestCaseComposer.composeTestCase(firstPath));
 
 	}
     }
@@ -213,7 +237,8 @@ public class TestMerger
 
     }
 
-    private static void relaxChild(TestStatement root, PriorityQueue<TestStatement> queue, TestStatement parent, TestStatement stmt)
+    private static void relaxChild(TestStatement root, PriorityQueue<TestStatement> queue, TestStatement parent,
+	    TestStatement stmt)
     {
 	long newD = parent.distFrom.get(root) + stmt.time;
 	Long childDist = stmt.distFrom.get(root);
@@ -227,32 +252,26 @@ public class TestMerger
 	    // queue.add(child.clone());
 	}
     }
-    
 
     public static Map<String, TestState> createModelForTestCases(List<String> testCases) throws IOException
     {
-	
-	
-	
+
 	StateCompatibilityChecker scc = new StateCompatibilityChecker();
 	// scc.processState("testSubtract-17.xml");
 	scc.populateVarStateSet(testCases);
 	// System.out.println(scc.varStateSet);
 
 	Map<String, Set<String>> compatibleStates = new HashMap<String, Set<String>>();
-	
-	
+
 	Set<String> allStates = new HashSet<String>(FileUtils.getStatesForTestCase(testCases));
 	for (String testCase : testCases)
 	{
 	    // state1 -> <a, b, c>
 	    Map<String, Set<SimpleName>> readVars = ReadVariableDetector
 		    .populateReadVarsForTestCaseOfFile(Utils.getTestCaseFile(testCase), testCase);
-	    
+
 	    ReadVariableDetector.accumulateReadVars(readVars);
 
-	    
-	    
 	    // state1 ->
 	    // <object1(a), field 1, field 2, ... >
 	    // <object2(a), field 1, field 2, ... >

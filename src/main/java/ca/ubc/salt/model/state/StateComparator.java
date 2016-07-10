@@ -15,6 +15,7 @@ import java.util.Scanner;
 
 import org.eclipse.core.internal.utils.FileUtil;
 
+import Comparator.NaturalOrderComparator;
 import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Settings;
 import ca.ubc.salt.model.utils.Utils;
@@ -60,8 +61,10 @@ public class StateComparator
 	    compareStates(entry.getKey(), testStateOfState, testStates);
 	}
 
+	List<String> sortedTestStates = FileUtils.getStatesForTestCase(testCases);
+	Collections.sort(sortedTestStates, new NaturalOrderComparator());
 	
-	populateGraph(testStateOfState, testStates, FileUtils.getStatesForTestCase(testCases));
+	populateGraph(testStateOfState, testStates, sortedTestStates);
 
 	return testStateOfState;
     }

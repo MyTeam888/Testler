@@ -12,32 +12,6 @@ public class StatementVariableVisitor extends ASTVisitor
 {
     Set<SimpleName> vars = new HashSet<SimpleName>();
 
-    // public boolean visit(MethodInvocation node)
-    // {
-    // Expression e = node.getExpression();
-    // ITypeBinding itb = e.resolveTypeBinding();
-    // if (e.getNodeType() == ASTNode.SIMPLE_NAME)
-    // {
-    // readVars.add(itb.getQualifiedName());
-    // }
-    //
-    // for (Object n : node.arguments())
-    // {
-    // if (n instanceof ASTNode)
-    // {
-    // ASTNode nd = (ASTNode) n;
-    // if (nd.getNodeType() == ASTNode.SIMPLE_NAME)
-    // {
-    // SimpleName sn = (SimpleName) nd;
-    // readVars.add(sn.toString());
-    // }
-    //
-    // }
-    // }
-    //
-    // return true;
-    // }
-
     public boolean visit(SimpleName node)
     {
 	final IBinding nodeBinding = node.resolveBinding();

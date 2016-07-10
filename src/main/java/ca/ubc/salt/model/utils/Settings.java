@@ -17,14 +17,14 @@ public class Settings
 
     public final static Logger consoleLogger = LogManager.getRootLogger();
 //    public final static Logger fileLogger = LogManager.getLogger("FileLogger");
-    public static final String LIBRARY_JAVA = "/Library/Java/JavaVirtualMachines/jdk1.8.0_25.jdk/Contents/Home/jre/lib/rt.jar";
+//    public static final String LIBRARY_JAVA = "/Library/Java/JavaVirtualMachines/jdk1.8.0_25.jdk/Contents/Home/jre/lib/rt.jar";
+    public static final String LIBRARY_JAVA = "/Library/Java/JavaVirtualMachines/jdk1.8.0_20.jdk/Contents/Home/jre/lib/rt.jar";
     public static final String PROJECT_PATH = "/Users/Arash/Research/repos/commons-math";
 //    public static final String PROJECT_PATH = "/Users/arash/Documents/workspace-mars/Calculator";
     public static final String PROJECT_INSTRUMENTED_PATH = PROJECT_PATH + "-instrumented";
+    public static final String PROJECT_MERGED_PATH = PROJECT_PATH + "-merged";
     public final static String tracePaths = PROJECT_INSTRUMENTED_PATH + "/traces";
     public final static String classFileMappingPath = "classFileMapping.txt";
-    
-    
     
     
     

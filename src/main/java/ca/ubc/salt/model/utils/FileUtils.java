@@ -96,8 +96,13 @@ public class FileUtils
     {
 	List<String> lines = FileUtils.getLines(file);
 	if (lines.size() > 0)
-	    return lines.get(lines.size() - 1);
-	else
+	{
+	    String state = lines.get(lines.size() - 1);
+	    if (state.startsWith("<?xml"))
+		return state;
+	    else
+		return "";
+	} else
 	    return "";
     }
 
@@ -108,7 +113,11 @@ public class FileUtils
 	    return null;
 	if (lines.size() < 2)
 	    return null;
-	return lines.get(lines.size() - 2);
+	String vars = lines.get(lines.size() - 2);
+	if (vars.startsWith("<vars>"))
+	    return vars;
+	else
+	    return null;
     }
 
     public static String getMethodCalled(String stateName)
@@ -187,33 +196,31 @@ public class FileUtils
     public static File[] getStateFilesForTestCase(final String testCase)
     {
 	File folder = new File(Settings.tracePaths);
-	FilenameFilter filter = new FilenameFilter()
-	{
+	FilenameFilter filter = new FilenameFilter() {
 
 	    @Override
 	    public boolean accept(File dir, String name)
 	    {
-		return name.contains(testCase);
+		return name.contains(testCase + "-");
 	    }
 	};
 
 	File[] traces = folder.listFiles(filter);
 	return traces;
     }
-    
+
     public static String[] getStatesForTestCase(final String testCase)
     {
 	File folder = new File(Settings.tracePaths);
-	FilenameFilter filter = new FilenameFilter()
-	{
-	    
+	FilenameFilter filter = new FilenameFilter() {
+
 	    @Override
 	    public boolean accept(File dir, String name)
 	    {
-		return name.contains(testCase);
+		return name.contains(testCase + "-");
 	    }
 	};
-	
+
 	String[] traces = folder.list(filter);
 	return traces;
     }
@@ -237,7 +244,7 @@ public class FileUtils
 	    nameValuePair.put(stateVar, XMLUtils.getXMLString(nodeList.item(index)));
 	    index++;
 	}
-	
+
 	return nameValuePair;
     }
 
