@@ -50,7 +50,7 @@ public class TestMerger
 	{
 	    long setupCost = 10;
 	    Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
-	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(2,
+	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(1,
 		    uniqueTestStatements);
 	    // connectedComponents.remove(0);
 
@@ -86,11 +86,16 @@ public class TestMerger
 	
 	for (Set<String> connectedComponent : connectedComponents)
 	{
-	    if (connectedComponent.size() < 2 || connectedComponent.size() > 4)
+	    if (connectedComponent.size() < 2)
 		continue;
 
-	    // System.out.println(connectedComponentsMap);
+	     System.out.println(connectedComponentsMap);
 
+//	    connectedComponent = new HashSet<String>();
+//	    connectedComponent.add("ComplexTest.testMultiply");
+//	    connectedComponent.add("ComplexTest.testReciprocal");
+	    
+	    
 	    List<String> testCases = new LinkedList<String>();
 	    testCases.addAll(connectedComponent);
 	    Map<String, TestState> graph = createModelForTestCases(testCases);
@@ -105,10 +110,13 @@ public class TestMerger
 	    
 	    do
 	    {
-		LinkedList<TestStatement> path = new LinkedList<TestStatement>();
-
 		first = dijkstra(new TestStatement(root, root, "init.xml"), false,
 			connectedComponentsMap);
+		if (first == null)
+		    break;
+		
+		LinkedList<TestStatement> path = new LinkedList<TestStatement>();
+
 		path.add(first);
 
 		TestStatement frontier = first;
@@ -124,17 +132,19 @@ public class TestMerger
 		}
 		
 		paths.add(returnThePath(root, path));
+
+		
+		System.out.println(TestCaseComposer.composeTestCase(returnThePath(root, path), connectedComponent,
+			TestCaseComposer.generateTestCaseName(connectedComponent)));
 		
 	    } while (first != null);
 
 	    
-	    TestCaseComposer.composeTestCases(mergedTestCases);
 
-//	    System.out.println(TestCaseComposer.composeTestCase(returnThePath(root, firstPath), connectedComponent,
-//		    TestCaseComposer.generateTestCaseName(connectedComponent)));
 	    // System.out.println(TestCaseComposer.composeTestCase(firstPath));
-
 	}
+	
+//	TestCaseComposer.composeTestCases(mergedTestCases);
     }
 
     public static LinkedList<TestStatement> returnThePath(TestState root, LinkedList<TestStatement> frontierPaths)
@@ -151,8 +161,8 @@ public class TestMerger
 
 	    while (cur != parent && cur != null)
 	    {
-		cur = (TestStatement) cur.getStart().parent.get(parent.getEnd());
-		if (cur != null)
+		cur = (TestStatement) cur.parent.get(parent);
+		if (cur != parent && cur != null)
 		    path.addFirst(cur);
 	    }
 	    path.addFirst(parent);

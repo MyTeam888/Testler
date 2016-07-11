@@ -21,6 +21,7 @@ import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jface.text.BadLocationException;
@@ -59,7 +60,15 @@ public class TestCaseComposer
 	{
 	    String renamedVar = renameSet.get(var.getIdentifier());
 	    if (renamedVar != null)
-		var.setIdentifier(renamedVar);
+	    {
+		ASTNode node = var.getParent();
+		if (node.getNodeType() == ASTNode.VARIABLE_DECLARATION_FRAGMENT)
+		{
+		    VariableDeclarationFragment vdf = (VariableDeclarationFragment) node;
+		    vdf.setName(vdf.getAST().newSimpleName(renamedVar));
+		} else
+		    var.setIdentifier(renamedVar);
+	    }
 	}
 
     }
@@ -79,9 +88,9 @@ public class TestCaseComposer
 
     public static void composeTestCases(List<Pair<Set<String>, List<List<TestStatement>>>> mergedTestCases)
     {
-	
+
 	Utils.copyProject(Settings.PROJECT_PATH, Settings.PROJECT_MERGED_PATH);
-	
+
 	for (Pair<Set<String>, List<List<TestStatement>>> pair : mergedTestCases)
 	{
 	    Set<String> connectedComponent = pair.getFirst();
@@ -167,7 +176,8 @@ public class TestCaseComposer
 
 		if (clazz.getTypeDec().getName().toString().equals(testClassName))
 		{
-		    removeTestCasesFromTestClass(clazz, testCasesOfClass, listRewrite);
+		    // removeTestCasesFromTestClass(clazz, testCasesOfClass,
+		    // listRewrite);
 
 		    addMergedTestCase(path, name, clazz, listRewrite);
 		}
@@ -182,8 +192,8 @@ public class TestCaseComposer
 		e.printStackTrace();
 	    }
 
-	    Utils.writebackSourceCode(document, testClassPath);
-	    System.out.println(document.get());
+	    // Utils.writebackSourceCode(document, testClassPath);
+	    // System.out.println(document.get());
 
 	    testClasses.remove(testClassName);
 	    // parse each test class
@@ -214,6 +224,7 @@ public class TestCaseComposer
 
 	md.setBody(methodBlockWithAST);
 
+	System.out.println(md.toString());
 	// clazz.getTypeDec().bodyDeclarations().add(md);
 	listRewrite.insertLast(md, null);
     }
@@ -224,8 +235,11 @@ public class TestCaseComposer
 	// sb.append(String.format("public void %s(){", name));
 	for (TestStatement ts : path)
 	{
-	    sb.append(ts.statement.toString());
-	    sb.append('\n');
+	    if (ts.statement != null)
+	    {
+		sb.append(ts.statement.toString());
+		sb.append('\n');
+	    }
 	}
 	// sb.append("}");
 
@@ -271,6 +285,7 @@ public class TestCaseComposer
 	    valueNamePairForCurrentState.update(statement.getName(), renameMap, varsName);
 	    rename(statement.statement, vars, renameMap);
 	}
+	System.out.println(getTestMethodText(path));
     }
 
     private static void findPostreqVarsRenames(TestStatement testStatement, RunningState curState,

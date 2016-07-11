@@ -131,7 +131,7 @@ public class TestState extends TestModelNode
 	for (TestState state : ts.getCompatibleStates())
 	{
 //	    if (state != ts.getStart())
-		sb.append("\"" + ts.toString() + "\"" + " -> " + "\"" + state.toString() + "\"[color=red]" + "\n");
+		sb.append("\"" + state.toString() + "\"" + " -> " + "\"" + ts.toString() + "\"[color=red]" + "\n");
 	}
 	return sb.toString();
     }

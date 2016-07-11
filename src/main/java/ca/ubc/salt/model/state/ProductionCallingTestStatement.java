@@ -36,7 +36,7 @@ public class ProductionCallingTestStatement
 	    Map<String, List<String>> uniqueTestStatements)
     {
 	Map<String, Map<String, Integer>> conGraph = getConnectivityGraph(uniqueTestStatements);
-	
+
 	System.out.println(conGraph);
 	Set<String> visited = new HashSet<String>();
 	List<Set<String>> connectedComponents = new LinkedList<Set<String>>();
@@ -281,13 +281,13 @@ public class ProductionCallingTestStatement
 
 	File folder = new File(Settings.tracePaths);
 
-	String [] tracesNames = folder.list();
+	String[] tracesNames = folder.list();
 	List<String> tracesStrs = Arrays.asList(tracesNames);
 	Collections.sort(tracesStrs, new NaturalOrderComparator());
-	
+
 	File[] traces = folder.listFiles();
 	int counter = 1;
-	
+
 	for (File trace : traces)
 	{
 	    String methodCalled = FileUtils.getMethodCalled(trace);
@@ -295,15 +295,17 @@ public class ProductionCallingTestStatement
 		continue;
 	    List<String> states = uniqueTestStatements.get(methodCalled);
 	    String traceName = Utils.nextOrPrevState(trace.getName(), tracesStrs, false);
-	    if (states == null)
+	    String nextTraceName = Utils.nextOrPrevState(trace.getName(), tracesStrs, true);
+	    if (!traceName.equals("") && !nextTraceName.equals(""))
 	    {
-		states = new LinkedList<String>();
-		if (!traceName.equals(""))
+		if (states == null)
 		{
+		    states = new LinkedList<String>();
 		    states.add(traceName);
-		uniqueTestStatements.put(methodCalled, states);}
-	    } else
-		states.add(traceName);
+		    uniqueTestStatements.put(methodCalled, states);
+		} else
+		    states.add(traceName);
+	    }
 
 	    counter++;
 	    if (counter % 1000 == 0)
@@ -311,8 +313,8 @@ public class ProductionCallingTestStatement
 
 	}
 
-//	uniqueTestStatements.remove(null);
-//	uniqueTestStatements.remove("");
+	// uniqueTestStatements.remove(null);
+	// uniqueTestStatements.remove("");
 
 	return uniqueTestStatements;
     }
