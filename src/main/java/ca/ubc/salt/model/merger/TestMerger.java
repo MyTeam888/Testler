@@ -134,8 +134,8 @@ public class TestMerger
 		paths.add(returnThePath(root, path));
 
 		
-		System.out.println(TestCaseComposer.composeTestCase(returnThePath(root, path), connectedComponent,
-			TestCaseComposer.generateTestCaseName(connectedComponent)));
+		TestCaseComposer.composeTestCase(returnThePath(root, path), connectedComponent,
+			TestCaseComposer.generateTestCaseName(connectedComponent));
 		
 	    } while (first != null);
 

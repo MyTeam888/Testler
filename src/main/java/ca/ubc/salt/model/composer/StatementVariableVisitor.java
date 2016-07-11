@@ -1,4 +1,4 @@
-package ca.ubc.salt.model.state;
+package ca.ubc.salt.model.composer;
 
 import java.util.HashSet;
 import java.util.Set;

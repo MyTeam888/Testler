@@ -34,7 +34,6 @@ import ca.ubc.salt.model.instrumenter.ClassModel;
 import ca.ubc.salt.model.instrumenter.Method;
 import ca.ubc.salt.model.instrumenter.ProductionClassInstrumenter;
 import ca.ubc.salt.model.state.StatementReadVariableVisitor;
-import ca.ubc.salt.model.state.StatementVariableVisitor;
 import ca.ubc.salt.model.state.TestStatement;
 import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Pair;
@@ -44,19 +43,40 @@ import ca.ubc.salt.model.utils.Utils;
 public class TestCaseComposer
 {
 
-    public static Set<SimpleName> getAllVars(TestStatement statement)
+    public static Set<SimpleName> getAllVars(Statement statement)
     {
-	if (statement.statement == null)
+	if (statement == null)
 	    return null;
 	StatementVariableVisitor srvv = new StatementVariableVisitor();
-	statement.statement.accept(srvv);
+	statement.accept(srvv);
 	return srvv.getVars();
 
     }
 
-    public static void rename(Statement stmt, Set<SimpleName> vars, Map<String, String> renameSet)
+    public static List<SimpleName> getSipleNamesInTheStatement(Statement statement, Set<SimpleName> vars)
     {
-	for (SimpleName var : vars)
+	if (statement == null)
+	    return null;
+	StatementSimpleNameVisitor srvv = new StatementSimpleNameVisitor();
+	statement.accept(srvv);
+	Set<String> varNames = Utils.getNameSet(vars);
+	List<SimpleName> refinedList = new LinkedList<SimpleName>();
+	for (SimpleName sn : srvv.getVars())
+	{
+	    if (varNames.contains(sn.getIdentifier()))
+		refinedList.add(sn);
+	}
+
+	return refinedList;
+
+    }
+
+    public static Statement rename(Statement stmt, Set<SimpleName> vars, Map<String, String> renameSet)
+    {
+
+	Statement cpyStmt = (Statement) ASTNode.copySubtree(stmt.getAST(), stmt);
+	List<SimpleName> cpyVars = getSipleNamesInTheStatement(cpyStmt, vars);
+	for (SimpleName var : cpyVars)
 	{
 	    String renamedVar = renameSet.get(var.getIdentifier());
 	    if (renamedVar != null)
@@ -71,6 +91,7 @@ public class TestCaseComposer
 	    }
 	}
 
+	return cpyStmt;
     }
 
     public static String generateTestCaseName(Set<String> testCases)
@@ -106,31 +127,32 @@ public class TestCaseComposer
 	}
     }
 
-    public static String composeTestCase(List<TestStatement> path, Set<String> testCases, String name)
+    public static void composeTestCase(List<TestStatement> path, Set<String> testCases, String name)
     {
 
 	populateStateField(path);
 
-	performRenaming(path);
+	List<Statement> renamedStatements = performRenaming(path);
 
 	try
 	{
-	    writeBackMergedTestCases(path, testCases, name);
+	    writeBackMergedTestCases(renamedStatements, testCases, name);
 	} catch (IOException e)
 	{
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();
 	}
 
-	StringBuilder sb = new StringBuilder();
-	for (TestStatement statement : path)
-	{
-	    sb.append(statement.getName() + "  :  "
-		    + (statement.statement == null ? "null" : statement.statement.toString()));
-	    sb.append('\n');
-	}
+	// StringBuilder sb = new StringBuilder();
+	// for (TestStatement statement : path)
+	// {
+	// sb.append(statement.getName() + " : "
+	// + (statement.statement == null ? "null" :
+	// statement.statement.toString()));
+	// sb.append('\n');
+	// }
+	// System.out.println(sb.toString());
 
-	return sb.toString();
     }
 
     // could be improved later !
@@ -150,7 +172,7 @@ public class TestCaseComposer
 	return maxTestClass;
     }
 
-    private static void writeBackMergedTestCases(List<TestStatement> path, Set<String> testCases, String name)
+    private static void writeBackMergedTestCases(List<Statement> path, Set<String> testCases, String name)
 	    throws IOException
     {
 	Map<String, Set<String>> testClasses = Utils.getTestClassMapFromTestCases(testCases);
@@ -178,20 +200,21 @@ public class TestCaseComposer
 		{
 		    // removeTestCasesFromTestClass(clazz, testCasesOfClass,
 		    // listRewrite);
-
-		    addMergedTestCase(path, name, clazz, listRewrite);
+		    //
+		    // addMergedTestCase(path, name, clazz, listRewrite);
+		    System.out.println(getMergedMethod(path, name, clazz.getTypeDec().getAST()).toString());
 		}
 	    }
-	    TextEdit edits = rewriter.rewriteAST(document, null);
-	    try
-	    {
-		edits.apply(document);
-	    } catch (MalformedTreeException | BadLocationException e)
-	    {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	    }
-
+	    // TextEdit edits = rewriter.rewriteAST(document, null);
+	    // try
+	    // {
+	    // edits.apply(document);
+	    // } catch (MalformedTreeException | BadLocationException e)
+	    // {
+	    // // TODO Auto-generated catch block
+	    // e.printStackTrace();
+	    // }
+	    //
 	    // Utils.writebackSourceCode(document, testClassPath);
 	    // System.out.println(document.get());
 
@@ -203,11 +226,19 @@ public class TestCaseComposer
 	}
     }
 
-    private static void addMergedTestCase(List<TestStatement> path, String name, ClassModel clazz,
-	    ListRewrite listRewrite)
+    private static void addMergedTestCase(List<Statement> path, String name, ClassModel clazz, ListRewrite listRewrite)
     {
 	TypeDeclaration td = clazz.getTypeDec();
 	AST ast = td.getAST();
+	MethodDeclaration md = getMergedMethod(path, name, ast);
+
+	System.out.println(md.toString());
+	// clazz.getTypeDec().bodyDeclarations().add(md);
+	listRewrite.insertLast(md, null);
+    }
+
+    private static MethodDeclaration getMergedMethod(List<Statement> path, String name, AST ast)
+    {
 	MethodDeclaration md = ast.newMethodDeclaration();
 	md.setName(ast.newSimpleName(name));
 
@@ -223,18 +254,34 @@ public class TestCaseComposer
 	Block methodBlockWithAST = (Block) ASTNode.copySubtree(ast, methodBlock);
 
 	md.setBody(methodBlockWithAST);
-
-	System.out.println(md.toString());
-	// clazz.getTypeDec().bodyDeclarations().add(md);
-	listRewrite.insertLast(md, null);
+	return md;
     }
 
-    public static String getTestMethodText(List<TestStatement> path)
+    public static String getTestMethodText(List<Statement> path)
     {
 	StringBuilder sb = new StringBuilder();
 	// sb.append(String.format("public void %s(){", name));
-	for (TestStatement ts : path)
+	for (Statement ts : path)
 	{
+	    if (ts != null)
+	    {
+		sb.append(ts.toString());
+		sb.append('\n');
+	    }
+	}
+	// sb.append("}");
+
+	return sb.toString();
+
+    }
+
+    public static String getTestMethodText(List<TestStatement> path, int n)
+    {
+	StringBuilder sb = new StringBuilder();
+	// sb.append(String.format("public void %s(){", name));
+	for (int j = 0; j <= n; j++)
+	{
+	    TestStatement ts = path.get(j);
 	    if (ts.statement != null)
 	    {
 		sb.append(ts.statement.toString());
@@ -264,28 +311,39 @@ public class TestCaseComposer
 
     }
 
-    private static void performRenaming(List<TestStatement> path)
+    private static List<Statement> performRenaming(List<TestStatement> path)
     {
+
+	List<Statement> renamedStatements = new LinkedList<Statement>();
+
 	RunningState valueNamePairForCurrentState = new RunningState();
 	for (TestStatement statement : path)
 	{
+
 	    Statement stmt = statement.statement;
 	    if (statement.statement == null)
 		continue;
-	    Set<SimpleName> vars = getAllVars(statement);
+
+	    
+//	    System.out.println("********" + stmt.toString());
+	    Set<SimpleName> vars = getAllVars(statement.statement);
 	    Set<String> varsName = Utils.getNameSet(vars);
 
 	    Map<String, String> nameValuePairOfStmtBefore = FileUtils.getNameValuePairs(statement.getName());
 	    Map<String, String> renameMap = new HashMap<String, String>();
 
-	    findPreqVarsRenames(valueNamePairForCurrentState, varsName, nameValuePairOfStmtBefore, renameMap);
+	    findPreqVarsRenames(statement, valueNamePairForCurrentState, varsName, nameValuePairOfStmtBefore, renameMap);
 
 	    findPostreqVarsRenames(statement, valueNamePairForCurrentState, renameMap);
 
 	    valueNamePairForCurrentState.update(statement.getName(), renameMap, varsName);
-	    rename(statement.statement, vars, renameMap);
+//	    System.out.println("***********" + renameMap.toString() + "\n");
+	    Statement renamedStatement = rename(statement.statement, vars, renameMap);
+	    renamedStatements.add(renamedStatement);
+	    // System.out.println(getTestMethodText(path, i));
 	}
-	System.out.println(getTestMethodText(path));
+
+	return renamedStatements;
     }
 
     private static void findPostreqVarsRenames(TestStatement testStatement, RunningState curState,
@@ -303,12 +361,20 @@ public class TestCaseComposer
 	    {
 		String newVarInStmt = varInStmt + "_"
 			+ Utils.getTestCaseNameFromTestStatementWithoutClassName(testStatement.getName());
-		renameMap.put(varInStmt, newVarInStmt);
+
+		String newName = newVarInStmt;
+		int counter = 2;
+		while (curState.getValue(newName) != null)
+		{
+		    newName = newVarInStmt + counter;
+		    counter++;
+		}
+		renameMap.put(varInStmt, newName);
 	    }
 	}
     }
 
-    private static void findPreqVarsRenames(RunningState valueNamePairForCurrentState, Set<String> varsName,
+    private static void findPreqVarsRenames(TestStatement stmt, RunningState valueNamePairForCurrentState, Set<String> varsName,
 	    Map<String, String> nameValuePairOfStmtBefore, Map<String, String> renameMap)
     {
 	for (Entry<String, String> entry : nameValuePairOfStmtBefore.entrySet())
@@ -322,7 +388,7 @@ public class TestCaseComposer
 	    String varNameInState = valueNamePairForCurrentState.getName(value);
 	    if (varNameInState == null)
 	    {
-		valueNamePairForCurrentState.put(value, varNameInStmt);
+		Settings.consoleLogger.error(String.format("something's wrong with %s--%s", stmt.getName(), stmt.statement.toString()));
 	    } else if (!varNameInState.equals(varNameInStmt))
 	    {
 		renameMap.put(varNameInStmt, varNameInState);
