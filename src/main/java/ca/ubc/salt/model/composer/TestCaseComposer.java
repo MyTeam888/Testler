@@ -2,8 +2,6 @@ package ca.ubc.salt.model.composer;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,7 +27,6 @@ import org.eclipse.jface.text.Document;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
 
-import Comparator.NaturalOrderComparator;
 import ca.ubc.salt.model.instrumenter.ClassModel;
 import ca.ubc.salt.model.instrumenter.Method;
 import ca.ubc.salt.model.instrumenter.ProductionClassInstrumenter;
@@ -53,7 +50,7 @@ public class TestCaseComposer
 
     }
 
-    public static List<SimpleName> getSipleNamesInTheStatement(Statement statement, Set<SimpleName> vars)
+    public static List<SimpleName> getSimpleNamesInTheStatement(Statement statement, Set<SimpleName> vars)
     {
 	if (statement == null)
 	    return null;
@@ -75,7 +72,7 @@ public class TestCaseComposer
     {
 
 	Statement cpyStmt = (Statement) ASTNode.copySubtree(stmt.getAST(), stmt);
-	List<SimpleName> cpyVars = getSipleNamesInTheStatement(cpyStmt, vars);
+	List<SimpleName> cpyVars = getSimpleNamesInTheStatement(cpyStmt, vars);
 	for (SimpleName var : cpyVars)
 	{
 	    String renamedVar = renameSet.get(var.getIdentifier());
@@ -311,6 +308,25 @@ public class TestCaseComposer
 
     }
 
+    public static Statement renameTestStatement(TestStatement statement, RunningState valueNamePairForCurrentState)
+    {
+	Set<SimpleName> vars = getAllVars(statement.statement);
+	if (vars == null)
+	    return null;
+	Set<String> varsName = Utils.getNameSet(vars);
+
+	Map<String, String> nameValuePairOfStmtBefore = FileUtils.getNameValuePairs(statement.getName());
+	Map<String, String> renameMap = new HashMap<String, String>();
+
+	findPreqVarsRenames(statement, valueNamePairForCurrentState, varsName, nameValuePairOfStmtBefore, renameMap);
+
+	findPostreqVarsRenames(statement, valueNamePairForCurrentState, renameMap);
+
+	valueNamePairForCurrentState.update(statement.getName(), renameMap, varsName);
+
+	return rename(statement.statement, vars, renameMap);
+    }
+
     private static List<Statement> performRenaming(List<TestStatement> path)
     {
 
@@ -320,27 +336,11 @@ public class TestCaseComposer
 	for (TestStatement statement : path)
 	{
 
-	    Statement stmt = statement.statement;
 	    if (statement.statement == null)
 		continue;
 
-	    
-//	    System.out.println("********" + stmt.toString());
-	    Set<SimpleName> vars = getAllVars(statement.statement);
-	    Set<String> varsName = Utils.getNameSet(vars);
-
-	    Map<String, String> nameValuePairOfStmtBefore = FileUtils.getNameValuePairs(statement.getName());
-	    Map<String, String> renameMap = new HashMap<String, String>();
-
-	    findPreqVarsRenames(statement, valueNamePairForCurrentState, varsName, nameValuePairOfStmtBefore, renameMap);
-
-	    findPostreqVarsRenames(statement, valueNamePairForCurrentState, renameMap);
-
-	    valueNamePairForCurrentState.update(statement.getName(), renameMap, varsName);
-//	    System.out.println("***********" + renameMap.toString() + "\n");
-	    Statement renamedStatement = rename(statement.statement, vars, renameMap);
+	    Statement renamedStatement = renameTestStatement(statement, valueNamePairForCurrentState);
 	    renamedStatements.add(renamedStatement);
-	    // System.out.println(getTestMethodText(path, i));
 	}
 
 	return renamedStatements;
@@ -374,8 +374,8 @@ public class TestCaseComposer
 	}
     }
 
-    private static void findPreqVarsRenames(TestStatement stmt, RunningState valueNamePairForCurrentState, Set<String> varsName,
-	    Map<String, String> nameValuePairOfStmtBefore, Map<String, String> renameMap)
+    private static void findPreqVarsRenames(TestStatement stmt, RunningState valueNamePairForCurrentState,
+	    Set<String> varsName, Map<String, String> nameValuePairOfStmtBefore, Map<String, String> renameMap)
     {
 	for (Entry<String, String> entry : nameValuePairOfStmtBefore.entrySet())
 	{
@@ -388,7 +388,8 @@ public class TestCaseComposer
 	    String varNameInState = valueNamePairForCurrentState.getName(value);
 	    if (varNameInState == null)
 	    {
-		Settings.consoleLogger.error(String.format("something's wrong with %s--%s", stmt.getName(), stmt.statement.toString()));
+		Settings.consoleLogger.error(
+			String.format("something's wrong with %s--%s", stmt.getName(), stmt.statement.toString()));
 	    } else if (!varNameInState.equals(varNameInStmt))
 	    {
 		renameMap.put(varNameInStmt, varNameInState);
@@ -473,60 +474,4 @@ public class TestCaseComposer
 	return Integer.valueOf(xmlTestStatementStr.substring(index + 1, endIndex));
     }
 
-}
-
-class RunningState
-{
-    Map<String, String> nameValuePairForCurrentState;
-    Map<String, String> valueNamePairForCurrentState;
-
-    public RunningState()
-    {
-	nameValuePairForCurrentState = new HashMap<String, String>();
-	valueNamePairForCurrentState = new HashMap<String, String>();
-    }
-
-    public String getValue(String name)
-    {
-	return nameValuePairForCurrentState.get(name);
-    }
-
-    public String getName(String value)
-    {
-	return valueNamePairForCurrentState.get(value);
-    }
-
-    public void put(String name, String value)
-    {
-	nameValuePairForCurrentState.put(name, value);
-	valueNamePairForCurrentState.put(value, name);
-    }
-
-    public void update(String prevState, Map<String, String> renameMap, Set<String> varsName)
-    {
-	List<String> sortedTestStates = Arrays
-		.asList(FileUtils.getStatesForTestCase(Utils.getTestCaseNameFromTestStatement(prevState)));
-
-	Collections.sort(sortedTestStates, new NaturalOrderComparator());
-
-	String nextState = Utils.nextOrPrevState(prevState, sortedTestStates, true);
-	Map<String, String> nameValuePair = FileUtils.getNameValuePairs(nextState);
-
-	for (Entry<String, String> entry : nameValuePair.entrySet())
-	{
-	    String name = entry.getKey();
-	    if (varsName.contains(name))
-	    {
-		String value = entry.getValue();
-
-		String renamedName = renameMap.get(name);
-
-		if (renamedName != null)
-		    name = renamedName;
-
-		this.put(name, value);
-	    }
-	}
-
-    }
 }

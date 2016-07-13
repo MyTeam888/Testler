@@ -2,6 +2,7 @@ package ca.ubc.salt.model.merger;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.xml.sax.SAXException;
@@ -24,6 +26,7 @@ import org.xml.sax.SAXException;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
 
+import Comparator.NaturalOrderComparator;
 import ca.ubc.salt.model.composer.TestCaseComposer;
 import ca.ubc.salt.model.state.ProductionCallingTestStatement;
 import ca.ubc.salt.model.state.ReadVariableDetector;
@@ -41,6 +44,11 @@ public class TestMerger
     public static void main(String[] args) throws SAXException, IOException, ClassNotFoundException
     {
 
+	merge1();
+    }
+
+    private static void merge1() throws IOException, FileNotFoundException, ClassNotFoundException
+    {
 	XStream xstream = new XStream(new StaxDriver());
 
 	File file = new File("components.txt");
@@ -92,8 +100,11 @@ public class TestMerger
 	     System.out.println(connectedComponentsMap);
 
 //	    connectedComponent = new HashSet<String>();
-//	    connectedComponent.add("ComplexTest.testMultiply");
-//	    connectedComponent.add("ComplexTest.testReciprocal");
+//	    connectedComponent.add("ComplexTest.testAcos");
+//	    connectedComponent.add("ComplexTest.testSqrt1z");
+//	    connectedComponent.add("ComplexTest.testExp");
+//	    connectedComponent.add("ComplexTest.testScalarAdd");
+	    
 	    
 	    
 	    List<String> testCases = new LinkedList<String>();
@@ -209,8 +220,12 @@ public class TestMerger
 		continue;
 
 	    visited.add(parent);
-
-	    for (Entry<String, TestStatement> edge : parent.getEnd().getChildren().entrySet())
+	    
+	    TreeMap<String, TestStatement> allEdges = new TreeMap<String, TestStatement>(new NaturalOrderComparator());
+	    allEdges.putAll(parent.getEnd().getChildren());
+	    allEdges.putAll(parent.getEnd().getCompatibleStatements());
+	    
+	    for (Entry<String, TestStatement> edge : allEdges.entrySet())
 	    {
 		TestStatement stmt = edge.getValue();
 		if (!visited.contains(stmt))
@@ -226,20 +241,21 @@ public class TestMerger
 		}
 	    }
 
-	    for (TestStatement stmt : parent.getEnd().getCompatibleStatements())
-	    {
-		if (!visited.contains(stmt))
-		{
-		    if (first == null && connectedComponentsMap.containsKey(stmt.getName()))
-		    {
-			if (returnFirst)
-			    return stmt;
-			first = stmt;
-		    }
-
-		    relaxChild(root, queue, parent, stmt);
-		}
-	    }
+//	    for (Entry<String, TestStatement> edge : parent.getEnd().getCompatibleStatements().entrySet())
+//	    {
+//		TestStatement stmt = edge.getValue();
+//		if (!visited.contains(stmt))
+//		{
+//		    if (first == null && connectedComponentsMap.containsKey(stmt.getName()))
+//		    {
+//			if (returnFirst)
+//			    return stmt;
+//			first = stmt;
+//		    }
+//
+//		    relaxChild(root, queue, parent, stmt);
+//		}
+//	    }
 
 	}
 
@@ -286,7 +302,8 @@ public class TestMerger
 	    // <object1(a), field 1, field 2, ... >
 	    // <object2(a), field 1, field 2, ... >
 	    // <object3(a), field 1, field 2, ... >
-	    Map<String, Set<String>> readValues = ReadVariableDetector.getReadValues(readVars);
+	    Map<String, Set<String>> readValues = new HashMap<String, Set<String>>();
+	    ReadVariableDetector.getReadValues(readVars, readValues);
 	    StateCompatibilityChecker.getCompatibleStates(compatibleStates, scc.varStateSet, readValues, allStates);
 
 	}
@@ -304,5 +321,6 @@ public class TestMerger
 	// for (List<TestStatement> path : paths)
 	// System.out.println(path);
     }
+    
 
 }

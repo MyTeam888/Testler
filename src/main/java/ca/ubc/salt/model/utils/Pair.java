@@ -1,6 +1,6 @@
 package ca.ubc.salt.model.utils;
 
-public  class  Pair <A, B>
+public  class  Pair <A, B> implements Comparable<Pair>
 {
     A first;
     B second;
@@ -31,6 +31,21 @@ public  class  Pair <A, B>
     public void setSecond(B second)
     {
         this.second = second;
+    }
+
+    @Override
+    public int compareTo(Pair o)
+    {
+	// TODO Auto-generated method stub
+	if (this.first instanceof Comparable)
+	{
+	    Comparable a = (Comparable) this.first;
+	    Comparable b = (Comparable) o.first;
+	    return a.compareTo(b);
+	    
+	}
+	
+	return 0;
     }
     
     

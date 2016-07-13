@@ -6,34 +6,39 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import Comparator.NaturalOrderComparator;
+
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class TestState extends TestModelNode
 {
-    HashMap<String, TestStatement> children;
-    HashMap<String, TestStatement> parents;
+    Map<String, TestStatement> children;
+    Map<String, TestStatement> parents;
     List<String> states;
     List<String> asserts;
-    Set<TestStatement> compatibleStatements;
+    Map<String, TestStatement> compatibleStatements;
     
     
-    public Set<TestStatement> getCompatibleStatements()
+    public Map<String, TestStatement> getCompatibleStatements()
     {
         return compatibleStatements;
     }
 
-    public void setCompatibleStatements(Set<TestStatement> compatibleStatements)
+    public void setCompatibleStatements(Map<String, TestStatement> compatibleStatements)
     {
         this.compatibleStatements = compatibleStatements;
     }
 
     public TestState()
     {
-	children = new HashMap<String, TestStatement>();
+	children = new TreeMap<String, TestStatement>(new NaturalOrderComparator());
 	parents = new HashMap<String, TestStatement>();
 	states = new LinkedList<String>();
 	asserts = new LinkedList<String>();
-	compatibleStatements = new HashSet<TestStatement>();
+	compatibleStatements = new TreeMap<String, TestStatement>(new NaturalOrderComparator());
     }
 
     public String printDot(boolean printWithTestStatements)
@@ -154,7 +159,7 @@ public class TestState extends TestModelNode
 	return states.toString();
     }
 
-    public HashMap<String, TestStatement> getChildren()
+    public Map<String, TestStatement> getChildren()
     {
 	return children;
     }
@@ -164,7 +169,7 @@ public class TestState extends TestModelNode
 	this.children = children;
     }
 
-    public HashMap<String, TestStatement> getParents()
+    public Map<String, TestStatement> getParents()
     {
 	return parents;
     }

@@ -7,7 +7,7 @@ import java.util.Set;
 
 import org.eclipse.jdt.core.dom.Statement;
 
-public class TestStatement extends TestModelNode
+public class TestStatement extends TestModelNode 
 {
     Set<TestState> compatibleStates;
     TestState start, end;

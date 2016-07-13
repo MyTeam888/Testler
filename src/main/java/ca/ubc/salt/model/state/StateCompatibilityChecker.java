@@ -80,7 +80,7 @@ public class StateCompatibilityChecker
 		    {
 			TestState compState = graph.get(state);
 			testStatement.getCompatibleStates().add(compState);
-			compState.compatibleStatements.add(testStatement);
+			compState.compatibleStatements.put(testStatement.getName(), testStatement);
 		    }
 		} else
 		{

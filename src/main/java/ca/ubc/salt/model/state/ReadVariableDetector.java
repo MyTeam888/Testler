@@ -153,16 +153,14 @@ public class ReadVariableDetector
 
     }
 
-    public static Map<String, Set<String>> getReadValues(Map<String, Set<SimpleName>> readVars)
+    public static void getReadValues(Map<String, Set<SimpleName>> readVars, Map<String, Set<String>> readValues)
     {
-	Map<String, Set<String>> readValues = new HashMap<String, Set<String>>();
 	for (Entry<String, Set<SimpleName>> entry : readVars.entrySet())
 	{
 	    String stateName = entry.getKey();
 	    Set<String> readValuesForState = getReadValuesOfState(stateName, entry.getValue());
 	    readValues.put(stateName, readValuesForState);
 	}
-	return readValues;
     }
 
     public static Set<String> getReadValuesOfState(String stateName, Set<SimpleName> readVars)

@@ -81,14 +81,18 @@ public class StateComparator
 		String nextState = Utils.nextOrPrevState(state, sortedTestStates, true);
 		if (testStateMap.containsKey(nextState))
 		{
-		    ts.getChildren().put(state, new TestStatement(ts, testStateMap.get(nextState), state));
+		    TestState nextStateTS = testStateMap.get(nextState);
+		    TestStatement stmt = new TestStatement(ts, nextStateTS, state);
+		    ts.getChildren().put(state, stmt);
+		    nextStateTS.getParents().put(state, stmt);
+		    
 		}
 
-		String prevState = Utils.nextOrPrevState(state, sortedTestStates, false);
-		if (testStateMap.containsKey(prevState))
-		{
-		    ts.getParents().put(state, new TestStatement(ts, testStateMap.get(prevState), state));
-		}
+//		String prevState = Utils.nextOrPrevState(state, sortedTestStates, false);
+//		if (testStateMap.containsKey(prevState))
+//		{
+//		    ts.getParents().put(state, new TestStatement(testStateMap.get(prevState), ts, prevState));
+//		}
 	    }
 	}
 
