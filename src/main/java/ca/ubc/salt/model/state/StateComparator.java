@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -61,7 +62,7 @@ public class StateComparator
 	    compareStates(entry.getKey(), testStateOfState, testStates);
 	}
 
-	List<String> sortedTestStates = FileUtils.getStatesForTestCase(testCases);
+	ArrayList<String> sortedTestStates = FileUtils.getStatesForTestCase(testCases);
 	Collections.sort(sortedTestStates, new NaturalOrderComparator());
 	
 	populateGraph(testStateOfState, testStates, sortedTestStates);
@@ -70,7 +71,7 @@ public class StateComparator
     }
 
     private static void populateGraph(Map<String, TestState> testStateMap, List<TestState> testStates,
-	    List<String> sortedTestStates)
+	    ArrayList<String> sortedTestStates)
     {
 
 	for (int i = 0; i < testStates.size(); i++)

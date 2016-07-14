@@ -7,7 +7,7 @@ import java.util.Set;
 
 import org.eclipse.jdt.core.dom.Statement;
 
-public class TestStatement extends TestModelNode 
+public class TestStatement extends TestModelNode
 {
     Set<TestState> compatibleStates;
     TestState start, end;
@@ -16,7 +16,7 @@ public class TestStatement extends TestModelNode
     String methodCall;
     String input;
 
-    public long time = 1;
+    public long time = 1000;
 
     public TestStatement(TestState start, TestState end, String name)
     {
@@ -61,7 +61,10 @@ public class TestStatement extends TestModelNode
     public String toString()
     {
 	// TODO Auto-generated method stub
-	return this.name;
+	if (this.statement != null)
+	    return this.statement.toString();
+	else
+	    return this.name;
     }
 
     public String getName()
@@ -86,6 +89,17 @@ public class TestStatement extends TestModelNode
 		return true;
 	}
 	return false;
+    }
+    
+    @Override
+    public TestStatement clone() throws CloneNotSupportedException
+    {
+        // TODO Auto-generated method stub
+	
+        TestStatement clone = new TestStatement(this.start, this.end, this.name);
+        clone.statement= this.statement;
+        return clone;
+        
     }
 
     // @Override

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Formatter;
@@ -282,7 +283,7 @@ public class ProductionCallingTestStatement
 	File folder = new File(Settings.tracePaths);
 
 	String[] tracesNames = folder.list();
-	List<String> tracesStrs = Arrays.asList(tracesNames);
+	ArrayList<String> tracesStrs = new ArrayList(Arrays.asList(tracesNames));
 	Collections.sort(tracesStrs, new NaturalOrderComparator());
 
 	File[] traces = folder.listFiles();

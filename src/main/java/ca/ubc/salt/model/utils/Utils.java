@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -14,6 +16,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
@@ -26,6 +29,8 @@ import org.eclipse.jface.text.Document;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
+
+import Comparator.NaturalOrderComparator;
 
 public class Utils
 {
@@ -140,17 +145,16 @@ public class Utils
 	}
 	return null;
     }
-    
+
     public static String getClassFile(String className)
     {
 	return Utils.classFileMapping.get(className);
     }
-    
+
     public static String getClassFileForProjectPath(String className, String projectPath)
     {
 	return Utils.classFileMapping.get(className).replace(Settings.PROJECT_PATH, projectPath);
     }
-    
 
     public static String getTestCaseFile(String testCase)
     {
@@ -216,10 +220,27 @@ public class Utils
 	return map;
     }
 
-    public static String nextOrPrevState(String state, List<String> sortedTestCases, boolean next)
+    public static String nextOrPrevState(List<String> testCases, String state, boolean next)
     {
-	int index = sortedTestCases.indexOf(state);
-	if (index == -1 || (next && index == sortedTestCases.size() - 1) || (!next && index == 0))
+
+	ArrayList<String> sortedTestStates;
+	try
+	{
+	    sortedTestStates = FileUtils.sortedAllStates.get(testCases);
+	    return nextOrPrevState(state, sortedTestStates, next);
+	} catch (ExecutionException e)
+	{
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	    return "";
+	}
+    }
+
+    public static String nextOrPrevState(String state, ArrayList<String> sortedTestStatements, boolean next)
+    {
+//	int index = Collections.binarySearch(sortedTestStatements, state, new NaturalOrderComparator());
+	int index = sortedTestStatements.indexOf(state);
+	if (index == -1 || (next && index == sortedTestStatements.size() - 1) || (!next && index == 0))
 	    return "";
 
 	String[] split = Utils.splitState(state);
@@ -227,7 +248,7 @@ public class Utils
 	if (split.length != 2)
 	    return "";
 
-	String nextState = sortedTestCases.get(index + (next ? 1 : -1));
+	String nextState = sortedTestStatements.get(index + (next ? 1 : -1));
 	String[] splitNext = Utils.splitState(nextState);
 
 	if (splitNext.length != 2)
@@ -260,16 +281,16 @@ public class Utils
 
     public static void writebackSourceCode(Document document, String newPath)
     {
-        try
-        {
-            FileWriter fw = new FileWriter(newPath);
-            fw.write(document.get());
-            fw.close();
-        } catch (IOException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+	try
+	{
+	    FileWriter fw = new FileWriter(newPath);
+	    fw.write(document.get());
+	    fw.close();
+	} catch (IOException e)
+	{
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
     }
 
 }

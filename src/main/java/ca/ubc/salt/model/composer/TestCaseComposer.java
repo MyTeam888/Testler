@@ -2,12 +2,14 @@ package ca.ubc.salt.model.composer;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -27,6 +29,10 @@ import org.eclipse.jface.text.Document;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+
 import ca.ubc.salt.model.instrumenter.ClassModel;
 import ca.ubc.salt.model.instrumenter.Method;
 import ca.ubc.salt.model.instrumenter.ProductionClassInstrumenter;
@@ -39,6 +45,51 @@ import ca.ubc.salt.model.utils.Utils;
 
 public class TestCaseComposer
 {
+
+    static LoadingCache<String, Map<String, String>> nameValuePairs;
+    static
+    {
+	nameValuePairs = CacheBuilder.newBuilder().maximumSize(1000) // maximum
+								     // 100
+								     // records
+								     // can be
+								     // cached
+		.build(new CacheLoader<String, Map<String, String>>()
+		{ // build the cacheloader
+
+		    @Override
+		    public Map<String, String> load(String stmt) throws Exception
+		    {
+			// make the expensive call
+			return FileUtils.getNameValuePairs(stmt);
+		    }
+		});
+    }
+
+    public static void updateRunningState(TestStatement statement, RunningState valueNamePairForCurrentState)
+    {
+	Set<SimpleName> vars = getAllVars(statement.statement);
+	if (vars == null)
+	    return;
+	Set<String> varsName = Utils.getNameSet(vars);
+
+	Map<String, String> nameValuePairOfStmtBefore = null;
+	try
+	{
+	    nameValuePairOfStmtBefore = nameValuePairs.get(statement.getName());
+	} catch (ExecutionException e)
+	{
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
+	Map<String, String> renameMap = new HashMap<String, String>();
+
+	findPreqVarsRenames(statement, valueNamePairForCurrentState, varsName, nameValuePairOfStmtBefore, renameMap);
+
+	findPostreqVarsRenames(statement, valueNamePairForCurrentState, renameMap);
+
+	valueNamePairForCurrentState.update(statement.getName(), renameMap, varsName);
+    }
 
     public static Set<SimpleName> getAllVars(Statement statement)
     {
@@ -195,24 +246,24 @@ public class TestCaseComposer
 
 		if (clazz.getTypeDec().getName().toString().equals(testClassName))
 		{
-		    // removeTestCasesFromTestClass(clazz, testCasesOfClass,
-		    // listRewrite);
+		     removeTestCasesFromTestClass(clazz, testCasesOfClass,
+		     listRewrite);
 		    //
-		    // addMergedTestCase(path, name, clazz, listRewrite);
+		     addMergedTestCase(path, name, clazz, listRewrite);
 		    System.out.println(getMergedMethod(path, name, clazz.getTypeDec().getAST()).toString());
 		}
 	    }
-	    // TextEdit edits = rewriter.rewriteAST(document, null);
-	    // try
-	    // {
-	    // edits.apply(document);
-	    // } catch (MalformedTreeException | BadLocationException e)
-	    // {
-	    // // TODO Auto-generated catch block
-	    // e.printStackTrace();
-	    // }
-	    //
-	    // Utils.writebackSourceCode(document, testClassPath);
+	     TextEdit edits = rewriter.rewriteAST(document, null);
+	     try
+	     {
+	     edits.apply(document);
+	     } catch (MalformedTreeException | BadLocationException e)
+	     {
+	     // TODO Auto-generated catch block
+	     e.printStackTrace();
+	     }
+	    
+	     Utils.writebackSourceCode(document, testClassPath);
 	    // System.out.println(document.get());
 
 	    testClasses.remove(testClassName);
@@ -397,7 +448,7 @@ public class TestCaseComposer
 	}
     }
 
-    public static void populateStateField(List<TestStatement> path)
+    public static void populateStateField(Collection<TestStatement> path)
     {
 	// file path to list of statements
 	Map<String, List<TestStatement>> fileTestStatementMapping = new HashMap<String, List<TestStatement>>();

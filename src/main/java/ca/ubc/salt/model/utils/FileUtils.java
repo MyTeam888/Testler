@@ -6,6 +6,9 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -18,8 +21,31 @@ import java.util.Set;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.w3c.dom.NodeList;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+
+import Comparator.NaturalOrderComparator;
+
 public class FileUtils
 {
+    static LoadingCache<List<String>, ArrayList<String>> sortedAllStates;
+    static
+    {
+	sortedAllStates = CacheBuilder.newBuilder().maximumSize(100).build(new CacheLoader<List<String>, ArrayList<String>>()
+	{
+	    @Override
+	    public ArrayList<String> load(List<String> testCases) throws Exception
+	    {
+		ArrayList<String> sortedTestStates = FileUtils.getStatesForTestCase(testCases);
+
+		Collections.sort(sortedTestStates, new NaturalOrderComparator());
+
+		return sortedTestStates;
+	    }
+	});
+    }
+
     public static HashSet<String> readSet(String path) throws FileNotFoundException
     {
 
@@ -166,9 +192,9 @@ public class FileUtils
 
     }
 
-    public static List<String> getStatesForTestCase(List<String> testCases)
+    public static ArrayList<String> getStatesForTestCase(List<String> testCases)
     {
-	List<String> states = new LinkedList<String>();
+	ArrayList<String> states = new ArrayList<String>();
 	for (String testCase : testCases)
 	{
 	    getStatesForTestCase(testCase, states);
@@ -196,7 +222,8 @@ public class FileUtils
     public static File[] getStateFilesForTestCase(final String testCase)
     {
 	File folder = new File(Settings.tracePaths);
-	FilenameFilter filter = new FilenameFilter() {
+	FilenameFilter filter = new FilenameFilter()
+	{
 
 	    @Override
 	    public boolean accept(File dir, String name)
@@ -212,7 +239,8 @@ public class FileUtils
     public static String[] getStatesForTestCase(final String testCase)
     {
 	File folder = new File(Settings.tracePaths);
-	FilenameFilter filter = new FilenameFilter() {
+	FilenameFilter filter = new FilenameFilter()
+	{
 
 	    @Override
 	    public boolean accept(File dir, String name)
