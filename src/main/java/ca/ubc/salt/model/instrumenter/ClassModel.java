@@ -23,6 +23,7 @@ public class ClassModel
     TypeDeclaration typeDec = null;
     CompilationUnit cu = null;
     List<FieldDeclaration> staticFields = null;
+    List<FieldDeclaration> fields = null;
     List<Method> methods = null;
 
     public ClassModel(TypeDeclaration typeDec, CompilationUnit cu) throws IOException
@@ -98,6 +99,20 @@ public class ClassModel
 	    methods.add(method);
 	}
     }
+    
+    private void initFields()
+    {
+	FieldDeclaration[] allFields = typeDec.getFields();
+	this.fields = new ArrayList<FieldDeclaration>();
+	for (FieldDeclaration field : allFields)
+	{
+	    if (!Modifier.isStatic(field.getModifiers()))
+	    {
+		this.fields.add(field);
+	    }
+	}
+	
+    }
 
     private void initStaticFields()
     {
@@ -132,8 +147,11 @@ public class ClassModel
 	this.cu = cu;
     }
 
+    
     public List<FieldDeclaration> getStaticFields()
     {
+	if (staticFields == null)
+	    initStaticFields();
 	return staticFields;
     }
 
@@ -155,5 +173,21 @@ public class ClassModel
     {
 	this.methods = methods;
     }
+
+
+    public List<FieldDeclaration> getFields()
+    {
+	if (fields == null)
+	    initFields();
+        return fields;
+    }
+
+
+    public void setFields(List<FieldDeclaration> fields)
+    {
+        this.fields = fields;
+    }
+    
+    
 
 }

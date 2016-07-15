@@ -145,8 +145,8 @@ public class TestMerger
 		paths.add(returnThePath(root, path));
 
 		
-		TestCaseComposer.composeTestCase(returnThePath(root, path), connectedComponent,
-			TestCaseComposer.generateTestCaseName(connectedComponent));
+//		TestCaseComposer.composeTestCase(returnThePath(root, path), connectedComponent,
+//			TestCaseComposer.generateTestCaseName(connectedComponent));
 		
 	    } while (first != null);
 
@@ -155,7 +155,7 @@ public class TestMerger
 	    // System.out.println(TestCaseComposer.composeTestCase(firstPath));
 	}
 	
-//	TestCaseComposer.composeTestCases(mergedTestCases);
+	TestCaseComposer.composeTestCases(mergedTestCases);
     }
 
     public static LinkedList<TestStatement> returnThePath(TestState root, LinkedList<TestStatement> frontierPaths)

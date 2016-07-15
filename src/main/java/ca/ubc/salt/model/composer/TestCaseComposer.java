@@ -2,6 +2,7 @@ package ca.ubc.salt.model.composer;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -15,6 +16,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
@@ -180,11 +182,11 @@ public class TestCaseComposer
 
 	populateStateField(path);
 
-	List<Statement> renamedStatements = performRenaming(path);
+	List<ASTNode> renamedStatements = performRenaming(path);
 
 	try
 	{
-	    writeBackMergedTestCases(renamedStatements, testCases, name);
+	    writeBackMergedTestCases(path, renamedStatements, testCases, name);
 	} catch (IOException e)
 	{
 	    // TODO Auto-generated catch block
@@ -220,13 +222,93 @@ public class TestCaseComposer
 	return maxTestClass;
     }
 
-    private static void writeBackMergedTestCases(List<Statement> path, Set<String> testCases, String name)
-	    throws IOException
+    private static List<FieldDeclaration> getRequiredFieldDecs(List<TestStatement> path, String mainClassName)
     {
+
+	List<FieldDeclaration> fieldDecStatements = new ArrayList<FieldDeclaration>();
+
+	Map<String, Set<String>> fieldVars = new HashMap<String, Set<String>>();
+	for (TestStatement statement : path)
+	{
+	    Statement stmt = statement.statement;
+	    StatementFieldVisitor sfv = new StatementFieldVisitor(fieldVars);
+	    stmt.accept(sfv);
+	}
+
+	for (Entry<String, Set<String>> entry : fieldVars.entrySet())
+	{
+	    String className = entry.getKey();
+
+	    if (className.equals(mainClassName))
+		continue;
+
+	    Set<String> usedFields = entry.getValue();
+
+	    String testClassPath = Utils.getClassFile(className);
+
+	    if (testClassPath == null)
+		continue;
+
+	    String source;
+	    try
+	    {
+		source = FileUtils.readFileToString(testClassPath);
+		Document document = new Document(source);
+		List<ClassModel> classes = ClassModel.getClasses(document.get());
+		for (ClassModel clazz : classes)
+		{
+		    List<FieldDeclaration> classFields = clazz.getFields();
+		    for (FieldDeclaration fieldDec : classFields)
+		    {
+			for (Object varDecObj : fieldDec.fragments())
+			{
+			    if (varDecObj instanceof VariableDeclarationFragment)
+			    {
+				VariableDeclarationFragment varDec = (VariableDeclarationFragment) varDecObj;
+				SimpleName varInFieldDec = varDec.getName();
+				if (usedFields.contains(varInFieldDec.getIdentifier()))
+				{
+				    fieldDecStatements.add(fieldDec);
+				}
+
+			    }
+			}
+		    }
+		}
+	    } catch (IOException e)
+	    {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	    }
+
+	}
+
+	return fieldDecStatements;
+    }
+
+    private static void addFieldDecsToPath(List<FieldDeclaration> fieldDecs, List<ASTNode> path)
+    {
+	for (FieldDeclaration fieldDec : fieldDecs)
+	{
+	    fieldDec.modifiers().clear();
+	    path.add(0, fieldDec);
+	}
+    }
+
+    private static void writeBackMergedTestCases(List<TestStatement> originalStatements, List<ASTNode> path,
+	    Set<String> testCases, String name) throws IOException
+    {
+
+	// class -> testCases
 	Map<String, Set<String>> testClasses = Utils.getTestClassMapFromTestCases(testCases);
+
+	String mainClassName = getTestClassWithMaxNumberOfTestCases(testClasses);
+
+	addFieldDecsToPath(getRequiredFieldDecs(originalStatements, mainClassName), path);
 
 	while (!testClasses.isEmpty())
 	{
+
 	    String testClassName = getTestClassWithMaxNumberOfTestCases(testClasses);
 
 	    String testClassPath = Utils.getClassFileForProjectPath(testClassName, Settings.PROJECT_MERGED_PATH);
@@ -241,29 +323,33 @@ public class TestCaseComposer
 
 	    for (ClassModel clazz : classes)
 	    {
-		ListRewrite listRewrite = rewriter.getListRewrite(clazz.getTypeDec(),
-			TypeDeclaration.BODY_DECLARATIONS_PROPERTY);
-
 		if (clazz.getTypeDec().getName().toString().equals(testClassName))
 		{
-		     removeTestCasesFromTestClass(clazz, testCasesOfClass,
-		     listRewrite);
+		    // ListRewrite listRewrite =
+		    // rewriter.getListRewrite(clazz.getTypeDec(),
+		    // TypeDeclaration.BODY_DECLARATIONS_PROPERTY);
 		    //
-		     addMergedTestCase(path, name, clazz, listRewrite);
+		    //
+		    // removeTestCasesFromTestClass(clazz, testCasesOfClass,
+		    // listRewrite);
+		    //
+		    //
+		    // if (testClassName.equals(mainClassName))
+		    // addMergedTestCase(path, name, clazz, listRewrite);
+
 		    System.out.println(getMergedMethod(path, name, clazz.getTypeDec().getAST()).toString());
 		}
 	    }
-	     TextEdit edits = rewriter.rewriteAST(document, null);
-	     try
-	     {
-	     edits.apply(document);
-	     } catch (MalformedTreeException | BadLocationException e)
-	     {
-	     // TODO Auto-generated catch block
-	     e.printStackTrace();
-	     }
-	    
-	     Utils.writebackSourceCode(document, testClassPath);
+	    // TextEdit edits = rewriter.rewriteAST(document, null);
+	    // try
+	    // {
+	    // edits.apply(document);
+	    // } catch (MalformedTreeException | BadLocationException e)
+	    // {
+	    // e.printStackTrace();
+	    // }
+
+	    // Utils.writebackSourceCode(document, testClassPath);
 	    // System.out.println(document.get());
 
 	    testClasses.remove(testClassName);
@@ -274,7 +360,7 @@ public class TestCaseComposer
 	}
     }
 
-    private static void addMergedTestCase(List<Statement> path, String name, ClassModel clazz, ListRewrite listRewrite)
+    private static void addMergedTestCase(List<ASTNode> path, String name, ClassModel clazz, ListRewrite listRewrite)
     {
 	TypeDeclaration td = clazz.getTypeDec();
 	AST ast = td.getAST();
@@ -285,7 +371,7 @@ public class TestCaseComposer
 	listRewrite.insertLast(md, null);
     }
 
-    private static MethodDeclaration getMergedMethod(List<Statement> path, String name, AST ast)
+    private static MethodDeclaration getMergedMethod(List<ASTNode> path, String name, AST ast)
     {
 	MethodDeclaration md = ast.newMethodDeclaration();
 	md.setName(ast.newSimpleName(name));
@@ -305,11 +391,11 @@ public class TestCaseComposer
 	return md;
     }
 
-    public static String getTestMethodText(List<Statement> path)
+    public static String getTestMethodText(List<ASTNode> path)
     {
 	StringBuilder sb = new StringBuilder();
 	// sb.append(String.format("public void %s(){", name));
-	for (Statement ts : path)
+	for (ASTNode ts : path)
 	{
 	    if (ts != null)
 	    {
@@ -378,10 +464,10 @@ public class TestCaseComposer
 	return rename(statement.statement, vars, renameMap);
     }
 
-    private static List<Statement> performRenaming(List<TestStatement> path)
+    private static List<ASTNode> performRenaming(List<TestStatement> path)
     {
 
-	List<Statement> renamedStatements = new LinkedList<Statement>();
+	List<ASTNode> renamedStatements = new LinkedList<ASTNode>();
 
 	RunningState valueNamePairForCurrentState = new RunningState();
 	for (TestStatement statement : path)
@@ -390,7 +476,7 @@ public class TestCaseComposer
 	    if (statement.statement == null)
 		continue;
 
-	    Statement renamedStatement = renameTestStatement(statement, valueNamePairForCurrentState);
+	    ASTNode renamedStatement = renameTestStatement(statement, valueNamePairForCurrentState);
 	    renamedStatements.add(renamedStatement);
 	}
 
