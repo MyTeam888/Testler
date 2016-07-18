@@ -84,7 +84,8 @@ public class TestClassInstrumenter
 
     }
 
-    public static Document instrumentClass(ClassModel srcClass, List<ClassModel> loadedClasses, Document document, String fileName)
+    public static Document instrumentClass(ClassModel srcClass, List<ClassModel> loadedClasses, Document document,
+	    String fileName)
 	    throws IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException
     {
 	List<Method> methods = srcClass.getMethods();
@@ -157,10 +158,10 @@ public class TestClassInstrumenter
     public static boolean isTestMethod(Method method)
     {
 
-//	if (method.methodDec.getName().toString().toLowerCase().contains("test"))
-//	    return true;
-	
-	
+	// if
+	// (method.methodDec.getName().toString().toLowerCase().contains("test"))
+	// return true;
+
 	List<NormalAnnotation> modifs = method.methodDec.modifiers();
 	AST ast = method.methodDec.getAST();
 	for (Object obj : modifs)
@@ -280,7 +281,7 @@ public class TestClassInstrumenter
 	instrumentClass(Settings.TEST_CLASS);
     }
 
-    public static ASTNode generateInstrumentationHeader(int randomNumber,String fileName, String methodName)
+    public static ASTNode generateInstrumentationHeader(int randomNumber, String fileName, String methodName)
     {
 	return Utils.createBlockWithText(String.format(
 		"InstrumentClassGenerator.init(\"%s.%s\");InstrumentClassGenerator.initTestStatement(0);InstrumentClassGenerator.traceTestStatementExecution();InstrumentClassGenerator.initTestStatement(1);",
@@ -306,7 +307,8 @@ public class TestClassInstrumenter
 	    sb.append("\"");
 	    sb.append(',');
 	}
-	sb.setLength(sb.length() - 1);
+	if (varDecs.size() > 0)
+	    sb.setLength(sb.length() - 1);
 	sb.append(");");
 
 	sb.append("InstrumentClassGenerator.writeObjects(");
@@ -315,7 +317,8 @@ public class TestClassInstrumenter
 	    sb.append(var.getName());
 	    sb.append(',');
 	}
-	sb.setLength(sb.length() - 1);
+	if (varDecs.size() > 0)
+	    sb.setLength(sb.length() - 1);
 	sb.append(");");
 	sb.append(String.format("InstrumentClassGenerator.initTestStatement(%d);", counter));
 

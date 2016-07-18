@@ -95,7 +95,7 @@ public class ClassModel
 	    // for (VariableDeclarationFragment var : visitor.varDecs)
 	    // System.out.println(" " + var.getName());
 
-	    Method method = new Method(m, typeDec.getName().toString());
+	    Method method = new Method(m, typeDec.getName().toString(), this);
 	    methods.add(method);
 	}
     }

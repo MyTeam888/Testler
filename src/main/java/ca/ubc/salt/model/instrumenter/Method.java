@@ -13,6 +13,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -35,11 +36,13 @@ public class Method
 {
     MethodDeclaration methodDec = null;
     String className;
+    ClassModel clazz;
 
-    public Method(MethodDeclaration methodDec, String className)
+    public Method(MethodDeclaration methodDec, String className, ClassModel clazz)
     {
 	this.methodDec = methodDec;
 	this.className = className;
+	this.clazz = clazz;
     }
 
     public void instrumentTestMethod(ASTRewrite rewriter, Document document, List<String> loadedClassVars,
@@ -73,6 +76,7 @@ public class Method
 	// listRewrite.insertLast(footer, null);
 
 	InstrumenterVisitor visitor = new InstrumenterVisitor(rewriter, randomNumber, methodDec.getName().toString());
+	visitor.addFieldVars(this.clazz);
 	this.methodDec.accept(visitor);
 
 	// apply the text edits to the compilation unit

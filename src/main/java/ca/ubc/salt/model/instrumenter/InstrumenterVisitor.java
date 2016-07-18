@@ -14,11 +14,20 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.DoStatement;
+import org.eclipse.jdt.core.dom.EnhancedForStatement;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.ForStatement;
+import org.eclipse.jdt.core.dom.IfStatement;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jdt.core.dom.SwitchCase;
+import org.eclipse.jdt.core.dom.SwitchStatement;
+import org.eclipse.jdt.core.dom.TryStatement;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.dom.WhileStatement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 
@@ -39,6 +48,21 @@ public class InstrumenterVisitor extends ASTVisitor
 	this.methodName = methodName;
     }
 
+
+    public void addFieldVars(ClassModel clazz)
+    {
+	for (FieldDeclaration fd : clazz.getFields())
+	{
+	    for (Object obj : fd.fragments())
+	    {
+		VariableDeclarationFragment vdf = (VariableDeclarationFragment) obj;
+		this.varDecs.add(vdf);
+	    }
+	}
+    }
+    
+    
+
     @Override
     public boolean preVisit2(ASTNode node)
     {
@@ -52,14 +76,30 @@ public class InstrumenterVisitor extends ASTVisitor
 
     }
 
+//    public boolean visit(Statement node)
+//    {
+//	if (node.getNodeType() == ASTNode.IF_STATEMENT || node.getNodeType() == ASTNode.WHILE_STATEMENT
+//		|| node.getNodeType() == ASTNode.ENHANCED_FOR_STATEMENT || node.getNodeType() == ASTNode.TRY_STATEMENT
+//		|| node.getNodeType() == ASTNode.SWITCH_STATEMENT || node.getNodeType() == ASTNode.SWITCH_CASE
+//		|| node.getNodeType() == ASTNode.DO_STATEMENT)
+//	{
+//	    if (node.getNodeType() != ASTNode.RETURN_STATEMENT)
+//		addDumpCode(node);
+//	    return false;
+//	} else if (node.getNodeType() == ASTNode.EXPRESSION_STATEMENT)
+//	{
+//	    
+//	}
+//	return true;
+//    }
+
     public boolean visit(VariableDeclarationFragment node)
     {
 	if (node.getInitializer() != null)
 	{
 	    varDecs.add(node);
 	    addDumpCode(node.getParent());
-	}
-	else
+	} else
 	{
 	    unassignedVars.put(node.getName().toString(), node);
 	}
@@ -68,26 +108,68 @@ public class InstrumenterVisitor extends ASTVisitor
 	// System.out.println(varDecs);
     }
 
-    public boolean visit(ExpressionStatement node)
+    
+    public boolean visit(IfStatement node)
     {
-	Expression e = node.getExpression();
+	addDumpCode(node);
+	return false;
+    }
+    public boolean visit(WhileStatement node)
+    {
+	addDumpCode(node);
+	return false;
+    }
+    public boolean visit(EnhancedForStatement node)
+    {
+	addDumpCode(node);
+	return false;
+    }
+    public boolean visit(ForStatement node)
+    {
+	addDumpCode(node);
+	return false;
+    }
+    public boolean visit(TryStatement node)
+    {
+	addDumpCode(node);
+	return false;
+    }
+    public boolean visit(SwitchStatement node)
+    {
+	addDumpCode(node);
+	return false;
+    }
+    public boolean visit(SwitchCase node)
+    {
+	addDumpCode(node);
+	return false;
+    }
+    public boolean visit(DoStatement node)
+    {
+	addDumpCode(node);
+	return false;
+    }
+    
+    public boolean visit(ExpressionStatement exp)
+    {
+	Expression e = exp.getExpression();
 	if (e instanceof Assignment)
 	{
 	    Assignment a = (Assignment) e;
-	    if(a.getLeftHandSide().getNodeType() == ASTNode.SIMPLE_NAME)
+	    if (a.getLeftHandSide().getNodeType() == ASTNode.SIMPLE_NAME)
 	    {
 		SimpleName sn = (SimpleName) a.getLeftHandSide();
 		VariableDeclarationFragment vdf = unassignedVars.get(sn.toString());
-		if(vdf != null)
+		if (vdf != null)
 		{
 		    varDecs.add(vdf);
 		    unassignedVars.remove(sn.toString());
 		}
 	    }
-	    
+
 	}
-	if (node.getNodeType() != ASTNode.RETURN_STATEMENT)
-	    addDumpCode(node);
+	if (exp.getNodeType() != ASTNode.RETURN_STATEMENT)
+	    addDumpCode(exp);
 	// System.out.println(node.toString());
 	// System.out.println(varDecs);
 	return false;

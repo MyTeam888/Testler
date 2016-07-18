@@ -1,5 +1,6 @@
-package ca.ubc.salt.model.state;
+package ca.ubc.salt.model.composer;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,22 +25,15 @@ import org.eclipse.jdt.core.dom.TryStatement;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.WhileStatement;
 
-public class ReadVariableVisitor extends ASTVisitor
+public class StatementNumberingVisitor extends ASTVisitor
 {
 
-    Map<String, Set<SimpleName>> readVars;
-    String methodName;
-    int counter = 0;
-
-    public ReadVariableVisitor(String methodName)
-    {
-	this.methodName = methodName;
-    }
-
+    ArrayList<Statement> statements = new ArrayList<Statement>();
+    
     public boolean visit(ExpressionStatement node)
     {
 	// System.out.println(node.toString());
-	getReadVars(node);
+	setStatement(node);
 	return false; // do not continue
     }
 
@@ -48,19 +42,14 @@ public class ReadVariableVisitor extends ASTVisitor
 	// System.out.println(node.toString());
 	// System.out.println(varDecs);
 
-	getReadVars(node.getInitializer());
+	setStatement(node.getParent());
 
 	return false;
     }
 
-    public void getReadVars(ASTNode node)
+    public void setStatement(ASTNode node)
     {
-	if (node == null)
-	    return;
-	StatementReadVariableVisitor srvv = new StatementReadVariableVisitor();
-	node.accept(srvv);
-	readVars.put(methodName + "-" + counter + ".xml", srvv.readVars);
-	counter++;
+	statements.add((Statement) node);
     }
     
     
@@ -95,19 +84,6 @@ public class ReadVariableVisitor extends ASTVisitor
     public boolean visit(DoStatement node)
     {
 	return false;
-    }
-    
-    
-    
-
-    public Map<String, Set<SimpleName>> getReadVars()
-    {
-	return readVars;
-    }
-
-    public void setReadVars(Map<String, Set<SimpleName>> readVars)
-    {
-	this.readVars = readVars;
     }
 
 }

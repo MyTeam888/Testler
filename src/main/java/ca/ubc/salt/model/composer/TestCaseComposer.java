@@ -587,10 +587,14 @@ public class TestCaseComposer
 			if (methodName.equals(stmtMethodName))
 			{
 
-			    List stmts = m.getMethodDec().getBody().statements();
+//			    List stmts = m.getMethodDec().getBody().statements();
 			    int index = getTestStatementNumber(stmt.getName());
-			    if (0 <= index && index < stmts.size())
-				stmt.statement = (Statement) stmts.get(index);
+//			    if (0 <= index && index < stmts.size())
+//				stmt.statement = (Statement) stmts.get(index);
+			    StatementNumberingVisitor snv = new StatementNumberingVisitor();
+			    m.getMethodDec().accept(snv);
+			    if (0 <= index && index < snv.statements.size())
+				stmt.statement = snv.statements.get(index);
 			    break;
 			}
 		    }
