@@ -31,6 +31,8 @@ import org.eclipse.jdt.core.dom.WhileStatement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 
+import ca.ubc.salt.model.utils.Utils;
+
 public class InstrumenterVisitor extends ASTVisitor
 {
     LinkedList<VariableDeclarationFragment> varDecs = new LinkedList<VariableDeclarationFragment>();
@@ -98,7 +100,7 @@ public class InstrumenterVisitor extends ASTVisitor
 	if (node.getInitializer() != null)
 	{
 	    varDecs.add(node);
-	    addDumpCode(node.getParent());
+	    addDumpCode(node.getParent(), false);
 	} else
 	{
 	    unassignedVars.put(node.getName().toString(), node);
@@ -111,42 +113,42 @@ public class InstrumenterVisitor extends ASTVisitor
     
     public boolean visit(IfStatement node)
     {
-	addDumpCode(node);
+	addDumpCode(node, true);
 	return false;
     }
     public boolean visit(WhileStatement node)
     {
-	addDumpCode(node);
+	addDumpCode(node, true);
 	return false;
     }
     public boolean visit(EnhancedForStatement node)
     {
-	addDumpCode(node);
+	addDumpCode(node, true);
 	return false;
     }
     public boolean visit(ForStatement node)
     {
-	addDumpCode(node);
+	addDumpCode(node, true);
 	return false;
     }
     public boolean visit(TryStatement node)
     {
-	addDumpCode(node);
+	addDumpCode(node, true);
 	return false;
     }
     public boolean visit(SwitchStatement node)
     {
-	addDumpCode(node);
+	addDumpCode(node, true);
 	return false;
     }
     public boolean visit(SwitchCase node)
     {
-	addDumpCode(node);
+	addDumpCode(node, true);
 	return false;
     }
     public boolean visit(DoStatement node)
     {
-	addDumpCode(node);
+	addDumpCode(node, true);
 	return false;
     }
     
@@ -169,23 +171,26 @@ public class InstrumenterVisitor extends ASTVisitor
 
 	}
 	if (exp.getNodeType() != ASTNode.RETURN_STATEMENT)
-	    addDumpCode(exp);
+	    addDumpCode(exp, false);
 	// System.out.println(node.toString());
 	// System.out.println(varDecs);
 	return false;
     }
 
-    private void addDumpCode(ASTNode node)
+    private void addDumpCode(ASTNode node, boolean loop)
     {
 	ASTNode newCode = TestClassInstrumenter.generateInstrumentationBlock(randomNumber, varDecs, methodName,
 		counter++);
 
+	ASTNode loopCode = Utils.createBlockWithText("InstrumentClassGenerator.traceLoop();");
 	ASTNode parent = node.getParent();
 	ListRewrite listRewrite;
 	if ((parent instanceof Block))
 	{
 	    listRewrite = astRewrite.getListRewrite(parent, Block.STATEMENTS_PROPERTY);
 	    listRewrite.insertAfter(newCode, node, null);
+	    if (loop)
+		listRewrite.insertBefore(loopCode, node, null);
 	} else
 	{
 	    // TODO fill here create a new node and replace it parent list

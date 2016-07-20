@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.PriorityQueue;
 import java.util.Set;
 
@@ -116,13 +117,18 @@ public class IncrementalTestMerger
 	fr.close();
 
 	List<Pair<Set<String>, List<List<TestStatement>>>> mergedTestCases = new LinkedList<Pair<Set<String>, List<List<TestStatement>>>>();
+	
+	int totalBeforeMerging = 0, totalAftermerging = 0;
 
 	for (Set<String> connectedComponent : connectedComponents)
 	{
 	    if (connectedComponent.size() < 2)
 		continue;
 
-	    System.out.println(connectedComponentsMap);
+//	    System.out.println(connectedComponentsMap);
+	    
+	    
+	    Settings.consoleLogger.error(String.format("merging %s", connectedComponent.toString()));
 
 	    // connectedComponent = new HashSet<String>();
 	    //// connectedComponent.add("ComplexTest.testReciprocal");
@@ -155,6 +161,8 @@ public class IncrementalTestMerger
 
 	    Map<String, TestStatement> allTestStatements = getAllTestStatements(allStates, graph);
 	    TestCaseComposer.populateStateField(allTestStatements.values());
+	    
+	    Set<String> assertions = getAllAssertions(allTestStatements);
 
 	    do
 	    {
@@ -166,10 +174,11 @@ public class IncrementalTestMerger
 		do
 		{
 		    frontier = dijkstra(frontier.getFirst(), graph, frontier.getSecond(), readValues,
-			    connectedComponentsMap, allTestStatements);
+			    connectedComponentsMap, allTestStatements, assertions);
 		    if (frontier == null)
 			break;
 		    TestMerger.markAsCovered(frontier.getFirst(), connectedComponentsMap);
+		    assertions.remove(frontier.getFirst().getName());
 		    path.add(frontier.getFirst());
 		} while (frontier != null);
 
@@ -187,15 +196,45 @@ public class IncrementalTestMerger
 		totalMerged += path.size();
 	    Settings.consoleLogger.error(String.format("Before Merging : %d, After Merging %d, saved : %d",
 		    totalNumberOfStatements, totalMerged, totalNumberOfStatements - totalMerged));
-
+	    
+	    totalBeforeMerging += totalNumberOfStatements;
+	    totalAftermerging += totalMerged;
 	}
 
-	// TestCaseComposer.composeTestCases(mergedTestCases);
+	Settings.consoleLogger.error(String.format("Before merging : %d, After merging : %d", totalBeforeMerging, totalAftermerging));
+//	 TestCaseComposer.composeTestCases(mergedTestCases);
+    }
+    
+    
+    
+    public static Set<String> getAllAssertions( Map<String, TestStatement> allTestStatements)
+    {
+	Set<String> assertions = new HashSet<String>();
+	for (Entry<String, TestStatement> entry : allTestStatements.entrySet())
+	{
+	    TestStatement stmt = entry.getValue();
+	    if (isAssertion(stmt))
+		assertions.add(entry.getKey());
+	}
+	
+	return assertions;
+    }
+    
+    public static boolean isAssertion(TestStatement statement)
+    {
+	
+	//TODO check for indirect assertion checking
+	if (statement.statement == null)
+	    return false;
+	String str = statement.statement.toString();
+	if (str.toLowerCase().contains("assert"))
+	    return true;
+	return false;
     }
 
     public static Pair<TestStatement, RunningState> dijkstra(TestStatement root, Map<String, TestState> graph,
 	    RunningState runningState, Map<String, Set<String>> readValues,
-	    Map<String, List<String>> connectedComponentsMap, Map<String, TestStatement> testStatementMap)
+	    Map<String, List<String>> connectedComponentsMap, Map<String, TestStatement> testStatementMap, Set<String> assertions)
 	    throws CloneNotSupportedException
     {
 
@@ -216,7 +255,7 @@ public class IncrementalTestMerger
 
 	    visited.add(parent);
 
-	    if (connectedComponentsMap.containsKey(parent.getName()))
+	    if (connectedComponentsMap.containsKey(parent.getName()) || assertions.contains(parent.getName()))
 	    {
 		return new Pair<TestStatement, RunningState>(parent, runningState.clone());
 	    }

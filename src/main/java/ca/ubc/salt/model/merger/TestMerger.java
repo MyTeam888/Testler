@@ -196,6 +196,8 @@ public class TestMerger
 	if (stmt == null)
 	    return;
 	List<String> equivalentStatements = connectedComponentsMap.get(stmt.getName());
+	if (equivalentStatements == null)
+	    return;
 	for (String st : equivalentStatements)
 	{
 	    connectedComponentsMap.remove(st);

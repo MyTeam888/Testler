@@ -325,31 +325,30 @@ public class TestCaseComposer
 	    {
 		if (clazz.getTypeDec().getName().toString().equals(testClassName))
 		{
-		    // ListRewrite listRewrite =
-		    // rewriter.getListRewrite(clazz.getTypeDec(),
-		    // TypeDeclaration.BODY_DECLARATIONS_PROPERTY);
-		    //
-		    //
-		    // removeTestCasesFromTestClass(clazz, testCasesOfClass,
-		    // listRewrite);
-		    //
-		    //
-		    // if (testClassName.equals(mainClassName))
-		    // addMergedTestCase(path, name, clazz, listRewrite);
+		    ListRewrite listRewrite = rewriter.getListRewrite(clazz.getTypeDec(),
+			    TypeDeclaration.BODY_DECLARATIONS_PROPERTY);
+
+		    removeTestCasesFromTestClass(clazz, testCasesOfClass, listRewrite);
+
+		    if (testClassName.equals(mainClassName))
+		    {
+			Settings.consoleLogger.error(String.format("adding %s to %s", name, testClassName));
+			addMergedTestCase(path, name, clazz, listRewrite);
+		    }
 
 		    System.out.println(getMergedMethod(path, name, clazz.getTypeDec().getAST()).toString());
 		}
 	    }
-	    // TextEdit edits = rewriter.rewriteAST(document, null);
-	    // try
-	    // {
-	    // edits.apply(document);
-	    // } catch (MalformedTreeException | BadLocationException e)
-	    // {
-	    // e.printStackTrace();
-	    // }
+	     TextEdit edits = rewriter.rewriteAST(document, null);
+	     try
+	     {
+	     edits.apply(document);
+	     } catch (MalformedTreeException | BadLocationException e)
+	     {
+	     e.printStackTrace();
+	     }
 
-	    // Utils.writebackSourceCode(document, testClassPath);
+//	     Utils.writebackSourceCode(document, testClassPath);
 	    // System.out.println(document.get());
 
 	    testClasses.remove(testClassName);
@@ -431,6 +430,7 @@ public class TestCaseComposer
     private static void removeTestCasesFromTestClass(ClassModel clazz, Set<String> testCasesOfClass,
 	    ListRewrite listRewrite)
     {
+	Settings.consoleLogger.error(String.format("removing %s from %s", testCasesOfClass, clazz.getTypeDec().getName().toString()));
 	List<Method> methods = clazz.getMethods();
 
 	for (Method m : methods)
@@ -587,10 +587,11 @@ public class TestCaseComposer
 			if (methodName.equals(stmtMethodName))
 			{
 
-//			    List stmts = m.getMethodDec().getBody().statements();
+			    // List stmts =
+			    // m.getMethodDec().getBody().statements();
 			    int index = getTestStatementNumber(stmt.getName());
-//			    if (0 <= index && index < stmts.size())
-//				stmt.statement = (Statement) stmts.get(index);
+			    // if (0 <= index && index < stmts.size())
+			    // stmt.statement = (Statement) stmts.get(index);
 			    StatementNumberingVisitor snv = new StatementNumberingVisitor();
 			    m.getMethodDec().accept(snv);
 			    if (0 <= index && index < snv.statements.size())
