@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -17,8 +18,10 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
@@ -103,7 +106,7 @@ public class TestCaseComposer
 
     }
 
-    public static List<SimpleName> getSimpleNamesInTheStatement(Statement statement, Set<SimpleName> vars)
+    public static List<SimpleName> getSimpleNamesInTheStatement(ASTNode statement, Set<SimpleName> vars)
     {
 	if (statement == null)
 	    return null;
@@ -121,10 +124,10 @@ public class TestCaseComposer
 
     }
 
-    public static Statement rename(Statement stmt, Set<SimpleName> vars, Map<String, String> renameSet)
+    public static ASTNode rename(ASTNode stmt, Set<SimpleName> vars, Map<String, String> renameSet)
     {
 
-	Statement cpyStmt = (Statement) ASTNode.copySubtree(stmt.getAST(), stmt);
+	ASTNode cpyStmt = ASTNode.copySubtree(stmt.getAST(), stmt);
 	List<SimpleName> cpyVars = getSimpleNamesInTheStatement(cpyStmt, vars);
 	for (SimpleName var : cpyVars)
 	{
@@ -186,7 +189,7 @@ public class TestCaseComposer
 
 	try
 	{
-	    writeBackMergedTestCases(path, renamedStatements, testCases, name);
+	    writeBackMergedTestCases(path, testCases, name);
 	} catch (IOException e)
 	{
 	    // TODO Auto-generated catch block
@@ -233,6 +236,14 @@ public class TestCaseComposer
 	    Statement stmt = statement.statement;
 	    StatementFieldVisitor sfv = new StatementFieldVisitor(fieldVars);
 	    stmt.accept(sfv);
+	    HashMap<String, String> renameMap = new HashMap<String, String>();
+	    for (SimpleName sn : sfv.fields)
+	    {
+		renameMap.put(sn.getIdentifier(), sn.getIdentifier() + "_" + sfv.className);
+	    }
+
+	    Statement renamedStmt = (Statement) rename(statement.refactoredStatement, sfv.fields, renameMap);
+	    statement.refactoredStatement = renamedStmt;
 	}
 
 	for (Entry<String, Set<String>> entry : fieldVars.entrySet())
@@ -254,7 +265,8 @@ public class TestCaseComposer
 	    {
 		source = FileUtils.readFileToString(testClassPath);
 		Document document = new Document(source);
-		List<ClassModel> classes = ClassModel.getClasses(document.get());
+		List<ClassModel> classes = ClassModel.getClasses(document.get(), true, testClassPath,
+			new String[] { Settings.PROJECT_PATH }, new String[] { Settings.LIBRARY_JAVA });
 		for (ClassModel clazz : classes)
 		{
 		    List<FieldDeclaration> classFields = clazz.getFields();
@@ -268,7 +280,12 @@ public class TestCaseComposer
 				SimpleName varInFieldDec = varDec.getName();
 				if (usedFields.contains(varInFieldDec.getIdentifier()))
 				{
-				    fieldDecStatements.add(fieldDec);
+				    Set<SimpleName> varSet = new HashSet<SimpleName>();
+				    varSet.add(varInFieldDec);
+				    Map<String, String> renameMap = new HashMap<String, String>();
+				    renameMap.put(varInFieldDec.getIdentifier(),
+					    varInFieldDec.getIdentifier() + "_" + className);
+				    fieldDecStatements.add((FieldDeclaration) rename(fieldDec, varSet, renameMap));
 				}
 
 			    }
@@ -295,7 +312,72 @@ public class TestCaseComposer
 	}
     }
 
-    private static void writeBackMergedTestCases(List<TestStatement> originalStatements, List<ASTNode> path,
+    public static void getNonTestMethods(ClassModel clazz, List<Method> testMethods)
+    {
+	List<Method> methods = clazz.getMethods();
+	for (Method method : methods)
+	{
+	    if (!method.isTestMethod())
+		testMethods.add(method);
+	}
+    }
+
+    public static List<MethodInvocation> getTestMethodInvocations(TestStatement stmt)
+    {
+	TestMethodInvocationVisitor smiv = new TestMethodInvocationVisitor(
+		Utils.getTestClassNameFromTestStatement(stmt.getName()));
+	stmt.statement.accept(smiv);
+	return smiv.getMethodInvocations();
+    }
+
+    public static List<MethodInvocation> getMethodInvocations(Statement stmt)
+    {
+	MethodInvocationVisitor smiv = new MethodInvocationVisitor();
+	stmt.accept(smiv);
+	return smiv.getMethodInvocations();
+    }
+
+    public static Statement renameMethodInvocs(TestStatement stmt)
+    {
+	Statement cpyStmt = (Statement) ASTNode.copySubtree(stmt.refactoredStatement.getAST(),
+		stmt.refactoredStatement);
+	List<MethodInvocation> methodInvocs = getMethodInvocations(cpyStmt);
+	List<MethodInvocation> testMethodInvocation = getTestMethodInvocations(stmt);
+	Set<String> testMethodNames = Utils.getNames(testMethodInvocation);
+	for (MethodInvocation methodCall : methodInvocs)
+	{
+	    if (testMethodNames.contains(methodCall.getName().getIdentifier()))
+	    {
+		String renamedVar = methodCall.getName().getIdentifier() + "_"
+			+ Utils.getTestClassNameFromTestStatement(stmt.getName());
+		methodCall.setName(methodCall.getAST().newSimpleName(renamedVar));
+	    }
+	}
+	return cpyStmt;
+    }
+
+    public static void renameMethodCalls(List<TestStatement> originalStatements, String mainClass)
+    {
+	for (TestStatement statement : originalStatements)
+	{
+	    if (statement.statement == null)
+		continue;
+	    if (!mainClass.equals(Utils.getTestClassNameFromTestStatement(statement.getName())))
+		statement.refactoredStatement = renameMethodInvocs(statement);
+	}
+    }
+
+    public static List<ASTNode> getPathFromStatements(List<TestStatement> statements)
+    {
+	List<ASTNode> path = new ArrayList<ASTNode>();
+	for (TestStatement stmt : statements)
+	{
+	    path.add(stmt.refactoredStatement);
+	}
+	return path;
+    }
+    
+    private static void writeBackMergedTestCases(List<TestStatement> originalStatements,
 	    Set<String> testCases, String name) throws IOException
     {
 
@@ -304,17 +386,22 @@ public class TestCaseComposer
 
 	String mainClassName = getTestClassWithMaxNumberOfTestCases(testClasses);
 
+	renameMethodCalls(originalStatements, mainClassName);
+	
+	List<ASTNode> path = getPathFromStatements(originalStatements);
+	
 	addFieldDecsToPath(getRequiredFieldDecs(originalStatements, mainClassName), path);
+
+	Set<String> imports = new HashSet<String>();
+
+	List<Method> nonTestMethods = new ArrayList<Method>();
 
 	while (!testClasses.isEmpty())
 	{
 
 	    String testClassName = getTestClassWithMaxNumberOfTestCases(testClasses);
 
-	    String testClassPath = Utils.getClassFileForProjectPath(testClassName, Settings.PROJECT_MERGED_PATH);
-
-	    String source = FileUtils.readFileToString(testClassPath);
-	    Document document = new Document(source);
+	    Document document = getDocumentForClassName(testClassName);
 	    List<ClassModel> classes = ClassModel.getClasses(document.get());
 
 	    Set<String> testCasesOfClass = testClasses.get(testClassName);
@@ -325,6 +412,7 @@ public class TestCaseComposer
 	    {
 		if (clazz.getTypeDec().getName().toString().equals(testClassName))
 		{
+
 		    ListRewrite listRewrite = rewriter.getListRewrite(clazz.getTypeDec(),
 			    TypeDeclaration.BODY_DECLARATIONS_PROPERTY);
 
@@ -334,21 +422,27 @@ public class TestCaseComposer
 		    {
 			Settings.consoleLogger.error(String.format("adding %s to %s", name, testClassName));
 			addMergedTestCase(path, name, clazz, listRewrite);
+		    } else
+		    {
+			getNonTestMethods(clazz, nonTestMethods);
+			// adding other imports
+			getAllImports(imports, clazz);
 		    }
 
 		    System.out.println(getMergedMethod(path, name, clazz.getTypeDec().getAST()).toString());
 		}
 	    }
-	     TextEdit edits = rewriter.rewriteAST(document, null);
-	     try
-	     {
-	     edits.apply(document);
-	     } catch (MalformedTreeException | BadLocationException e)
-	     {
-	     e.printStackTrace();
-	     }
+	    TextEdit edits = rewriter.rewriteAST(document, null);
+	    try
+	    {
+		edits.apply(document);
+	    } catch (MalformedTreeException | BadLocationException e)
+	    {
+		e.printStackTrace();
+	    }
 
-//	     Utils.writebackSourceCode(document, testClassPath);
+	    Utils.writebackSourceCode(document,
+		    Utils.getClassFileForProjectPath(testClassName, Settings.PROJECT_MERGED_PATH));
 	    // System.out.println(document.get());
 
 	    testClasses.remove(testClassName);
@@ -357,6 +451,74 @@ public class TestCaseComposer
 	    // if they have variables var with isField() add TestClass x = new
 	    // TestClass(); var -> x.var
 	}
+
+	addImportsAndNonTestMethodsToMainClass(nonTestMethods, mainClassName, imports);
+    }
+
+    private static void getAllImports(Set<String> imports, ClassModel clazz)
+    {
+	for (Object obj : clazz.getCu().imports())
+	{
+	    if (obj instanceof ImportDeclaration)
+	    {
+		ImportDeclaration imDec = (ImportDeclaration) obj;
+		imports.add(imDec.getName().getFullyQualifiedName());
+	    }
+	}
+    }
+
+    private static void addNonTestMethods(List<Method> nonTestMethods, Document document, String testClassName)
+    {
+	try
+	{
+	    List<ClassModel> classes = ClassModel.getClasses(document.get());
+	    ASTRewrite rewriter = ASTRewrite.create(classes.get(0).getCu().getAST());
+	    for (ClassModel clazz : classes)
+	    {
+		if (clazz.getTypeDec().getName().toString().equals(testClassName))
+		{
+		    ListRewrite listRewrite = rewriter.getListRewrite(clazz.getTypeDec(),
+			    TypeDeclaration.BODY_DECLARATIONS_PROPERTY);
+		    List bodyDecs = clazz.getTypeDec().bodyDeclarations();
+
+		    for (Method nonTestMethod : nonTestMethods)
+		    {
+			AST ast = clazz.getTypeDec().getAST();
+			MethodDeclaration methodCpy = (MethodDeclaration) ASTNode.copySubtree(ast,
+				nonTestMethod.getMethodDec());
+			methodCpy.setName(ast.newSimpleName(nonTestMethod.getMethodDec().getName().toString() + "_"
+				+ nonTestMethod.getClassName()));
+			listRewrite.insertLast(methodCpy, null);
+		    }
+		}
+	    }
+	    TextEdit edits = rewriter.rewriteAST(document, null);
+	    edits.apply(document);
+
+	} catch (IOException | MalformedTreeException | BadLocationException e)
+	{
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
+    }
+
+    private static void addImportsAndNonTestMethodsToMainClass(List<Method> nonTestMethods, String mainClassName,
+	    Set<String> imports) throws IOException
+    {
+	Document document = getDocumentForClassName(mainClassName);
+	addNonTestMethods(nonTestMethods, document, mainClassName);
+	Utils.addImports(document, imports);
+	Utils.writebackSourceCode(document,
+		Utils.getClassFileForProjectPath(mainClassName, Settings.PROJECT_MERGED_PATH));
+    }
+
+    private static Document getDocumentForClassName(String testClassName) throws IOException
+    {
+	String testClassPath = Utils.getClassFileForProjectPath(testClassName, Settings.PROJECT_MERGED_PATH);
+
+	String source = FileUtils.readFileToString(testClassPath);
+	Document document = new Document(source);
+	return document;
     }
 
     private static void addMergedTestCase(List<ASTNode> path, String name, ClassModel clazz, ListRewrite listRewrite)
@@ -430,7 +592,8 @@ public class TestCaseComposer
     private static void removeTestCasesFromTestClass(ClassModel clazz, Set<String> testCasesOfClass,
 	    ListRewrite listRewrite)
     {
-	Settings.consoleLogger.error(String.format("removing %s from %s", testCasesOfClass, clazz.getTypeDec().getName().toString()));
+	// Settings.consoleLogger.error(String.format("removing %s from %s",
+	// testCasesOfClass, clazz.getTypeDec().getName().toString()));
 	List<Method> methods = clazz.getMethods();
 
 	for (Method m : methods)
@@ -461,7 +624,7 @@ public class TestCaseComposer
 
 	valueNamePairForCurrentState.update(statement.getName(), renameMap, varsName);
 
-	return rename(statement.statement, vars, renameMap);
+	return (Statement) rename(statement.statement, vars, renameMap);
     }
 
     private static List<ASTNode> performRenaming(List<TestStatement> path)
@@ -476,7 +639,8 @@ public class TestCaseComposer
 	    if (statement.statement == null)
 		continue;
 
-	    ASTNode renamedStatement = renameTestStatement(statement, valueNamePairForCurrentState);
+	    Statement renamedStatement = renameTestStatement(statement, valueNamePairForCurrentState);
+	    statement.refactoredStatement = renamedStatement;
 	    renamedStatements.add(renamedStatement);
 	}
 

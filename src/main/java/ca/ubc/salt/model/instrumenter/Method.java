@@ -202,5 +202,41 @@ public class Method
     {
 	return this.className + "." + this.methodDec.getName().toString();
     }
+    
+    public boolean isTestMethod()
+    {
+
+	// if
+	// (method.methodDec.getName().toString().toLowerCase().contains("test"))
+	// return true;
+
+	List<NormalAnnotation> modifs = this.methodDec.modifiers();
+	AST ast = this.methodDec.getAST();
+	for (Object obj : modifs)
+	{
+	    if (obj instanceof MarkerAnnotation)
+	    {
+		MarkerAnnotation ma = (MarkerAnnotation) obj;
+		if (ma.getTypeName().getFullyQualifiedName().contains("Test"))
+		{
+		    return true;
+		}
+	    }
+	}
+
+	return false;
+    }
+
+    public String getClassName()
+    {
+        return className;
+    }
+
+    public void setClassName(String className)
+    {
+        this.className = className;
+    }
+    
+    
 
 }

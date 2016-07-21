@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Statement;
 
 public class TestStatement extends TestModelNode
@@ -13,6 +14,7 @@ public class TestStatement extends TestModelNode
     TestState start, end;
     String name;
     public Statement statement;
+    public Statement refactoredStatement;
     String methodCall;
     String input;
 

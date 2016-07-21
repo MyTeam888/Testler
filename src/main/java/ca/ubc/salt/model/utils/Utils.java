@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,15 +23,22 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.core.dom.ImportDeclaration;
+import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
+import org.eclipse.text.edits.MalformedTreeException;
+import org.eclipse.text.edits.TextEdit;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
 
 import Comparator.NaturalOrderComparator;
+import ca.ubc.salt.model.instrumenter.TestClassInstrumenter;
 
 public class Utils
 {
@@ -162,7 +170,7 @@ public class Utils
 	return Utils.classFileMapping.get(className);
     }
 
-    private static String getTestClassNameFromTestCase(String testCase)
+    public static String getTestClassNameFromTestCase(String testCase)
     {
 	int index = testCase.lastIndexOf('.');
 	String className = testCase.substring(0, index);
@@ -266,6 +274,24 @@ public class Utils
 	String[] split = state.split("-");
 	return split;
     }
+    
+    
+    public static String getTestClassNameFromTestStatement(String testStatement)
+    {
+	int index = testStatement.indexOf('.');
+	return testStatement.substring(0, index);
+    }
+    
+    public static Set<String> getNames(Collection<MethodInvocation> methodCalls)
+    {
+	Set<String> nameSet = new HashSet<String>();
+	for (MethodInvocation mi : methodCalls)
+	{
+	    nameSet.add(mi.getName().getIdentifier());
+	}
+	
+	return nameSet;
+    }
 
     public static Set<String> getNameSet(Set<SimpleName> readVars)
     {
@@ -292,5 +318,54 @@ public class Utils
 	    e.printStackTrace();
 	}
     }
+
+    public static void addImports(Document document, Collection<String> imports)
+    {
+        ASTParser parser = ASTParser.newParser(AST.JLS8);
+        parser.setKind(ASTParser.K_COMPILATION_UNIT);
+        Map<String, String> pOptions = JavaCore.getOptions();
+        pOptions.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_8);
+        pOptions.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_8);
+        pOptions.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_8);
+        parser.setCompilerOptions(pOptions);
+    
+        parser.setSource(document.get().toCharArray());
+        CompilationUnit cu = (CompilationUnit) parser.createAST(null);
+    
+        addImports(document, imports, cu);
+    
+    }
+
+    private static void addImports(Document document, Collection<String> imports, CompilationUnit cu)
+    {
+	cu.recordModifications();
+    
+        // String[] imports = new String[] { "java.io.FileWriter",
+        // "java.io.IOException", "java.io.ObjectOutputStream",
+        // "com.thoughtworks.xstream.XStream",
+        // "com.thoughtworks.xstream.io.xml.StaxDriver" };
+        for (String name : imports)
+            addImport(cu, name);
+    
+        TextEdit edits = cu.rewrite(document, null);
+    
+        try
+	{
+	    edits.apply(document);
+	} catch (MalformedTreeException | BadLocationException e)
+	{
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
+    }
+    
+    public static void addImport(CompilationUnit cu, String name)
+    {
+	AST ast = cu.getAST();
+	ImportDeclaration imp = ast.newImportDeclaration();
+	imp.setName(ast.newName(name));
+	cu.imports().add(imp);
+    }
+
 
 }

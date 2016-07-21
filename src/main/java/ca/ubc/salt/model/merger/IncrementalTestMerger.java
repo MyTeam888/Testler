@@ -185,7 +185,7 @@ public class IncrementalTestMerger
 		List<TestStatement> mergedPath = TestMerger.returnThePath(root, path);
 		paths.add(mergedPath);
 
-		TestCaseComposer.composeTestCase(TestMerger.returnThePath(root, path), connectedComponent,
+		TestCaseComposer.composeTestCase(mergedPath, connectedComponent,
 			TestCaseComposer.generateTestCaseName(connectedComponent));
 
 	    } while (first != null);

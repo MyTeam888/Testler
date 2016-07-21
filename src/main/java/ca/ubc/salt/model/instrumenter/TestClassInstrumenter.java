@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.io.FilenameUtils;
 import org.eclipse.core.internal.utils.FileUtil;
@@ -19,11 +18,9 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -94,7 +91,7 @@ public class TestClassInstrumenter
 	ASTRewrite rewriter = ASTRewrite.create(srcClass.cu.getAST());
 	for (Method method : methods)
 	{
-	    if (isTestMethod(method))
+	    if (method.isTestMethod())
 		method.instrumentTestMethod(rewriter, document, null, fileName, !method.getMethodDec().isConstructor());
 	}
 	TextEdit edits = rewriter.rewriteAST(document, null);
@@ -112,72 +109,14 @@ public class TestClassInstrumenter
 
 	edits.apply(newDocument);
 
-	addImports(newDocument);
+	Utils.addImports(newDocument, Arrays.asList(new String[] { "instrument.InstrumentClassGenerator" }));
 
 	return newDocument;
 
     }
 
-    public static void addImports(Document document) throws MalformedTreeException, BadLocationException
-    {
-	ASTParser parser = ASTParser.newParser(AST.JLS8);
-	parser.setKind(ASTParser.K_COMPILATION_UNIT);
-	Map<String, String> pOptions = JavaCore.getOptions();
-	pOptions.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_8);
-	pOptions.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_8);
-	pOptions.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_8);
-	parser.setCompilerOptions(pOptions);
-
-	parser.setSource(document.get().toCharArray());
-	CompilationUnit cu = (CompilationUnit) parser.createAST(null);
-
-	cu.recordModifications();
-
-	// String[] imports = new String[] { "java.io.FileWriter",
-	// "java.io.IOException", "java.io.ObjectOutputStream",
-	// "com.thoughtworks.xstream.XStream",
-	// "com.thoughtworks.xstream.io.xml.StaxDriver" };
-	String[] imports = new String[] { "instrument.InstrumentClassGenerator" };
-	for (String name : imports)
-	    addImport(cu, name);
-
-	TextEdit edits = cu.rewrite(document, null);
-
-	edits.apply(document);
-
-    }
-
-    private static void addImport(CompilationUnit cu, String name)
-    {
-	AST ast = cu.getAST();
-	ImportDeclaration imp = ast.newImportDeclaration();
-	imp.setName(ast.newName(name));
-	cu.imports().add(imp);
-    }
-
-    public static boolean isTestMethod(Method method)
-    {
-
-	// if
-	// (method.methodDec.getName().toString().toLowerCase().contains("test"))
-	// return true;
-
-	List<NormalAnnotation> modifs = method.methodDec.modifiers();
-	AST ast = method.methodDec.getAST();
-	for (Object obj : modifs)
-	{
-	    if (obj instanceof MarkerAnnotation)
-	    {
-		MarkerAnnotation ma = (MarkerAnnotation) obj;
-		if (ma.getTypeName().getFullyQualifiedName().contains("Test"))
-		{
-		    return true;
-		}
-	    }
-	}
-
-	return false;
-    }
+   
+    
     // public static void instrumentClass2(String testClassPath) throws
     // IOException
     // {
