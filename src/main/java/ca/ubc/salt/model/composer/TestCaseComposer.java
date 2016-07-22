@@ -185,11 +185,11 @@ public class TestCaseComposer
 
 	populateStateField(path);
 
-	List<ASTNode> renamedStatements = performRenaming(path);
+	List<TestStatement> renamedStatements = performRenaming(path);
 
 	try
 	{
-	    writeBackMergedTestCases(path, testCases, name);
+	    writeBackMergedTestCases(renamedStatements, testCases, name);
 	} catch (IOException e)
 	{
 	    // TODO Auto-generated catch block
@@ -627,10 +627,10 @@ public class TestCaseComposer
 	return (Statement) rename(statement.statement, vars, renameMap);
     }
 
-    private static List<ASTNode> performRenaming(List<TestStatement> path)
+    private static List<TestStatement> performRenaming(List<TestStatement> path)
     {
 
-	List<ASTNode> renamedStatements = new LinkedList<ASTNode>();
+	List<TestStatement> renamedStatements = new LinkedList<TestStatement>();
 
 	RunningState valueNamePairForCurrentState = new RunningState();
 	for (TestStatement statement : path)
@@ -639,9 +639,22 @@ public class TestCaseComposer
 	    if (statement.statement == null)
 		continue;
 
+	    TestStatement cpyStatement = null;
+	    try
+	    {
+		cpyStatement = statement.clone();
+	    } catch (CloneNotSupportedException e)
+	    {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	    }
+	    
+	    if (statement.statement.toString().contains("Array2DRowRealMatrix m2"))
+		System.out.println();
+	    
 	    Statement renamedStatement = renameTestStatement(statement, valueNamePairForCurrentState);
-	    statement.refactoredStatement = renamedStatement;
-	    renamedStatements.add(renamedStatement);
+	    cpyStatement.refactoredStatement = renamedStatement;
+	    renamedStatements.add(cpyStatement);
 	}
 
 	return renamedStatements;
@@ -750,16 +763,17 @@ public class TestCaseComposer
 			String methodName = m.getMethodDec().getName().toString();
 			if (methodName.equals(stmtMethodName))
 			{
-
-			    // List stmts =
-			    // m.getMethodDec().getBody().statements();
+//			    if (methodName.equals("testSetSubMatrix") && filePath.contains("Array2DRowRealMatrixTest"))
+//				System.out.println();
+			     List stmts =
+			     m.getMethodDec().getBody().statements();
 			    int index = getTestStatementNumber(stmt.getName());
-			    // if (0 <= index && index < stmts.size())
-			    // stmt.statement = (Statement) stmts.get(index);
-			    StatementNumberingVisitor snv = new StatementNumberingVisitor();
-			    m.getMethodDec().accept(snv);
-			    if (0 <= index && index < snv.statements.size())
-				stmt.statement = snv.statements.get(index);
+			     if (0 <= index && index < stmts.size())
+			     stmt.statement = (Statement) stmts.get(index);
+//			    StatementNumberingVisitor snv = new StatementNumberingVisitor();
+//			    m.getMethodDec().accept(snv);
+//			    if (0 <= index && index < snv.statements.size())
+//				stmt.statement = snv.statements.get(index);
 			    break;
 			}
 		    }

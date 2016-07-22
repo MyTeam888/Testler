@@ -55,34 +55,42 @@ public class StatementNumberingVisitor extends ASTVisitor
     
     public boolean visit(IfStatement node)
     {
+	setStatement(node.getParent());
 	return false;
     }
     public boolean visit(WhileStatement node)
     {
+	setStatement(node.getParent());
 	return false;
     }
     public boolean visit(EnhancedForStatement node)
     {
+	setStatement(node.getParent());
 	return false;
     }
     public boolean visit(ForStatement node)
     {
+	setStatement(node.getParent());
 	return false;
     }
     public boolean visit(TryStatement node)
     {
+	setStatement(node.getParent());
 	return false;
     }
     public boolean visit(SwitchStatement node)
     {
+	setStatement(node.getParent());
 	return false;
     }
     public boolean visit(SwitchCase node)
     {
+	setStatement(node.getParent());
 	return false;
     }
     public boolean visit(DoStatement node)
     {
+	setStatement(node.getParent());
 	return false;
     }
 

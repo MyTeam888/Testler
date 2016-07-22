@@ -63,6 +63,8 @@ public class TestStatement extends TestModelNode
     public String toString()
     {
 	// TODO Auto-generated method stub
+	if (this.refactoredStatement != null)
+	    return this.refactoredStatement.toString();
 	if (this.statement != null)
 	    return this.statement.toString();
 	else
@@ -100,6 +102,7 @@ public class TestStatement extends TestModelNode
 	
         TestStatement clone = new TestStatement(this.start, this.end, this.name);
         clone.statement= this.statement;
+        clone.refactoredStatement = this.refactoredStatement;
         return clone;
         
     }
