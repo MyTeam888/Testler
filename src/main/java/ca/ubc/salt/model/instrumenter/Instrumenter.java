@@ -26,9 +26,10 @@ public class Instrumenter
 {
 
     static HashMap<String, String> classFileMapping = new HashMap<String, String>();
+
     public static void main(String[] args)
     {
-	 Utils.copyProject(Settings.PROJECT_PATH, Settings.PROJECT_INSTRUMENTED_PATH);
+	Utils.copyProject(Settings.PROJECT_PATH, Settings.PROJECT_INSTRUMENTED_PATH);
 	try
 	{
 	    instrumentClass(Settings.PROJECT_PATH);
@@ -77,8 +78,12 @@ public class Instrumenter
 		Settings.consoleLogger.info(String.format("test : %s", classPath));
 		for (ClassModel clazz : classes)
 		{
-		    classFileMapping.put(clazz.typeDec.getName().toString(), fClass.getAbsolutePath());
-		    document = TestClassInstrumenter.instrumentClass(clazz, null, document, clazz.typeDec.getName().toString());
+		    if (clazz.isInstrumentable())
+		    {
+			classFileMapping.put(clazz.typeDec.getName().toString(), fClass.getAbsolutePath());
+			document = TestClassInstrumenter.instrumentClass(clazz, null, document,
+				clazz.typeDec.getName().toString());
+		    }
 		}
 	    }
 

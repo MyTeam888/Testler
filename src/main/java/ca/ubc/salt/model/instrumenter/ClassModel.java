@@ -26,6 +26,24 @@ public class ClassModel
     List<FieldDeclaration> staticFields = null;
     List<FieldDeclaration> fields = null;
     List<Method> methods = null;
+    
+    
+    public boolean isInstrumentable()
+    {
+	boolean abstrc = false;
+	for (Object obj : typeDec.modifiers())
+	{
+	    if (obj instanceof Modifier)
+	    {
+		Modifier mod = (Modifier) obj;
+		if (mod.isAbstract())
+		    abstrc = true;
+	    }
+	}
+
+	return typeDec.getSuperclassType() == null && typeDec.superInterfaceTypes().isEmpty() && !typeDec.isInterface()
+		&& !abstrc;
+    }
 
     public ClassModel(TypeDeclaration typeDec, CompilationUnit cu) throws IOException
     {

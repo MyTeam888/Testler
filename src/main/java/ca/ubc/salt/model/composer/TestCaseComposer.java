@@ -318,7 +318,7 @@ public class TestCaseComposer
 	}
     }
 
-    public static void getNonTestMethods(ClassModel clazz, List<Method> testMethods)
+    public static void getNonTestMethods(ClassModel clazz, Set<Method> testMethods)
     {
 	List<Method> methods = clazz.getMethods();
 	for (Method method : methods)
@@ -396,7 +396,7 @@ public class TestCaseComposer
 
 	Set<String> imports = new HashSet<String>();
 
-	List<Method> nonTestMethods = new ArrayList<Method>();
+	Set<Method> nonTestMethods = new HashSet<Method>();
 
 	while (!testClasses.isEmpty())
 	{
@@ -424,6 +424,7 @@ public class TestCaseComposer
 		    {
 			Settings.consoleLogger.error(String.format("adding %s to %s", name, testClassName));
 			addMergedTestCase(path, name, clazz, listRewrite);
+//			System.out.println(getMergedMethod(path, name, clazz.getTypeDec().getAST()).toString());
 		    } else
 		    {
 			getNonTestMethods(clazz, nonTestMethods);
@@ -431,7 +432,6 @@ public class TestCaseComposer
 			getAllImports(imports, clazz);
 		    }
 
-		    System.out.println(getMergedMethod(path, name, clazz.getTypeDec().getAST()).toString());
 		}
 	    }
 	    TextEdit edits = rewriter.rewriteAST(document, null);
@@ -469,7 +469,7 @@ public class TestCaseComposer
 	}
     }
 
-    private static void addNonTestMethods(List<Method> nonTestMethods, Document document, String testClassName)
+    private static void addNonTestMethods(Set<Method> nonTestMethods, Document document, String testClassName)
     {
 	try
 	{
@@ -504,7 +504,7 @@ public class TestCaseComposer
 	}
     }
 
-    private static void addImportsAndNonTestMethodsToMainClass(List<Method> nonTestMethods, String mainClassName,
+    private static void addImportsAndNonTestMethodsToMainClass(Set<Method> nonTestMethods, String mainClassName,
 	    Set<String> imports) throws IOException
     {
 	Document document = getDocumentForClassName(mainClassName);
