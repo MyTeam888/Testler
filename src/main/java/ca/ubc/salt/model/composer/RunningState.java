@@ -1,8 +1,10 @@
 package ca.ubc.salt.model.composer;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -17,12 +19,12 @@ import ca.ubc.salt.model.utils.Utils;
 public class RunningState
 {
     Map<String, String> nameValuePairForCurrentState;
-    Map<String, String> valueNamePairForCurrentState;
+    Map<String, Set<String>> valueNamePairForCurrentState;
 
     public RunningState()
     {
 	nameValuePairForCurrentState = new HashMap<String, String>();
-	valueNamePairForCurrentState = new HashMap<String, String>();
+	valueNamePairForCurrentState = new HashMap<String, Set<String>>();
     }
 
     public String getValue(String name)
@@ -30,7 +32,7 @@ public class RunningState
 	return nameValuePairForCurrentState.get(name);
     }
 
-    public String getName(String value)
+    public Set<String> getName(String value)
     {
 	return valueNamePairForCurrentState.get(value);
     }
@@ -39,9 +41,13 @@ public class RunningState
     {
 	String prevVal = this.getValue(name);
 	if (prevVal != null)
-	    valueNamePairForCurrentState.remove(prevVal);
+	{
+//	    valueNamePairForCurrentState.remove(prevVal);
+	    Utils.removeFromTheSetInMap(valueNamePairForCurrentState, prevVal, name);
+	}
 	nameValuePairForCurrentState.put(name, value);
-	valueNamePairForCurrentState.put(value, name);
+	Utils.addToTheSetInMap(valueNamePairForCurrentState, value, name);
+//	valueNamePairForCurrentState.put(value, name);
     }
 
     public void update(String prevState, Map<String, String> renameMap, Set<String> varsName)
@@ -82,7 +88,50 @@ public class RunningState
 	// TODO Auto-generated method stub
 	RunningState rs = new RunningState();
 	rs.nameValuePairForCurrentState.putAll(this.nameValuePairForCurrentState);
-	rs.valueNamePairForCurrentState.putAll(this.valueNamePairForCurrentState);
+	for (Entry<String, Set<String>> entry : this.valueNamePairForCurrentState.entrySet())
+	{
+	    Set<String> newSet = new HashSet<String>();
+	    newSet.addAll(entry.getValue());
+	    rs.valueNamePairForCurrentState.put(entry.getKey(), newSet);
+	    
+	}
 	return rs;
     }
+
+    public RunningState(Collection<String> testCases)
+    {
+	nameValuePairForCurrentState = new HashMap<String, String>();
+	valueNamePairForCurrentState = new HashMap<String, Set<String>>();
+	for (String testCase : testCases)
+	{
+	    Map<String, String> nameValuePair = FileUtils.getNameValuePairs(testCase + "-0.xml");
+	    for (Entry<String, String> entry : nameValuePair.entrySet())
+		this.put(entry.getKey(), entry.getValue());
+	}
+
+    }
+
+    public RunningState(Collection<String> testCases, String mainTestClass)
+    {
+	nameValuePairForCurrentState = new HashMap<String, String>();
+	valueNamePairForCurrentState = new HashMap<String, Set<String>>();
+
+	Set<String> done = new HashSet<String>();
+	for (String testCase : testCases)
+	{
+	    String testClass = Utils.getTestClassNameFromTestCase(testCase);
+	    if (done.contains(testClass))
+		continue;
+	    Map<String, String> nameValuePair = FileUtils.getNameValuePairs(testCase + "-0.xml");
+	    for (Entry<String, String> entry : nameValuePair.entrySet())
+	    {
+		String name = entry.getKey();
+		if (!testClass.equals(mainTestClass))
+		    name = name + "_" + testClass;
+		this.put(name, entry.getValue());
+	    }
+	    done.add(testClass);
+	}
+    }
+
 }

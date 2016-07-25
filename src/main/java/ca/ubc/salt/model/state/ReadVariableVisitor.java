@@ -66,34 +66,42 @@ public class ReadVariableVisitor extends ASTVisitor
     
     public boolean visit(IfStatement node)
     {
+	getReadVars(node);
 	return false;
     }
     public boolean visit(WhileStatement node)
     {
+	getReadVars(node);
 	return false;
     }
     public boolean visit(EnhancedForStatement node)
     {
+	getReadVars(node);
 	return false;
     }
     public boolean visit(ForStatement node)
     {
+	getReadVars(node);
 	return false;
     }
     public boolean visit(TryStatement node)
     {
+	getReadVars(node);
 	return false;
     }
     public boolean visit(SwitchStatement node)
     {
+	getReadVars(node);
 	return false;
     }
     public boolean visit(SwitchCase node)
     {
+	getReadVars(node);
 	return false;
     }
     public boolean visit(DoStatement node)
     {
+	getReadVars(node);
 	return false;
     }
     

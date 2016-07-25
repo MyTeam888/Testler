@@ -58,7 +58,7 @@ public class Method
 	    return;
 	ListRewrite listRewrite = rewriter.getListRewrite(block, Block.STATEMENTS_PROPERTY);
 
-	Block header = (Block) TestClassInstrumenter.generateInstrumentationHeader(randomNumber, fileName,
+	Block header = (Block) TestClassInstrumenter.generateInstrumentationHeader(this.clazz, randomNumber, fileName,
 		methodDec.getName().toString());
 	List<Statement> stmts = header.statements();
 	if (start)

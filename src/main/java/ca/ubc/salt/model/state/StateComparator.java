@@ -69,6 +69,8 @@ public class StateComparator
 
 	return testStateOfState;
     }
+    
+    
 
     private static void populateGraph(Map<String, TestState> testStateMap, List<TestState> testStates,
 	    ArrayList<String> sortedTestStates)

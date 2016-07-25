@@ -41,122 +41,122 @@ import ca.ubc.salt.model.utils.Utils;
 
 public class TestMerger
 {
-    public static void main(String[] args) throws SAXException, IOException, ClassNotFoundException
-    {
+//    public static void main(String[] args) throws SAXException, IOException, ClassNotFoundException
+//    {
+//
+//	merge1();
+//    }
 
-	merge1();
-    }
-
-    private static void merge1() throws IOException, FileNotFoundException, ClassNotFoundException
-    {
-	XStream xstream = new XStream(new StaxDriver());
-
-	File file = new File("components.txt");
-	List<Set<String>> connectedComponents = null;
-	Map<String, List<String>> connectedComponentsMap = null;
-	if (!file.exists())
-	{
-	    long setupCost = 10;
-	    Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
-	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(1,
-		    uniqueTestStatements);
-	    // connectedComponents.remove(0);
-
-	    connectedComponentsMap = ProductionCallingTestStatement.convertTheSetToMap(uniqueTestStatements);
-
-	    String components = xstream.toXML(connectedComponents);
-
-	    FileWriter fw = new FileWriter("components.txt");
-	    fw.write(components);
-	    fw.close();
-
-	    ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("unique.txt"));
-	    out.writeObject(connectedComponentsMap);
-	    out.close();
-
-	} else
-	{
-	    connectedComponents = (List<Set<String>>) xstream.fromXML(new File("components.txt"));
-	    ObjectInputStream in = new ObjectInputStream(new FileInputStream("unique.txt"));
-	    connectedComponentsMap = (Map<String, List<String>>) in.readObject();
-	    in.close();
-	}
-
-	Formatter fr = new Formatter("stat.csv");
-	for (Set<String> connectedComponent : connectedComponents)
-	{
-	    fr.format("%d,%s\n", connectedComponent.size(), connectedComponent.toString());
-	}
-	fr.close();
-
-	
-	List<Pair<Set<String>, List<List<TestStatement>>>> mergedTestCases = new LinkedList<Pair<Set<String>, List<List<TestStatement>>>>();
-	
-	for (Set<String> connectedComponent : connectedComponents)
-	{
-	    if (connectedComponent.size() < 2)
-		continue;
-
-	     System.out.println(connectedComponentsMap);
-
-//	    connectedComponent = new HashSet<String>();
-//	    connectedComponent.add("ComplexTest.testAcos");
-//	    connectedComponent.add("ComplexTest.testSqrt1z");
-//	    connectedComponent.add("ComplexTest.testExp");
-//	    connectedComponent.add("ComplexTest.testScalarAdd");
-	    
-	    
-	    
-	    List<String> testCases = new LinkedList<String>();
-	    testCases.addAll(connectedComponent);
-	    Map<String, TestState> graph = createModelForTestCases(testCases);
-	    TestState root = graph.get("init.init-.xml");
-	    System.out.println(root.printDot(true));
-
-	    TestStatement first = null;
-	    List<List<TestStatement>> paths = new LinkedList<List<TestStatement>>();
-	    
-	    Pair<Set<String>, List<List<TestStatement>>> pair = new Pair<Set<String>, List<List<TestStatement>>>(connectedComponent, paths);
-	    mergedTestCases.add(pair);
-	    
-	    do
-	    {
-		first = dijkstra(new TestStatement(root, root, "init.xml"), false,
-			connectedComponentsMap);
-		if (first == null)
-		    break;
-		
-		LinkedList<TestStatement> path = new LinkedList<TestStatement>();
-
-		path.add(first);
-
-		TestStatement frontier = first;
-		markAsCovered(frontier, connectedComponentsMap);
-
-		while (frontier != null)
-		{
-		    frontier = dijkstra(frontier, true, connectedComponentsMap);
-		    if (frontier == null)
-			break;
-		    markAsCovered(frontier, connectedComponentsMap);
-		    path.add(frontier);
-		}
-		
-		paths.add(returnThePath(root, path));
-
-		
-//		TestCaseComposer.composeTestCase(returnThePath(root, path), connectedComponent,
-//			TestCaseComposer.generateTestCaseName(connectedComponent));
-		
-	    } while (first != null);
-
-	    
-
-	    // System.out.println(TestCaseComposer.composeTestCase(firstPath));
-	}
-	
-	TestCaseComposer.composeTestCases(mergedTestCases);
-    }
+//    private static void merge1() throws IOException, FileNotFoundException, ClassNotFoundException
+//    {
+//	XStream xstream = new XStream(new StaxDriver());
+//
+//	File file = new File("components.txt");
+//	List<Set<String>> connectedComponents = null;
+//	Map<String, List<String>> connectedComponentsMap = null;
+//	if (!file.exists())
+//	{
+//	    long setupCost = 10;
+//	    Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
+//	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(1,
+//		    uniqueTestStatements);
+//	    // connectedComponents.remove(0);
+//
+//	    connectedComponentsMap = ProductionCallingTestStatement.convertTheSetToMap(uniqueTestStatements);
+//
+//	    String components = xstream.toXML(connectedComponents);
+//
+//	    FileWriter fw = new FileWriter("components.txt");
+//	    fw.write(components);
+//	    fw.close();
+//
+//	    ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("unique.txt"));
+//	    out.writeObject(connectedComponentsMap);
+//	    out.close();
+//
+//	} else
+//	{
+//	    connectedComponents = (List<Set<String>>) xstream.fromXML(new File("components.txt"));
+//	    ObjectInputStream in = new ObjectInputStream(new FileInputStream("unique.txt"));
+//	    connectedComponentsMap = (Map<String, List<String>>) in.readObject();
+//	    in.close();
+//	}
+//
+//	Formatter fr = new Formatter("stat.csv");
+//	for (Set<String> connectedComponent : connectedComponents)
+//	{
+//	    fr.format("%d,%s\n", connectedComponent.size(), connectedComponent.toString());
+//	}
+//	fr.close();
+//
+//	
+//	List<Pair<Set<String>, List<List<TestStatement>>>> mergedTestCases = new LinkedList<Pair<Set<String>, List<List<TestStatement>>>>();
+//	
+//	for (Set<String> connectedComponent : connectedComponents)
+//	{
+//	    if (connectedComponent.size() < 2)
+//		continue;
+//
+//	     System.out.println(connectedComponentsMap);
+//
+////	    connectedComponent = new HashSet<String>();
+////	    connectedComponent.add("ComplexTest.testAcos");
+////	    connectedComponent.add("ComplexTest.testSqrt1z");
+////	    connectedComponent.add("ComplexTest.testExp");
+////	    connectedComponent.add("ComplexTest.testScalarAdd");
+//	    
+//	    
+//	    
+//	    List<String> testCases = new LinkedList<String>();
+//	    testCases.addAll(connectedComponent);
+//	    Map<String, TestState> graph = createModelForTestCases(testCases);
+//	    TestState root = graph.get("init.init-.xml");
+//	    System.out.println(root.printDot(true));
+//
+//	    TestStatement first = null;
+//	    List<List<TestStatement>> paths = new LinkedList<List<TestStatement>>();
+//	    
+//	    Pair<Set<String>, List<List<TestStatement>>> pair = new Pair<Set<String>, List<List<TestStatement>>>(connectedComponent, paths);
+//	    mergedTestCases.add(pair);
+//	    
+//	    do
+//	    {
+//		first = dijkstra(new TestStatement(root, root, "init.xml"), false,
+//			connectedComponentsMap);
+//		if (first == null)
+//		    break;
+//		
+//		LinkedList<TestStatement> path = new LinkedList<TestStatement>();
+//
+//		path.add(first);
+//
+//		TestStatement frontier = first;
+//		markAsCovered(frontier, connectedComponentsMap);
+//
+//		while (frontier != null)
+//		{
+//		    frontier = dijkstra(frontier, true, connectedComponentsMap);
+//		    if (frontier == null)
+//			break;
+//		    markAsCovered(frontier, connectedComponentsMap);
+//		    path.add(frontier);
+//		}
+//		
+//		paths.add(returnThePath(root, path));
+//
+//		
+////		TestCaseComposer.composeTestCase(returnThePath(root, path), connectedComponent,
+////			TestCaseComposer.generateTestCaseName(connectedComponent));
+//		
+//	    } while (first != null);
+//
+//	    
+//
+//	    // System.out.println(TestCaseComposer.composeTestCase(firstPath));
+//	}
+//	
+////	TestCaseComposer.composeTestCases(mergedTestCases);
+//    }
 
     public static LinkedList<TestStatement> returnThePath(TestState root, LinkedList<TestStatement> frontierPaths)
     {
@@ -281,48 +281,48 @@ public class TestMerger
 	}
     }
 
-    public static Map<String, TestState> createModelForTestCases(List<String> testCases) throws IOException
-    {
-
-	StateCompatibilityChecker scc = new StateCompatibilityChecker();
-	// scc.processState("testSubtract-17.xml");
-	scc.populateVarStateSet(testCases);
-	// System.out.println(scc.varStateSet);
-
-	Map<String, Set<String>> compatibleStates = new HashMap<String, Set<String>>();
-
-	Set<String> allStates = new HashSet<String>(FileUtils.getStatesForTestCase(testCases));
-	for (String testCase : testCases)
-	{
-	    // state1 -> <a, b, c>
-	    Map<String, Set<SimpleName>> readVars = ReadVariableDetector
-		    .populateReadVarsForTestCaseOfFile(Utils.getTestCaseFile(testCase), testCase);
-
-	    ReadVariableDetector.accumulateReadVars(readVars);
-
-	    // state1 ->
-	    // <object1(a), field 1, field 2, ... >
-	    // <object2(a), field 1, field 2, ... >
-	    // <object3(a), field 1, field 2, ... >
-	    Map<String, Set<String>> readValues = new HashMap<String, Set<String>>();
-	    ReadVariableDetector.getReadValues(readVars, readValues);
-	    StateCompatibilityChecker.getCompatibleStates(compatibleStates, scc.varStateSet, readValues, allStates);
-
-	}
-	testCases.add("init.init");
-	Map<String, TestState> graph = StateComparator.createGraph(testCases);
-
-	StateCompatibilityChecker.setCompabilityFields(graph, compatibleStates);
-
-	// TestState root = graph.get("init.xml");
-	// System.out.println(root.printDot(true));
-
-	return graph;
-	// List<List<TestStatement>> paths = root.getAllPaths();
-	// System.out.println(paths.size());
-	// for (List<TestStatement> path : paths)
-	// System.out.println(path);
-    }
+//    public static Map<String, TestState> createModelForTestCases(List<String> testCases) throws IOException
+//    {
+//
+//	StateCompatibilityChecker scc = new StateCompatibilityChecker();
+//	// scc.processState("testSubtract-17.xml");
+//	scc.populateVarStateSet(testCases);
+//	// System.out.println(scc.varStateSet);
+//
+//	Map<String, Set<String>> compatibleStates = new HashMap<String, Set<String>>();
+//
+//	Set<String> allStates = new HashSet<String>(FileUtils.getStatesForTestCase(testCases));
+//	for (String testCase : testCases)
+//	{
+//	    // state1 -> <a, b, c>
+//	    Map<String, Set<SimpleName>> readVars = ReadVariableDetector
+//		    .populateReadVarsForTestCaseOfFile(Utils.getTestCaseFile(testCase), testCase);
+//
+//	    ReadVariableDetector.accumulateReadVars(readVars);
+//
+//	    // state1 ->
+//	    // <object1(a), field 1, field 2, ... >
+//	    // <object2(a), field 1, field 2, ... >
+//	    // <object3(a), field 1, field 2, ... >
+//	    Map<String, Map<String, String>> readValues = new HashMap<String, Map<String, String>>();
+//	    ReadVariableDetector.getReadValues(readVars, readValues);
+//	    StateCompatibilityChecker.getCompatibleStates(compatibleStates, scc.varStateSet, readValues, allStates);
+//
+//	}
+//	testCases.add("init.init");
+//	Map<String, TestState> graph = StateComparator.createGraph(testCases);
+//
+//	StateCompatibilityChecker.setCompabilityFields(graph, compatibleStates);
+//
+//	// TestState root = graph.get("init.xml");
+//	// System.out.println(root.printDot(true));
+//
+//	return graph;
+//	// List<List<TestStatement>> paths = root.getAllPaths();
+//	// System.out.println(paths.size());
+//	// for (List<TestStatement> path : paths)
+//	// System.out.println(path);
+//    }
     
 
 }

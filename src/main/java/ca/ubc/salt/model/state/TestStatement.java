@@ -1,12 +1,21 @@
 package ca.ubc.salt.model.state;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Statement;
+
+import ca.ubc.salt.model.composer.TestCaseComposer;
+import ca.ubc.salt.model.utils.FileUtils;
+import ca.ubc.salt.model.utils.Utils;
 
 public class TestStatement extends TestModelNode
 {
@@ -17,8 +26,33 @@ public class TestStatement extends TestModelNode
     public Statement refactoredStatement;
     String methodCall;
     String input;
+    Collection<String> sideEffects;
 
     public long time = 1000;
+
+    public void initSideEffects(List<String> testCases)
+    {
+	sideEffects = new ArrayList<String>();
+	try
+	{
+	    Map<String, String> before = TestCaseComposer.nameValuePairs.get(this.name);
+	    String nextState = Utils.nextOrPrevState(testCases, this.name, true);
+	    Map<String, String> after = TestCaseComposer.nameValuePairs.get(nextState);
+
+	    for (Entry<String, String> entry : before.entrySet())
+	    {
+		String varName = entry.getKey();
+		String varValBefore = entry.getValue();
+		String varValAfter = after.get(varName);
+		if (!varValBefore.equals(varValAfter))
+		    sideEffects.add(varName);
+	    }
+	} catch (ExecutionException e)
+	{
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
+    }
 
     public TestStatement(TestState start, TestState end, String name)
     {
@@ -94,17 +128,23 @@ public class TestStatement extends TestModelNode
 	}
 	return false;
     }
-    
+
     @Override
     public TestStatement clone() throws CloneNotSupportedException
     {
-        // TODO Auto-generated method stub
-	
-        TestStatement clone = new TestStatement(this.start, this.end, this.name);
-        clone.statement= this.statement;
-        clone.refactoredStatement = this.refactoredStatement;
-        return clone;
-        
+	// TODO Auto-generated method stub
+
+	TestStatement clone = new TestStatement(this.start, this.end, this.name);
+	clone.statement = this.statement;
+	clone.refactoredStatement = this.refactoredStatement;
+	clone.sideEffects = this.sideEffects;
+	return clone;
+
+    }
+
+    public Collection<String> getSideEffects()
+    {
+	return sideEffects;
     }
 
     // @Override

@@ -220,11 +220,15 @@ public class TestClassInstrumenter
 	instrumentClass(Settings.TEST_CLASS);
     }
 
-    public static ASTNode generateInstrumentationHeader(int randomNumber, String fileName, String methodName)
+    public static ASTNode generateInstrumentationHeader(ClassModel clazz, int randomNumber, String fileName, String methodName)
     {
-	return Utils.createBlockWithText(String.format(
-		"InstrumentClassGenerator.init(\"%s.%s\");InstrumentClassGenerator.initTestStatement(0);InstrumentClassGenerator.traceTestStatementExecution();InstrumentClassGenerator.initTestStatement(1);",
+	
+	StringBuilder sb = new StringBuilder();
+	sb.append(String.format(
+		"InstrumentClassGenerator.init(\"%s.%s\");InstrumentClassGenerator.initTestStatement(0);",
 		fileName, methodName));
+	sb.append(getTextForInstrumentation(clazz.getVarDecsOfFields(), 1));
+	return Utils.createBlockWithText(sb.toString());
 
     }
 
@@ -237,31 +241,9 @@ public class TestClassInstrumenter
 	    LinkedList<VariableDeclarationFragment> varDecs, String methodName, int counter)
     {
 
-	StringBuilder sb = new StringBuilder();
-	sb.append(String.format("InstrumentClassGenerator.traceTestStatementExecution("));
-	for (VariableDeclarationFragment var : varDecs)
-	{
-	    sb.append("\"");
-	    sb.append(var.getName());
-	    sb.append("\"");
-	    sb.append(',');
-	}
-	if (varDecs.size() > 0)
-	    sb.setLength(sb.length() - 1);
-	sb.append(");");
-
-	sb.append("InstrumentClassGenerator.writeObjects(");
-	for (VariableDeclarationFragment var : varDecs)
-	{
-	    sb.append(var.getName());
-	    sb.append(',');
-	}
-	if (varDecs.size() > 0)
-	    sb.setLength(sb.length() - 1);
-	sb.append(");");
-	sb.append(String.format("InstrumentClassGenerator.initTestStatement(%d);", counter));
-
-	return Utils.createBlockWithText(sb.toString());
+	String text = getTextForInstrumentation(varDecs, counter);
+	
+	return Utils.createBlockWithText(text);
 
     }
     // public static ASTNode generateInstrumentationHeader(int randomNumber,
@@ -316,5 +298,35 @@ public class TestClassInstrumenter
     // return Utils.createBlockWithText(sb.toString());
     //
     // }
+
+    public static String getTextForInstrumentation(List<VariableDeclarationFragment> list, int counter)
+    {
+	StringBuilder sb = new StringBuilder();
+	sb.append(String.format("InstrumentClassGenerator.traceTestStatementExecution("));
+	for (VariableDeclarationFragment var : list)
+	{
+	    sb.append("\"");
+	    sb.append(var.getName());
+	    sb.append("\"");
+	    sb.append(',');
+	}
+	if (list.size() > 0)
+	    sb.setLength(sb.length() - 1);
+	sb.append(");");
+
+	sb.append("InstrumentClassGenerator.writeObjects(");
+	for (VariableDeclarationFragment var : list)
+	{
+	    sb.append(var.getName());
+	    sb.append(',');
+	}
+	if (list.size() > 0)
+	    sb.setLength(sb.length() - 1);
+	sb.append(");");
+	sb.append(String.format("InstrumentClassGenerator.initTestStatement(%d);", counter));
+
+	String text = sb.toString();
+	return text;
+    }
 
 }

@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Formatter;
 import java.util.HashMap;
@@ -33,6 +34,7 @@ import ca.ubc.salt.model.state.ReadVariableDetector;
 import ca.ubc.salt.model.state.StateComparator;
 import ca.ubc.salt.model.state.TestState;
 import ca.ubc.salt.model.state.TestStatement;
+import ca.ubc.salt.model.utils.Counter;
 import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Pair;
 import ca.ubc.salt.model.utils.Settings;
@@ -71,6 +73,14 @@ public class IncrementalTestMerger
 	TestState end = graph.get(nextState);
 	TestStatement ts = end.getParents().get(stmt);
 	return ts;
+    }
+
+    public static void initSideEffectForStatements(Map<String, TestStatement> testStatements, List<String> testCases)
+    {
+	for (Entry<String, TestStatement> entry : testStatements.entrySet())
+	{
+	    entry.getValue().initSideEffects(testCases);
+	}
     }
 
     private static void merge2()
@@ -117,7 +127,7 @@ public class IncrementalTestMerger
 	fr.close();
 
 	List<Pair<Set<String>, List<List<TestStatement>>>> mergedTestCases = new LinkedList<Pair<Set<String>, List<List<TestStatement>>>>();
-	
+
 	int totalBeforeMerging = 0, totalAftermerging = 0;
 
 	for (Set<String> connectedComponent : connectedComponents)
@@ -125,14 +135,13 @@ public class IncrementalTestMerger
 	    if (connectedComponent.size() < 2)
 		continue;
 
-//	    System.out.println(connectedComponentsMap);
-	    
-	    
+	    // System.out.println(connectedComponentsMap);
+
 	    Settings.consoleLogger.error(String.format("merging %s", connectedComponent.toString()));
 
-	    // connectedComponent = new HashSet<String>();
-	    //// connectedComponent.add("ComplexTest.testReciprocal");
-	    // connectedComponent.add("ComplexTest.testTanh");
+//	     connectedComponent = new HashSet<String>();
+//	     connectedComponent.add("Array2DRowRealMatrixTest.testSetColumn");
+//	     connectedComponent.add("Array2DRowRealMatrixTest.testGetColumn");
 	    // connectedComponent.add("ComplexTest.testMultiply");
 	    // connectedComponent.add("ComplexTest.testExp");
 	    // connectedComponent.add("ComplexTest.testScalarAdd");
@@ -140,13 +149,15 @@ public class IncrementalTestMerger
 	    List<String> testCases = new LinkedList<String>();
 	    testCases.addAll(connectedComponent);
 
-	    Map<String, Set<String>> readValues = getAllReadValues(testCases);
+	    Map<String, Map<String, String>> readValues = getAllReadValues(testCases);
+
+	    System.out.println(readValues);
 
 	    testCases.add("init.init");
 	    Map<String, TestState> graph = StateComparator.createGraph(testCases);
 
 	    TestState root = graph.get("init.init-.xml");
-	    System.out.println(root.printDot(true));
+	    // System.out.println(root.printDot(true));
 
 	    Pair<TestStatement, RunningState> first = null;
 	    List<List<TestStatement>> paths = new LinkedList<List<TestStatement>>();
@@ -161,15 +172,22 @@ public class IncrementalTestMerger
 
 	    Map<String, TestStatement> allTestStatements = getAllTestStatements(allStates, graph);
 	    TestCaseComposer.populateStateField(allTestStatements.values());
-	    
+
+	    initSideEffectForStatements(allTestStatements, testCases);
+
 	    Set<String> assertions = getAllAssertions(allTestStatements);
 
+	    Map<String, Set<String>> testClasses = Utils.getTestClassMapFromTestCases(connectedComponent);
+
+	    String mainClassName = Utils.getTestClassWithMaxNumberOfTestCases(testClasses);
+
+	    RunningState initialState = new RunningState(connectedComponent, mainClassName);
 	    do
 	    {
 		LinkedList<TestStatement> path = new LinkedList<TestStatement>();
 
 		Pair<TestStatement, RunningState> frontier = new Pair<TestStatement, RunningState>(
-			new TestStatement(root, root, "init.xml"), new RunningState());
+			new TestStatement(root, root, "init.xml"), initialState);
 
 		do
 		{
@@ -186,7 +204,7 @@ public class IncrementalTestMerger
 		paths.add(mergedPath);
 
 		TestCaseComposer.composeTestCase(mergedPath, connectedComponent,
-			TestCaseComposer.generateTestCaseName(connectedComponent));
+			TestCaseComposer.generateTestCaseName(connectedComponent), readValues);
 
 	    } while (first != null);
 
@@ -196,18 +214,17 @@ public class IncrementalTestMerger
 		totalMerged += path.size();
 	    Settings.consoleLogger.error(String.format("Before Merging : %d, After Merging %d, saved : %d",
 		    totalNumberOfStatements, totalMerged, totalNumberOfStatements - totalMerged));
-	    
+
 	    totalBeforeMerging += totalNumberOfStatements;
 	    totalAftermerging += totalMerged;
 	}
 
-	Settings.consoleLogger.error(String.format("Before merging : %d, After merging : %d", totalBeforeMerging, totalAftermerging));
-//	 TestCaseComposer.composeTestCases(mergedTestCases);
+	Settings.consoleLogger
+		.error(String.format("Before merging : %d, After merging : %d", totalBeforeMerging, totalAftermerging));
+	// TestCaseComposer.composeTestCases(mergedTestCases);
     }
-    
-    
-    
-    public static Set<String> getAllAssertions( Map<String, TestStatement> allTestStatements)
+
+    public static Set<String> getAllAssertions(Map<String, TestStatement> allTestStatements)
     {
 	Set<String> assertions = new HashSet<String>();
 	for (Entry<String, TestStatement> entry : allTestStatements.entrySet())
@@ -216,14 +233,14 @@ public class IncrementalTestMerger
 	    if (isAssertion(stmt))
 		assertions.add(entry.getKey());
 	}
-	
+
 	return assertions;
     }
-    
+
     public static boolean isAssertion(TestStatement statement)
     {
-	
-	//TODO check for indirect assertion checking
+
+	// TODO check for indirect assertion checking
 	if (statement.statement == null)
 	    return false;
 	String str = statement.statement.toString();
@@ -233,9 +250,9 @@ public class IncrementalTestMerger
     }
 
     public static Pair<TestStatement, RunningState> dijkstra(TestStatement root, Map<String, TestState> graph,
-	    RunningState runningState, Map<String, Set<String>> readValues,
-	    Map<String, List<String>> connectedComponentsMap, Map<String, TestStatement> testStatementMap, Set<String> assertions)
-	    throws CloneNotSupportedException
+	    RunningState runningState, Map<String, Map<String, String>> readValues,
+	    Map<String, List<String>> connectedComponentsMap, Map<String, TestStatement> testStatementMap,
+	    Set<String> assertions) throws CloneNotSupportedException
     {
 
 	Set<TestStatement> visited = new HashSet<TestStatement>();
@@ -260,9 +277,9 @@ public class IncrementalTestMerger
 		return new Pair<TestStatement, RunningState>(parent, runningState.clone());
 	    }
 
-	    TestCaseComposer.updateRunningState(parent, runningState);
+	    TestCaseComposer.updateRunningState(parent, runningState, readValues);
 	    List<Pair<Integer, TestStatement>> comps = getAllCompatibleTestStatements(testStatementMap, readValues,
-		    runningState);
+		    runningState, visited);
 
 	    Collections.sort(comps, Collections.reverseOrder());
 	    for (Pair<Integer, TestStatement> stmtPair : comps)
@@ -283,7 +300,7 @@ public class IncrementalTestMerger
 	    TestStatement parent, TestStatement stmt, RunningState runningState, int bonus)
 	    throws CloneNotSupportedException
     {
-	long newD = parent.distFrom.get(root) + stmt.time - bonus;
+	long newD = parent.distFrom.get(root) + stmt.time - bonus + stmt.getSideEffects().size() * 10;
 	Long childDist = stmt.distFrom.get(root);
 	if (childDist == null || newD < childDist)
 	{
@@ -297,24 +314,37 @@ public class IncrementalTestMerger
     }
 
     public static List<Pair<Integer, TestStatement>> getAllCompatibleTestStatements(
-	    Map<String, TestStatement> allTestStatements, Map<String, Set<String>> readValues,
-	    RunningState runningState)
+	    Map<String, TestStatement> allTestStatements, Map<String, Map<String, String>> readValues,
+	    RunningState runningState, Set<TestStatement> visited)
     {
 	List<Pair<Integer, TestStatement>> comps = new LinkedList<Pair<Integer, TestStatement>>();
 	for (TestStatement stmt : allTestStatements.values())
 	{
-	    Set<String> readVals = readValues.get(stmt.getName());
+	    if (visited.contains(stmt))
+		continue;
+	    Map<String, String> readVals = readValues.get(stmt.getName());
 	    if (readVals == null)
 		continue;
-	    // if(stmt.equals("ComplexTest.testTanh-2.xml"))
-	    // System.out.println();
+//	    if (stmt.equals("Array2DRowRealMatrixTest.testSetRow-1.xml"))
+//		System.out.println();
 	    boolean isComp = true;
-	    for (String readVal : readVals)
+	    Counter counter = new Counter();
+	    for (Entry<String, String> entry : readVals.entrySet())
 	    {
-		if (runningState.getName(readVal) == null)
+		String readVal = entry.getValue();
+		Set<String> varsNameInState = runningState.getName(readVal);
+		if (varsNameInState == null || varsNameInState.size() == 0)
 		{
 		    isComp = false;
 		    break;
+		} else
+		{
+		    counter.increment(readVal);
+		    if (counter.get(readVal) > varsNameInState.size())
+		    {
+			isComp = false;
+			break;
+		    }
 		}
 
 	    }
@@ -327,9 +357,9 @@ public class IncrementalTestMerger
 	return comps;
     }
 
-    public static Map<String, Set<String>> getAllReadValues(List<String> testCases) throws IOException
+    public static Map<String, Map<String, String>> getAllReadValues(List<String> testCases) throws IOException
     {
-	Map<String, Set<String>> readValues = new HashMap<String, Set<String>>();
+	Map<String, Map<String, String>> readValues = new HashMap<String, Map<String, String>>();
 
 	for (String testCase : testCases)
 	{

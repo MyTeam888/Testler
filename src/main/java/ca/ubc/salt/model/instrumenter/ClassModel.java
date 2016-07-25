@@ -3,6 +3,7 @@ package ca.ubc.salt.model.instrumenter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -31,12 +32,12 @@ public class ClassModel
 	this.typeDec = typeDec;
 	this.cu = cu;
     }
-    
-    
+
     public static List<ClassModel> getClasses(String source) throws IOException
     {
 	return getClasses(source, false, null, null, null);
     }
+
     public static List<ClassModel> getClasses(String source, boolean binding, String unitName, String[] sources,
 	    String[] classPath) throws IOException
     {
@@ -62,7 +63,7 @@ public class ClassModel
 	    // };
 	    // String[] classpath = {"C:\\Program
 	    // Files\\Java\\jre1.8.0_25\\lib\\rt.jar"};
-	    parser.setEnvironment(classPath, sources, new String[] { "UTF-8"}, true);
+	    parser.setEnvironment(classPath, sources, new String[] { "UTF-8" }, true);
 	}
 	parser.setSource(source.toCharArray());
 	CompilationUnit cu = (CompilationUnit) parser.createAST(null);
@@ -99,7 +100,7 @@ public class ClassModel
 	    methods.add(method);
 	}
     }
-    
+
     private void initFields()
     {
 	FieldDeclaration[] allFields = typeDec.getFields();
@@ -111,7 +112,7 @@ public class ClassModel
 		this.fields.add(field);
 	    }
 	}
-	
+
     }
 
     private void initStaticFields()
@@ -147,7 +148,6 @@ public class ClassModel
 	this.cu = cu;
     }
 
-    
     public List<FieldDeclaration> getStaticFields()
     {
 	if (staticFields == null)
@@ -174,20 +174,30 @@ public class ClassModel
 	this.methods = methods;
     }
 
-
     public List<FieldDeclaration> getFields()
     {
 	if (fields == null)
 	    initFields();
-        return fields;
+	return fields;
     }
-
 
     public void setFields(List<FieldDeclaration> fields)
     {
-        this.fields = fields;
+	this.fields = fields;
     }
-    
-    
+
+    public List<VariableDeclarationFragment> getVarDecsOfFields()
+    {
+	List<VariableDeclarationFragment> vars = new ArrayList<VariableDeclarationFragment>();
+	for (FieldDeclaration fd : this.getFields())
+	{
+	    for (Object obj : fd.fragments())
+	    {
+		VariableDeclarationFragment vdf = (VariableDeclarationFragment) obj;
+		vars.add(vdf);
+	    }
+	}
+	return vars;
+    }
 
 }

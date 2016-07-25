@@ -15,6 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -198,6 +199,16 @@ public class Utils
 	}
 	list.add(value);
     }
+    public static <K, V> void removeFromTheSetInMap(Map<K, Set<V>> map, K key, V value)
+    {
+	Set<V> list = map.get(key);
+	if (list != null)
+	{
+	    list.remove(value);
+	}
+	else
+	    map.remove(key);
+    }
 
     public static String getTestCaseName(String testCase)
     {
@@ -365,6 +376,23 @@ public class Utils
 	ImportDeclaration imp = ast.newImportDeclaration();
 	imp.setName(ast.newName(name));
 	cu.imports().add(imp);
+    }
+
+    // could be improved later !
+    public static String getTestClassWithMaxNumberOfTestCases(Map<String, Set<String>> map)
+    {
+        int max = Integer.MIN_VALUE;
+        String maxTestClass = null;
+        for (Entry<String, Set<String>> entry : map.entrySet())
+        {
+            if (max < entry.getValue().size())
+            {
+        	max = entry.getValue().size();
+        	maxTestClass = entry.getKey();
+            }
+        }
+    
+        return maxTestClass;
     }
 
 

@@ -153,19 +153,20 @@ public class ReadVariableDetector
 
     }
 
-    public static void getReadValues(Map<String, Set<SimpleName>> readVars, Map<String, Set<String>> readValues)
+    public static void getReadValues(Map<String, Set<SimpleName>> readVars, Map<String, Map<String, String>> readValues)
     {
 	for (Entry<String, Set<SimpleName>> entry : readVars.entrySet())
 	{
 	    String stateName = entry.getKey();
-	    Set<String> readValuesForState = getReadValuesOfState(stateName, entry.getValue());
+	    Map<String, String> readValuesForState = getReadValuesOfState(stateName, entry.getValue());
 	    readValues.put(stateName, readValuesForState);
+	    
 	}
     }
 
-    public static Set<String> getReadValuesOfState(String stateName, Set<SimpleName> readVars)
+    public static Map<String, String> getReadValuesOfState(String stateName, Set<SimpleName> readVars)
     {
-	Set<String> varStateSet = new HashSet<String>();
+	Map<String, String> varStateSet = new HashMap<String, String>();
 
 	String varXML = FileUtils.getVars(stateName);
 
@@ -183,7 +184,7 @@ public class ReadVariableDetector
 	{
 	    if (readVarNames.contains(stateVar))
 	    {
-		varStateSet.add(XMLUtils.getXMLString(nodeList.item(index)));
+		varStateSet.put(stateVar, XMLUtils.getXMLString(nodeList.item(index)));
 		// processObjectValues(nodeList.item(index), varStateSet, key,
 		// stateName);
 	    }
