@@ -214,7 +214,7 @@ public class IncrementalTestMerger
 		totalMerged += path.size();
 	    Settings.consoleLogger.error(String.format("Before Merging : %d, After Merging %d, saved : %d",
 		    totalNumberOfStatements, totalMerged, totalNumberOfStatements - totalMerged));
-
+	    System.out.println(getSavedStmts(allTestStatements, paths.get(0)));
 	    totalBeforeMerging += totalNumberOfStatements;
 	    totalAftermerging += totalMerged;
 	}
@@ -224,6 +224,29 @@ public class IncrementalTestMerger
 	// TestCaseComposer.composeTestCases(mergedTestCases);
     }
 
+    
+    public static List<TestStatement> getSavedStmts(Map<String, TestStatement> allTestStatements, List<TestStatement> path)
+    {
+	List<TestStatement> savedStmts = new LinkedList<TestStatement>();
+	
+	Set<String> pathSet = new HashSet<String>();
+	
+	for (TestStatement stmt : path)
+	{
+	    pathSet.add(stmt.getName());
+	}
+	
+	for (TestStatement stmt : allTestStatements.values()){
+	    if (!pathSet.contains(stmt.getName()))
+	    {
+		savedStmts.add(stmt);
+	    }
+	}
+	
+	return savedStmts;
+	
+    }
+    
     public static Set<String> getAllAssertions(Map<String, TestStatement> allTestStatements)
     {
 	Set<String> assertions = new HashSet<String>();
@@ -244,7 +267,7 @@ public class IncrementalTestMerger
 	if (statement.statement == null)
 	    return false;
 	String str = statement.statement.toString();
-	if (str.toLowerCase().contains("assert"))
+	if (str.toLowerCase().contains("assert") || str.toLowerCase().contains("check"))
 	    return true;
 	return false;
     }
