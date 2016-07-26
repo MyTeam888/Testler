@@ -25,6 +25,7 @@ public class ClassModel
     CompilationUnit cu = null;
     List<FieldDeclaration> staticFields = null;
     List<FieldDeclaration> fields = null;
+    List<FieldDeclaration> allFields = null;
     List<Method> methods = null;
     
     
@@ -207,7 +208,7 @@ public class ClassModel
     public List<VariableDeclarationFragment> getVarDecsOfFields()
     {
 	List<VariableDeclarationFragment> vars = new ArrayList<VariableDeclarationFragment>();
-	for (FieldDeclaration fd : this.getFields())
+	for (FieldDeclaration fd : this.getAllFields())
 	{
 	    for (Object obj : fd.fragments())
 	    {
@@ -218,4 +219,17 @@ public class ClassModel
 	return vars;
     }
 
+    
+    public List<FieldDeclaration> getAllFields()
+    {
+	if (this.allFields == null)
+	{
+	    this.allFields = new LinkedList<FieldDeclaration>();
+	    this.allFields.addAll(this.getFields());
+	    this.allFields.addAll(this.getStaticFields());
+	    
+	}
+	
+	return this.allFields;
+    }
 }

@@ -53,7 +53,7 @@ public class InstrumenterVisitor extends ASTVisitor
 
     public void addFieldVars(ClassModel clazz)
     {
-	for (FieldDeclaration fd : clazz.getFields())
+	for (FieldDeclaration fd : clazz.getAllFields())
 	{
 	    for (Object obj : fd.fragments())
 	    {

@@ -91,7 +91,7 @@ public class TestClassInstrumenter
 	ASTRewrite rewriter = ASTRewrite.create(srcClass.cu.getAST());
 	for (Method method : methods)
 	{
-	    if (method.isTestMethod())
+	    if (method.isTestMethod() && !Settings.blackListSet.contains(method.getFullMethodName()))
 		method.instrumentTestMethod(rewriter, document, null, fileName, !method.getMethodDec().isConstructor());
 	}
 	TextEdit edits = rewriter.rewriteAST(document, null);

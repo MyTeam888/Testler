@@ -225,6 +225,8 @@ public class Utils
     public static String getTestCaseNameFromTestStatement(String testStatement)
     {
 	int index = testStatement.lastIndexOf('-');
+	if (index == -1)
+	    return null;
 	return testStatement.substring(0, index);
     }
 

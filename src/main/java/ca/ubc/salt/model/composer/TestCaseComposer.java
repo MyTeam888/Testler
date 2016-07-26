@@ -237,7 +237,7 @@ public class TestCaseComposer
 	    Statement stmt = statement.statement;
 	    StatementFieldVisitor sfv = new StatementFieldVisitor(fieldVars);
 	    stmt.accept(sfv);
-	    // renameFieldVarsInStmt(statement, sfv);
+//	    renameFieldVarsInStmt(statement, sfv);
 	}
 
 	for (Entry<String, Set<String>> entry : fieldVars.entrySet())
@@ -263,7 +263,7 @@ public class TestCaseComposer
 			new String[] { Settings.PROJECT_PATH }, new String[] { Settings.LIBRARY_JAVA });
 		for (ClassModel clazz : classes)
 		{
-		    List<FieldDeclaration> classFields = clazz.getFields();
+		    List<FieldDeclaration> classFields = clazz.getAllFields();
 		    for (FieldDeclaration fieldDec : classFields)
 		    {
 			for (Object varDecObj : fieldDec.fragments())
@@ -390,9 +390,9 @@ public class TestCaseComposer
 	// class -> testCases
 	renameMethodCalls(originalStatements, mainClassName);
 
+	List<FieldDeclaration> fieldDecs = getRequiredFieldDecs(originalStatements, mainClassName);
 	List<ASTNode> path = getPathFromStatements(originalStatements);
-
-	addFieldDecsToPath(getRequiredFieldDecs(originalStatements, mainClassName), path);
+	addFieldDecsToPath(fieldDecs, path);
 
 	Set<String> imports = new HashSet<String>();
 
@@ -422,7 +422,7 @@ public class TestCaseComposer
 
 		    if (testClassName.equals(mainClassName))
 		    {
-			Settings.consoleLogger.error(String.format("adding %s to %s", name, testClassName));
+			Settings.consoleLogger.error(String.format("adding tests to %s", Utils.getClassFile(mainClassName)));
 			addMergedTestCase(path, name, clazz, listRewrite);
 //			System.out.println(getMergedMethod(path, name, clazz.getTypeDec().getAST()).toString());
 		    } else
@@ -529,7 +529,7 @@ public class TestCaseComposer
 	AST ast = td.getAST();
 	MethodDeclaration md = getMergedMethod(path, name, ast);
 
-	System.out.println(md.toString());
+//	System.out.println(md.toString());
 	// clazz.getTypeDec().bodyDeclarations().add(md);
 	listRewrite.insertLast(md, null);
     }
