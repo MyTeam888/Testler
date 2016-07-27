@@ -139,9 +139,9 @@ public class IncrementalTestMerger
 
 	    Settings.consoleLogger.error(String.format("merging %s", connectedComponent.toString()));
 
-//	     connectedComponent = new HashSet<String>();
-//	     connectedComponent.add("Array2DRowRealMatrixTest.testSetColumn");
-//	     connectedComponent.add("Array2DRowRealMatrixTest.testGetColumn");
+	    // connectedComponent = new HashSet<String>();
+	    // connectedComponent.add("Array2DRowRealMatrixTest.testSetColumn");
+	    // connectedComponent.add("Array2DRowRealMatrixTest.testGetColumn");
 	    // connectedComponent.add("ComplexTest.testMultiply");
 	    // connectedComponent.add("ComplexTest.testExp");
 	    // connectedComponent.add("ComplexTest.testScalarAdd");
@@ -188,9 +188,10 @@ public class IncrementalTestMerger
 
 		Pair<TestStatement, RunningState> frontier = new Pair<TestStatement, RunningState>(
 			new TestStatement(root, root, "init.xml"), initialState);
-
+		Pair<TestStatement, RunningState> prevFrontier;
 		do
 		{
+		    prevFrontier = frontier;
 		    frontier = dijkstra(frontier.getFirst(), graph, frontier.getSecond(), readValues,
 			    connectedComponentsMap, allTestStatements, assertions);
 		    if (frontier == null)
@@ -199,6 +200,35 @@ public class IncrementalTestMerger
 		    assertions.remove(frontier.getFirst().getName());
 		    path.add(frontier.getFirst());
 		} while (frontier != null);
+
+		Settings.consoleLogger.error("first phase finished");
+		if (!assertions.isEmpty())
+		{
+		    frontier = prevFrontier;
+			Map<String, Set<String>> assertionView = Planning
+				.getTestCaseTestStatementStringMapping(assertions);
+			Map<String, Map<String, TestStatement>> allStmtsView = Planning
+				.getTestCaseTestStatementMapping(allTestStatements);
+			for (Entry<String, Set<String>> testCaseEntry : assertionView.entrySet())
+			{
+			    String testCase = testCaseEntry.getKey();
+			    Set<String> assertionsToCover = testCaseEntry.getValue();
+			    do
+			    {
+			    frontier = Planning.dijkstra(frontier.getFirst(), graph, frontier.getSecond(), readValues,
+				    connectedComponentsMap, allStmtsView.get(testCase), assertionsToCover, 3);
+			    if (frontier == null)
+				break;
+			    TestMerger.markAsCovered(frontier.getFirst(), connectedComponentsMap);
+			    assertionsToCover.remove(frontier.getFirst().getName());
+			    path.add(frontier.getFirst());
+			    if (assertionsToCover.isEmpty())
+				break;
+			    System.out.println(frontier.getFirst());
+			} while (frontier != null);
+			}
+		}
+		Settings.consoleLogger.error("second phase finished");
 
 		List<TestStatement> mergedPath = TestMerger.returnThePath(root, path);
 		paths.add(mergedPath);
@@ -224,29 +254,30 @@ public class IncrementalTestMerger
 	// TestCaseComposer.composeTestCases(mergedTestCases);
     }
 
-    
-    public static List<TestStatement> getSavedStmts(Map<String, TestStatement> allTestStatements, List<TestStatement> path)
+    public static List<TestStatement> getSavedStmts(Map<String, TestStatement> allTestStatements,
+	    List<TestStatement> path)
     {
 	List<TestStatement> savedStmts = new LinkedList<TestStatement>();
-	
+
 	Set<String> pathSet = new HashSet<String>();
-	
+
 	for (TestStatement stmt : path)
 	{
 	    pathSet.add(stmt.getName());
 	}
-	
-	for (TestStatement stmt : allTestStatements.values()){
+
+	for (TestStatement stmt : allTestStatements.values())
+	{
 	    if (!pathSet.contains(stmt.getName()))
 	    {
 		savedStmts.add(stmt);
 	    }
 	}
-	
+
 	return savedStmts;
-	
+
     }
-    
+
     public static Set<String> getAllAssertions(Map<String, TestStatement> allTestStatements)
     {
 	Set<String> assertions = new HashSet<String>();
@@ -343,13 +374,13 @@ public class IncrementalTestMerger
 	List<Pair<Integer, TestStatement>> comps = new LinkedList<Pair<Integer, TestStatement>>();
 	for (TestStatement stmt : allTestStatements.values())
 	{
-	    if (visited.contains(stmt))
+	    if (visited != null && visited.contains(stmt))
 		continue;
 	    Map<String, String> readVals = readValues.get(stmt.getName());
 	    if (readVals == null)
 		continue;
-//	    if (stmt.equals("Array2DRowRealMatrixTest.testSetRow-1.xml"))
-//		System.out.println();
+	    // if (stmt.equals("Array2DRowRealMatrixTest.testSetRow-1.xml"))
+	    // System.out.println();
 	    boolean isComp = true;
 	    Counter counter = new Counter();
 	    for (Entry<String, String> entry : readVals.entrySet())

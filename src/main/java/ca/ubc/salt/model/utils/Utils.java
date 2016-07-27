@@ -209,6 +209,17 @@ public class Utils
 	    return false;
 	}
 	return set.contains(value);
+	}
+
+    public static <K1, K2, V> void addToTheMapInMap(Map<K1, Map<K2, V>> map, K1 key1, K2 key2, V value)
+    {
+	Map<K2, V> m = map.get(key1);
+	if (m == null)
+	{
+	    m = new HashMap<K2, V>();
+	    map.put(key1, m);
+	}
+	m.put(key2, value);
     }
     
     public static <K, V> void removeFromTheSetInMap(Map<K, Set<V>> map, K key, V value)
@@ -221,6 +232,7 @@ public class Utils
 	else
 	    map.remove(key);
     }
+    
 
     public static String getTestCaseName(String testCase)
     {

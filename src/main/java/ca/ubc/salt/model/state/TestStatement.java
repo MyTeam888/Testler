@@ -138,6 +138,9 @@ public class TestStatement extends TestModelNode
 	clone.statement = this.statement;
 	clone.refactoredStatement = this.refactoredStatement;
 	clone.sideEffects = this.sideEffects;
+	clone.time = this.time;
+	clone.parent.putAll(this.parent);
+	clone.distFrom.putAll(this.distFrom);
 	return clone;
 
     }
