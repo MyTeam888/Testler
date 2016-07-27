@@ -199,6 +199,18 @@ public class Utils
 	}
 	list.add(value);
     }
+    
+    
+    public static <K, V> boolean containsInSetInMap(Map<K, Set<V>> map, K key, V value)
+    {
+	Set<V> set = map.get(key);
+	if (set == null)
+	{
+	    return false;
+	}
+	return set.contains(value);
+    }
+    
     public static <K, V> void removeFromTheSetInMap(Map<K, Set<V>> map, K key, V value)
     {
 	Set<V> list = map.get(key);

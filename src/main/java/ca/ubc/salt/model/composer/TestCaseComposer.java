@@ -54,13 +54,15 @@ import ca.ubc.salt.model.utils.Utils;
 public class TestCaseComposer
 {
 
+    public static Map<String, Set<String>> addedMethods = new HashMap<String, Set<String>>();
     public static LoadingCache<String, Map<String, String>> nameValuePairs;
     static
     {
 	nameValuePairs = CacheBuilder.newBuilder().maximumSize(1000)
-		.build(new CacheLoader<String, Map<String, String>>() { // build
-									// the
-									// cacheloader
+		.build(new CacheLoader<String, Map<String, String>>()
+		{ // build
+		  // the
+		  // cacheloader
 
 		    @Override
 		    public Map<String, String> load(String stmt) throws Exception
@@ -71,7 +73,8 @@ public class TestCaseComposer
 		});
     }
 
-    public static void updateRunningState(TestStatement statement, RunningState valueNamePairForCurrentState, Map<String, Map<String, String>> readVals)
+    public static void updateRunningState(TestStatement statement, RunningState valueNamePairForCurrentState,
+	    Map<String, Map<String, String>> readVals)
     {
 
 	Map<String, String> renameMap = new HashMap<String, String>();
@@ -79,7 +82,7 @@ public class TestCaseComposer
 	findPreqVarsRenames(statement, valueNamePairForCurrentState, renameMap, readVals);
 
 	findPostreqVarsRenames(statement, valueNamePairForCurrentState, renameMap);
-	
+
 	Set<SimpleName> vars = getAllVars(statement.statement);
 	if (vars == null)
 	    return;
@@ -111,8 +114,7 @@ public class TestCaseComposer
 	    {
 		Assignment a = (Assignment) e;
 		a.getRightHandSide().accept(srvv);
-	    }
-	    else
+	    } else
 		statement.accept(srvv);
 	} else
 	    statement.accept(srvv);
@@ -174,30 +176,32 @@ public class TestCaseComposer
 	return sb.toString();
     }
 
-//    public static void composeTestCases(List<Pair<Set<String>, List<List<TestStatement>>>> mergedTestCases)
-//    {
-//
-//	Utils.copyProject(Settings.PROJECT_PATH, Settings.PROJECT_MERGED_PATH);
-//
-//	for (Pair<Set<String>, List<List<TestStatement>>> pair : mergedTestCases)
-//	{
-//	    Set<String> connectedComponent = pair.getFirst();
-//	    List<List<TestStatement>> testCases = pair.getSecond();
-//	    String name = generateTestCaseName(connectedComponent);
-//	    if (testCases.size() == 1)
-//		composeTestCase(testCases.get(0), connectedComponent, name);
-//	    else
-//		for (int i = 0; i < testCases.size(); i++)
-//		{
-//		    composeTestCase(testCases.get(i), connectedComponent, name + i);
-//		}
-//	}
-//    }
+    // public static void composeTestCases(List<Pair<Set<String>,
+    // List<List<TestStatement>>>> mergedTestCases)
+    // {
+    //
+    // Utils.copyProject(Settings.PROJECT_PATH, Settings.PROJECT_MERGED_PATH);
+    //
+    // for (Pair<Set<String>, List<List<TestStatement>>> pair : mergedTestCases)
+    // {
+    // Set<String> connectedComponent = pair.getFirst();
+    // List<List<TestStatement>> testCases = pair.getSecond();
+    // String name = generateTestCaseName(connectedComponent);
+    // if (testCases.size() == 1)
+    // composeTestCase(testCases.get(0), connectedComponent, name);
+    // else
+    // for (int i = 0; i < testCases.size(); i++)
+    // {
+    // composeTestCase(testCases.get(i), connectedComponent, name + i);
+    // }
+    // }
+    // }
 
-    public static void composeTestCase(List<TestStatement> path, Set<String> testCases, String name, Map<String, Map<String, String>> readVals)
+    public static void composeTestCase(List<TestStatement> path, Set<String> testCases, String name,
+	    Map<String, Map<String, String>> readVals)
     {
 
-//	populateStateField(path);
+	// populateStateField(path);
 
 	Map<String, Set<String>> testClasses = Utils.getTestClassMapFromTestCases(testCases);
 
@@ -237,7 +241,7 @@ public class TestCaseComposer
 	    Statement stmt = statement.statement;
 	    StatementFieldVisitor sfv = new StatementFieldVisitor(fieldVars);
 	    stmt.accept(sfv);
-//	    renameFieldVarsInStmt(statement, sfv);
+	    // renameFieldVarsInStmt(statement, sfv);
 	}
 
 	for (Entry<String, Set<String>> entry : fieldVars.entrySet())
@@ -422,9 +426,11 @@ public class TestCaseComposer
 
 		    if (testClassName.equals(mainClassName))
 		    {
-			Settings.consoleLogger.error(String.format("adding tests to %s", Utils.getClassFile(mainClassName)));
+			Settings.consoleLogger
+				.error(String.format("adding tests to %s", Utils.getClassFile(mainClassName)));
 			addMergedTestCase(path, name, clazz, listRewrite);
-//			System.out.println(getMergedMethod(path, name, clazz.getTypeDec().getAST()).toString());
+			// System.out.println(getMergedMethod(path, name,
+			// clazz.getTypeDec().getAST()).toString());
 		    } else
 		    {
 			getNonTestMethods(clazz, nonTestMethods);
@@ -469,7 +475,7 @@ public class TestCaseComposer
 	}
     }
 
-    private static void addNonTestMethods(Set<Method> nonTestMethods, Document document, String testClassName)
+    private static void addNonTestMethods(Set<Method> nonTestMethods, Document document, String mainClassName)
     {
 	try
 	{
@@ -477,7 +483,7 @@ public class TestCaseComposer
 	    ASTRewrite rewriter = ASTRewrite.create(classes.get(0).getCu().getAST());
 	    for (ClassModel clazz : classes)
 	    {
-		if (clazz.getTypeDec().getName().toString().equals(testClassName))
+		if (clazz.getTypeDec().getName().toString().equals(mainClassName))
 		{
 		    ListRewrite listRewrite = rewriter.getListRewrite(clazz.getTypeDec(),
 			    TypeDeclaration.BODY_DECLARATIONS_PROPERTY);
@@ -485,12 +491,18 @@ public class TestCaseComposer
 
 		    for (Method nonTestMethod : nonTestMethods)
 		    {
+			String newName = nonTestMethod.getMethodDec().getName().toString() + "_"
+				+ nonTestMethod.getClassName();
+			String signature = newName + "(" + nonTestMethod.getMethodDec().parameters().toString() + ")";
+			if (Utils.containsInSetInMap(addedMethods, mainClassName, signature))
+			    continue;
 			AST ast = clazz.getTypeDec().getAST();
 			MethodDeclaration methodCpy = (MethodDeclaration) ASTNode.copySubtree(ast,
 				nonTestMethod.getMethodDec());
-			methodCpy.setName(ast.newSimpleName(nonTestMethod.getMethodDec().getName().toString() + "_"
-				+ nonTestMethod.getClassName()));
+			methodCpy.setName(ast.newSimpleName(newName));
+
 			listRewrite.insertLast(methodCpy, null);
+			Utils.addToTheSetInMap(addedMethods, mainClassName, signature);
 		    }
 		}
 	    }
@@ -529,7 +541,7 @@ public class TestCaseComposer
 	AST ast = td.getAST();
 	MethodDeclaration md = getMergedMethod(path, name, ast);
 
-//	System.out.println(md.toString());
+	// System.out.println(md.toString());
 	// clazz.getTypeDec().bodyDeclarations().add(md);
 	listRewrite.insertLast(md, null);
     }
@@ -610,19 +622,20 @@ public class TestCaseComposer
 
     }
 
-    public static Statement renameTestStatement(TestStatement statement, RunningState valueNamePairForCurrentState, Map<String, Map<String, String>> readVals)
+    public static Statement renameTestStatement(TestStatement statement, RunningState valueNamePairForCurrentState,
+	    Map<String, Map<String, String>> readVals)
     {
-		Map<String, String> renameMap = new HashMap<String, String>();
+	Map<String, String> renameMap = new HashMap<String, String>();
 
 	findPreqVarsRenames(statement, valueNamePairForCurrentState, renameMap, readVals);
 
 	findPostreqVarsRenames(statement, valueNamePairForCurrentState, renameMap);
-	
+
 	Set<SimpleName> vars = getAllVars(statement.statement);
 	if (vars == null)
 	    return null;
 	Set<String> varsName = Utils.getNameSet(vars);
-	
+
 	valueNamePairForCurrentState.update(statement.getName(), renameMap, varsName);
 
 	return (Statement) rename(statement.statement, vars, renameMap);
@@ -692,15 +705,17 @@ public class TestCaseComposer
 	}
     }
 
-    private static void findPreqVarsRenames(TestStatement stmt, RunningState valueNamePairForCurrentState, Map<String, String> renameMap, Map<String, Map<String, String>> readVals)
+    private static void findPreqVarsRenames(TestStatement stmt, RunningState valueNamePairForCurrentState,
+	    Map<String, String> renameMap, Map<String, Map<String, String>> readVals)
     {
-//	if (stmt.statement.toString().contains("Assert.assertTrue(mColumn3[0]"))
-//	    System.out.println();
+	// if
+	// (stmt.statement.toString().contains("Assert.assertTrue(mColumn3[0]"))
+	// System.out.println();
 	Map<String, String> nameValuePairOfStmtBefore = readVals.get(stmt.getName());
-	
+
 	if (nameValuePairOfStmtBefore == null)
 	    return;
-	
+
 	Set<String> chosenNames = new HashSet<String>();
 	for (Entry<String, String> entry : nameValuePairOfStmtBefore.entrySet())
 	{
@@ -715,7 +730,8 @@ public class TestCaseComposer
 			String.format("something's wrong with %s--%s", stmt.getName(), stmt.statement.toString()));
 	    } else if (!varNameInState.contains(varNameInStmt))
 	    {
-		//TODO for choosing the varname do a edit distance and choose the most simillar one
+		// TODO for choosing the varname do a edit distance and choose
+		// the most simillar one
 		boolean success = false;
 		for (String name : varNameInState)
 		{
@@ -730,10 +746,9 @@ public class TestCaseComposer
 		if (success != true)
 		{
 		    Settings.consoleLogger.error(
-				String.format("something's wrong with %s--%s", stmt.getName(), stmt.statement.toString()));
+			    String.format("something's wrong with %s--%s", stmt.getName(), stmt.statement.toString()));
 		}
-	    }
-	    else
+	    } else
 	    {
 		chosenNames.add(varNameInStmt);
 	    }

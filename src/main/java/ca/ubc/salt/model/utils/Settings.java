@@ -78,7 +78,23 @@ public class Settings
 	    "EvaluationTest.testComputeValueAndJacobian", "QRDecompositionTest.testQOrthogonal",
 	    "BlockFieldMatrixTest.testCopyFunctions", "EnumeratedIntegerDistributionTest.testSample",
 	    "TricubicInterpolatingFunctionTest.testQuadric", "AkimaSplineInterpolatorTest.testInterpolateLine",
-	    "BlockFieldMatrixTest.testOperateLarge" };
+	    "BlockFieldMatrixTest.testOperateLarge",
+	    "KohonenTrainingTaskTest.testTravellerSalesmanSquareTourParallelSolver",
+	    "CombinatoricsUtilsTest.testFactorial", "KolmogorovSmirnovTestTest.testDRoundingMonteCarlo",
+	    "OpenIntToFieldTest.testPutAndGetWithExpectedSize", "CombinatoricsUtilsTest.testBinomialCoefficientFail",
+	    "ContinuedFractionTest.testGoldenRatio", "CombinatoricsUtilsTest.testCheckBinomial3",
+	    "MannWhitneyUTestTest.testBigDataSetOverflow", "OpenIntToDoubleHashMapTest.testConcurrentModification",
+	    "OpenIntToDoubleHashMapTest.testPutAndGetWith0ExpectedSize", "ArithmeticUtilsTest.testSubAndCheckLong",
+	    "OpenIntToDoubleHashMapTest.testPutAndGet", "OpenIntToDoubleHashMapTest.testRemove2",
+	    "NaturalRankingTest.testNaNsMaximalTiesMinimum", "OpenIntToDoubleHashMapTest.testRemove",
+	    "OpenIntToDoubleHashMapTest.testRemoveAbsent", "OpenIntToDoubleHashMapTest.testPutAndGetWithExpectedSize",
+	    "FastHadamardTransformerTest.testNoIntInverse", "OpenIntToDoubleHashMapTest.testIterator",
+	    "CombinatoricsUtilsTest.testBinomialCoefficientLarge", "CombinationsTest.testLexicographicIterator",
+	    "OpenIntToDoubleHashMapTest.testContainsKey", "OpenIntToDoubleHashMapTest.testPutOnExisting",
+	    "OpenIntToDoubleHashMapTest.testGetAbsent", "OpenIntToDoubleHashMapTest.testCopy",
+	    "OpenIntToDoubleHashMapTest.testPutAbsentOnExisting", "CombinatoricsUtilsTest.test0Choose0",
+	    "KohonenTrainingTaskTest.testTravellerSalesmanSquareTourParallelSolver",
+	    "SplineInterpolatorTest.testInterpolateLinearDegenerateThreeSegment" };
     public static final Set<String> blackListSet = new HashSet<String>(Arrays.asList(methodBlackList));
 
     public static final String TEST_CLASS = "/Users/arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/transform/FastFourierTransformerTest.java";
