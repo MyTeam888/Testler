@@ -44,7 +44,7 @@ public class TestStatement extends TestModelNode
 		String varName = entry.getKey();
 		String varValBefore = entry.getValue();
 		String varValAfter = after.get(varName);
-		if (!varValBefore.equals(varValAfter))
+		if (!varValBefore.equals(varValAfter) && !varValBefore.equals("<null/>"))
 		    sideEffects.add(varName);
 	    }
 	} catch (ExecutionException e)

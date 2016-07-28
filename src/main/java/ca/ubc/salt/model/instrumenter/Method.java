@@ -222,6 +222,14 @@ public class Method
 		    return true;
 		}
 	    }
+	    if (obj instanceof NormalAnnotation)
+	    {
+		NormalAnnotation ma = (NormalAnnotation) obj;
+		if (ma.getTypeName().getFullyQualifiedName().contains("Test"))
+		{
+		    return true;
+		}
+	    }
 	}
 
 	return false;

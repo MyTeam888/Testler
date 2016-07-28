@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FilenameUtils;
 import org.eclipse.core.internal.utils.FileUtil;
@@ -212,12 +213,12 @@ public class TestClassInstrumenter
     public static void main(String[] args)
 	    throws IOException, IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException
     {
-	// instrumentClass(
-	// "/Users/arash/Documents/workspace-mars/assertionmodel/src/main/java/ca/ubc/ca/salt/assertionModel/instrumenter/Visitor.java");
+	 instrumentClass(
+	 "/Users/arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/analysis/integration/RombergIntegratorTest.java");
 	// instrumentClass(
 	// "/Users/arash/Library/Mobile
 	// Documents/com~apple~CloudDocs/Research/Calculator/src/calc/CalculatorTest.java");
-	instrumentClass(Settings.TEST_CLASS);
+//	instrumentClass(Settings.TEST_CLASS);
     }
 
     public static ASTNode generateInstrumentationHeader(ClassModel clazz, int randomNumber, String fileName, String methodName)
@@ -227,7 +228,7 @@ public class TestClassInstrumenter
 	sb.append(String.format(
 		"InstrumentClassGenerator.init(\"%s.%s\");InstrumentClassGenerator.initTestStatement(0);",
 		fileName, methodName));
-	sb.append(getTextForInstrumentation(clazz.getVarDecsOfFields(), 1));
+	sb.append(getTextForInstrumentation(clazz.getVarDecsOfFields(), 1, null));
 	return Utils.createBlockWithText(sb.toString());
 
     }
@@ -238,10 +239,10 @@ public class TestClassInstrumenter
     }
 
     public static ASTNode generateInstrumentationBlock(int randomNumber,
-	    LinkedList<VariableDeclarationFragment> varDecs, String methodName, int counter)
+	    LinkedList<VariableDeclarationFragment> varDecs, String methodName, int counter, Map<String, VariableDeclarationFragment> unassignedVars)
     {
 
-	String text = getTextForInstrumentation(varDecs, counter);
+	String text = getTextForInstrumentation(varDecs, counter, unassignedVars);
 	
 	return Utils.createBlockWithText(text);
 
@@ -299,7 +300,7 @@ public class TestClassInstrumenter
     //
     // }
 
-    public static String getTextForInstrumentation(List<VariableDeclarationFragment> list, int counter)
+    public static String getTextForInstrumentation(List<VariableDeclarationFragment> list, int counter, Map<String, VariableDeclarationFragment> unassignedVars)
     {
 	StringBuilder sb = new StringBuilder();
 	sb.append(String.format("InstrumentClassGenerator.traceTestStatementExecution("));
@@ -317,7 +318,10 @@ public class TestClassInstrumenter
 	sb.append("InstrumentClassGenerator.writeObjects(");
 	for (VariableDeclarationFragment var : list)
 	{
+	    if (unassignedVars == null || !unassignedVars.containsKey(var.getName().toString()))
 	    sb.append(var.getName());
+	    else
+		sb.append("null");
 	    sb.append(',');
 	}
 	if (list.size() > 0)

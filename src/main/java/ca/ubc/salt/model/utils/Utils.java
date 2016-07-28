@@ -200,6 +200,19 @@ public class Utils
 	list.add(value);
     }
     
+    public static <K, V> void addAllTheSetInMap(Map<K, Set<V>> map, K key, Set<V> value)
+    {
+	Set<V> list = map.get(key);
+	if (list == null)
+	{
+	    list = new HashSet<V>();
+	    map.put(key, list);
+	}
+	if (value == null)
+	    return;
+	list.addAll(value);
+    }
+    
     
     public static <K, V> boolean containsInSetInMap(Map<K, Set<V>> map, K key, V value)
     {

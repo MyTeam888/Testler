@@ -22,14 +22,17 @@ import org.eclipse.jdt.core.dom.SwitchCase;
 import org.eclipse.jdt.core.dom.SwitchStatement;
 import org.eclipse.jdt.core.dom.TryStatement;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.dom.WhileStatement;
+
+import ca.ubc.salt.model.utils.Utils;
 
 public class ReadVariableVisitor extends ASTVisitor
 {
 
     Map<String, Set<SimpleName>> readVars;
     String methodName;
-    int counter = 0;
+    int counter = -1;
 
     public ReadVariableVisitor(String methodName)
     {
@@ -39,8 +42,15 @@ public class ReadVariableVisitor extends ASTVisitor
     public boolean visit(ExpressionStatement node)
     {
 	// System.out.println(node.toString());
+	counter++;
 	getReadVars(node);
 	return false; // do not continue
+    }
+    
+    public boolean visit(VariableDeclarationStatement node)
+    {
+	counter++;
+	return true;
     }
 
     public boolean visit(VariableDeclarationFragment node)
@@ -49,58 +59,68 @@ public class ReadVariableVisitor extends ASTVisitor
 	// System.out.println(varDecs);
 
 	getReadVars(node.getInitializer());
-
 	return false;
     }
 
     public void getReadVars(ASTNode node)
     {
 	if (node == null)
+	{
+	    Utils.addAllTheSetInMap(readVars, methodName + "-" + counter + ".xml", null);
 	    return;
+	}
 	StatementReadVariableVisitor srvv = new StatementReadVariableVisitor();
 	node.accept(srvv);
-	readVars.put(methodName + "-" + counter + ".xml", srvv.readVars);
-	counter++;
+	Utils.addAllTheSetInMap(readVars, methodName + "-" + counter + ".xml", srvv.readVars);
+	
     }
     
     
     public boolean visit(IfStatement node)
     {
+	counter++;
 	getReadVars(node);
 	return false;
     }
     public boolean visit(WhileStatement node)
     {
+	counter++;
 	getReadVars(node);
 	return false;
     }
     public boolean visit(EnhancedForStatement node)
     {
+	counter++;
 	getReadVars(node);
 	return false;
     }
     public boolean visit(ForStatement node)
     {
+	counter++;
 	getReadVars(node);
 	return false;
     }
     public boolean visit(TryStatement node)
     {
+	counter++;
 	getReadVars(node);
 	return false;
     }
     public boolean visit(SwitchStatement node)
     {
+	counter++;
 	getReadVars(node);
 	return false;
     }
     public boolean visit(SwitchCase node)
     {
+	counter++;
 	getReadVars(node);
 	return false;
     }
     public boolean visit(DoStatement node)
     {
+	counter++;
 	getReadVars(node);
 	return false;
     }

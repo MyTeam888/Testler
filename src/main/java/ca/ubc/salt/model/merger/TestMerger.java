@@ -158,7 +158,7 @@ public class TestMerger
 ////	TestCaseComposer.composeTestCases(mergedTestCases);
 //    }
 
-    public static LinkedList<TestStatement> returnThePath(TestState root, LinkedList<TestStatement> frontierPaths)
+    public static LinkedList<TestStatement> returnThePath(TestStatement root, LinkedList<TestStatement> frontierPaths)
     {
 
 	LinkedList<TestStatement> path = new LinkedList<TestStatement>();
@@ -181,10 +181,10 @@ public class TestMerger
 	    cur = parent;
 	}
 
-	while (cur != null)
+	while (cur != null && cur != root)
 	{
-	    cur = (TestStatement) cur.getStart().parent.get(root);
-	    if (cur != null)
+	    cur = (TestStatement) cur.parent.get(root);
+	    if (cur != null&& cur != root)
 		path.addFirst(cur);
 	}
 

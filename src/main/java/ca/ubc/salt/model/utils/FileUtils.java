@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
@@ -32,18 +33,19 @@ public class FileUtils
     static LoadingCache<List<String>, ArrayList<String>> sortedAllStates;
     static
     {
-	sortedAllStates = CacheBuilder.newBuilder().maximumSize(100).build(new CacheLoader<List<String>, ArrayList<String>>()
-	{
-	    @Override
-	    public ArrayList<String> load(List<String> testCases) throws Exception
-	    {
-		ArrayList<String> sortedTestStates = FileUtils.getStatesForTestCase(testCases);
+	sortedAllStates = CacheBuilder.newBuilder().maximumSize(100)
+		.build(new CacheLoader<List<String>, ArrayList<String>>()
+		{
+		    @Override
+		    public ArrayList<String> load(List<String> testCases) throws Exception
+		    {
+			ArrayList<String> sortedTestStates = FileUtils.getStatesForTestCase(testCases);
 
-		Collections.sort(sortedTestStates, new NaturalOrderComparator());
+			Collections.sort(sortedTestStates, new NaturalOrderComparator());
 
-		return sortedTestStates;
-	    }
-	});
+			return sortedTestStates;
+		    }
+		});
     }
 
     public static HashSet<String> readSet(String path) throws FileNotFoundException
@@ -118,33 +120,85 @@ public class FileUtils
 	return getState(new File(Settings.tracePaths + "/" + stateName));
     }
 
+    
     public static String getState(File file)
     {
-	List<String> lines = FileUtils.getLines(file);
-	if (lines.size() > 0)
+	String str;
+	try
 	{
-	    String state = lines.get(lines.size() - 1);
-	    if (state.startsWith("<?xml"))
-		return state;
-	    else
+	    str = readFileToString(file);
+	    int end = str.indexOf("</vars>");
+	    if (end == -1)
 		return "";
-	} else
-	    return "";
+	    return str.substring(end + 8);
+	} catch (IOException e)
+	{
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
+	return "";
     }
+//    public static String getState(File file)
+//    {
+//	List<String> lines = FileUtils.getLines(file);
+//	if (lines.size() > 0)
+//	{
+//	    String state = lines.get(lines.size() - 1);
+//	    if (state.startsWith("<?xml"))
+//		return state;
+//	    else
+//	    {
+//		for (ListIterator<String> it = lines.listIterator(); it.hasNext();)
+//		{
+//		    String line = it.next();
+//		    if (line.startsWith("<vars>"))
+//			return it.next();
+//		}
+//		return "";
+//	    }
+//	} else
+//	    return "";
+//    }
 
     public static String getVars(String stateName)
     {
-	List<String> lines = FileUtils.getLines(new File(Settings.tracePaths + "/" + stateName));
-	if (lines == null)
-	    return null;
-	if (lines.size() < 2)
-	    return null;
-	String vars = lines.get(lines.size() - 2);
-	if (vars.startsWith("<vars>"))
-	    return vars;
-	else
-	    return null;
+	String str;
+	try
+	{
+	    str = readFileToString(Settings.tracePaths + "/" + stateName);
+	    int begin = str.indexOf("<vars>");
+	    int end = str.indexOf("</vars>");
+	    if (begin == -1 || end == -1)
+		return null;
+	    return str.substring(begin, end + 8);
+	} catch (IOException e)
+	{
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
+	return null;
     }
+//    public static String getVars(String stateName)
+//    {
+//	List<String> lines = FileUtils.getLines(new File(Settings.tracePaths + "/" + stateName));
+//	if (lines == null)
+//	    return null;
+//	if (lines.size() < 2)
+//	    return null;
+//	
+//	String vars = lines.get(lines.size() - 2);
+//	if (vars.startsWith("<vars>"))
+//	    return vars;
+//	else
+//	{
+//	    for (String line : lines)
+//	    {
+//		if (line.startsWith("<vars>"))
+//		    return line;
+//	    }
+//	}
+//	return null;
+//    }
 
     public static String getMethodCalled(String stateName)
     {

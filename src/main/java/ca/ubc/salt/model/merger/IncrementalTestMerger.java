@@ -139,10 +139,10 @@ public class IncrementalTestMerger
 
 	    Settings.consoleLogger.error(String.format("merging %s", connectedComponent.toString()));
 
-	    // connectedComponent = new HashSet<String>();
-	    // connectedComponent.add("Array2DRowRealMatrixTest.testSetColumn");
-	    // connectedComponent.add("Array2DRowRealMatrixTest.testGetColumn");
-	    // connectedComponent.add("ComplexTest.testMultiply");
+	    connectedComponent = new HashSet<String>();
+	    connectedComponent.add("SimplexSolverTest.testMath272");
+	    connectedComponent.add("SimplexSolverTest.testMath293");
+//	    connectedComponent.add("DiagonalMatrixTest.testConstructor3");
 	    // connectedComponent.add("ComplexTest.testExp");
 	    // connectedComponent.add("ComplexTest.testScalarAdd");
 
@@ -151,7 +151,7 @@ public class IncrementalTestMerger
 
 	    Map<String, Map<String, String>> readValues = getAllReadValues(testCases);
 
-	    System.out.println(readValues);
+	    // System.out.println(readValues);
 
 	    testCases.add("init.init");
 	    Map<String, TestState> graph = StateComparator.createGraph(testCases);
@@ -182,12 +182,14 @@ public class IncrementalTestMerger
 	    String mainClassName = Utils.getTestClassWithMaxNumberOfTestCases(testClasses);
 
 	    RunningState initialState = new RunningState(connectedComponent, mainClassName);
-	    do
+	    // do
 	    {
+
 		LinkedList<TestStatement> path = new LinkedList<TestStatement>();
 
-		Pair<TestStatement, RunningState> frontier = new Pair<TestStatement, RunningState>(
-			new TestStatement(root, root, "init.xml"), initialState);
+		TestStatement rootStmt = new TestStatement(root, root, "init.xml");
+		Pair<TestStatement, RunningState> frontier = new Pair<TestStatement, RunningState>(rootStmt,
+			initialState);
 		Pair<TestStatement, RunningState> prevFrontier;
 		do
 		{
@@ -205,16 +207,15 @@ public class IncrementalTestMerger
 		if (!assertions.isEmpty())
 		{
 		    frontier = prevFrontier;
-			Map<String, Set<String>> assertionView = Planning
-				.getTestCaseTestStatementStringMapping(assertions);
-			Map<String, Map<String, TestStatement>> allStmtsView = Planning
-				.getTestCaseTestStatementMapping(allTestStatements);
-			for (Entry<String, Set<String>> testCaseEntry : assertionView.entrySet())
+		    Map<String, Set<String>> assertionView = Planning.getTestCaseTestStatementStringMapping(assertions);
+		    Map<String, Map<String, TestStatement>> allStmtsView = Planning
+			    .getTestCaseTestStatementMapping(allTestStatements);
+		    for (Entry<String, Set<String>> testCaseEntry : assertionView.entrySet())
+		    {
+			String testCase = testCaseEntry.getKey();
+			Set<String> assertionsToCover = testCaseEntry.getValue();
+			do
 			{
-			    String testCase = testCaseEntry.getKey();
-			    Set<String> assertionsToCover = testCaseEntry.getValue();
-			    do
-			    {
 			    frontier = Planning.dijkstra(frontier.getFirst(), graph, frontier.getSecond(), readValues,
 				    connectedComponentsMap, allStmtsView.get(testCase), assertionsToCover, 3);
 			    if (frontier == null)
@@ -226,17 +227,18 @@ public class IncrementalTestMerger
 				break;
 			    System.out.println(frontier.getFirst());
 			} while (frontier != null);
-			}
+		    }
 		}
 		Settings.consoleLogger.error("second phase finished");
 
-		List<TestStatement> mergedPath = TestMerger.returnThePath(root, path);
+		List<TestStatement> mergedPath = TestMerger.returnThePath(rootStmt, path);
 		paths.add(mergedPath);
 
 		TestCaseComposer.composeTestCase(mergedPath, connectedComponent,
 			TestCaseComposer.generateTestCaseName(connectedComponent), readValues);
 
-	    } while (first != null);
+	    }
+	    // while (first != null);
 
 	    int totalNumberOfStatements = allStates.size() - testCases.size() * 2;
 	    int totalMerged = 0;
@@ -244,7 +246,8 @@ public class IncrementalTestMerger
 		totalMerged += path.size();
 	    Settings.consoleLogger.error(String.format("Before Merging : %d, After Merging %d, saved : %d",
 		    totalNumberOfStatements, totalMerged, totalNumberOfStatements - totalMerged));
-	    System.out.println(getSavedStmts(allTestStatements, paths.get(0)));
+	    // System.out.println(getSavedStmts(allTestStatements,
+	    // paths.get(0)));
 	    totalBeforeMerging += totalNumberOfStatements;
 	    totalAftermerging += totalMerged;
 	}
@@ -341,7 +344,8 @@ public class IncrementalTestMerger
 		TestStatement stmt = stmtPair.getSecond();
 		if (!visited.contains(stmt))
 		{
-		    relaxChild(root, queue, parent, stmt, runningState, stmtPair.getFirst());
+		    relaxChild(root, queue, parent, stmt, runningState,
+			    stmtPair.getFirst() + readValues.get(stmt.getName()).size());
 		}
 
 	    }
@@ -421,6 +425,7 @@ public class IncrementalTestMerger
 	    Map<String, Set<SimpleName>> readVars = ReadVariableDetector
 		    .populateReadVarsForTestCaseOfFile(Utils.getTestCaseFile(testCase), testCase);
 
+	    System.out.println(readVars);
 	    // ReadVariableDetector.accumulateReadVars(readVars);
 
 	    // state1 ->

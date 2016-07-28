@@ -42,6 +42,7 @@ public class InstrumenterVisitor extends ASTVisitor
     int randomNumber;
     int counter = 2;
     String methodName;
+//    boolean addedUnInitializedVar = false;
 
     public InstrumenterVisitor(ASTRewrite astRewrite, int randomNumber, String methodName)
     {
@@ -49,7 +50,6 @@ public class InstrumenterVisitor extends ASTVisitor
 	this.randomNumber = randomNumber;
 	this.methodName = methodName;
     }
-
 
     public void addFieldVars(ClassModel clazz)
     {
@@ -62,8 +62,6 @@ public class InstrumenterVisitor extends ASTVisitor
 	    }
 	}
     }
-    
-    
 
     @Override
     public boolean preVisit2(ASTNode node)
@@ -78,80 +76,87 @@ public class InstrumenterVisitor extends ASTVisitor
 
     }
 
-//    public boolean visit(Statement node)
-//    {
-//	if (node.getNodeType() == ASTNode.IF_STATEMENT || node.getNodeType() == ASTNode.WHILE_STATEMENT
-//		|| node.getNodeType() == ASTNode.ENHANCED_FOR_STATEMENT || node.getNodeType() == ASTNode.TRY_STATEMENT
-//		|| node.getNodeType() == ASTNode.SWITCH_STATEMENT || node.getNodeType() == ASTNode.SWITCH_CASE
-//		|| node.getNodeType() == ASTNode.DO_STATEMENT)
-//	{
-//	    if (node.getNodeType() != ASTNode.RETURN_STATEMENT)
-//		addDumpCode(node);
-//	    return false;
-//	} else if (node.getNodeType() == ASTNode.EXPRESSION_STATEMENT)
-//	{
-//	    
-//	}
-//	return true;
-//    }
+    // public boolean visit(Statement node)
+    // {
+    // if (node.getNodeType() == ASTNode.IF_STATEMENT || node.getNodeType() ==
+    // ASTNode.WHILE_STATEMENT
+    // || node.getNodeType() == ASTNode.ENHANCED_FOR_STATEMENT ||
+    // node.getNodeType() == ASTNode.TRY_STATEMENT
+    // || node.getNodeType() == ASTNode.SWITCH_STATEMENT || node.getNodeType()
+    // == ASTNode.SWITCH_CASE
+    // || node.getNodeType() == ASTNode.DO_STATEMENT)
+    // {
+    // if (node.getNodeType() != ASTNode.RETURN_STATEMENT)
+    // addDumpCode(node);
+    // return false;
+    // } else if (node.getNodeType() == ASTNode.EXPRESSION_STATEMENT)
+    // {
+    //
+    // }
+    // return true;
+    // }
 
     public boolean visit(VariableDeclarationFragment node)
     {
-	if (node.getInitializer() != null)
-	{
-	    varDecs.add(node);
-	    addDumpCode(node.getParent(), false);
-	} else
+	if (node.getInitializer() == null)
 	{
 	    unassignedVars.put(node.getName().toString(), node);
-	}
+	} 
+	varDecs.add(node);
+
 	return false; // do not continue
 	// System.out.println(node.toString());
 	// System.out.println(varDecs);
     }
 
-    
     public boolean visit(IfStatement node)
     {
 	addDumpCode(node, true);
 	return false;
     }
+
     public boolean visit(WhileStatement node)
     {
 	addDumpCode(node, true);
 	return false;
     }
+
     public boolean visit(EnhancedForStatement node)
     {
 	addDumpCode(node, true);
 	return false;
     }
+
     public boolean visit(ForStatement node)
     {
 	addDumpCode(node, true);
 	return false;
     }
+
     public boolean visit(TryStatement node)
     {
 	addDumpCode(node, true);
 	return false;
     }
+
     public boolean visit(SwitchStatement node)
     {
 	addDumpCode(node, true);
 	return false;
     }
+
     public boolean visit(SwitchCase node)
     {
 	addDumpCode(node, true);
 	return false;
     }
+
     public boolean visit(DoStatement node)
     {
 	addDumpCode(node, true);
 	return false;
     }
-    
+
     public boolean visit(ExpressionStatement exp)
     {
 	Expression e = exp.getExpression();
@@ -164,8 +169,9 @@ public class InstrumenterVisitor extends ASTVisitor
 		VariableDeclarationFragment vdf = unassignedVars.get(sn.toString());
 		if (vdf != null)
 		{
-		    varDecs.add(vdf);
+//		    varDecs.add(vdf);
 		    unassignedVars.remove(sn.toString());
+//		    addedUnInitializedVar = true;
 		}
 	    }
 
@@ -180,7 +186,7 @@ public class InstrumenterVisitor extends ASTVisitor
     private void addDumpCode(ASTNode node, boolean loop)
     {
 	ASTNode newCode = TestClassInstrumenter.generateInstrumentationBlock(randomNumber, varDecs, methodName,
-		counter++);
+		counter++, unassignedVars);
 
 	ASTNode loopCode = Utils.createBlockWithText("InstrumentClassGenerator.traceLoop();");
 	ASTNode parent = node.getParent();
@@ -200,13 +206,22 @@ public class InstrumenterVisitor extends ASTVisitor
     @Override
     public void postVisit(ASTNode node)
     {
-	if (node instanceof Statement && node.getNodeType() != ASTNode.VARIABLE_DECLARATION_STATEMENT
+	if (node instanceof Statement)
+	{
+	    if (node.getNodeType() == ASTNode.VARIABLE_DECLARATION_STATEMENT)
+		addDumpCode(node, false);
+	if ( node.getNodeType() != ASTNode.VARIABLE_DECLARATION_STATEMENT
 		&& node.getNodeType() != ASTNode.VARIABLE_DECLARATION_EXPRESSION
 		&& node.getNodeType() != ASTNode.VARIABLE_DECLARATION_FRAGMENT)
 	{
-	    int size = varDecLen.pop();
-	    while (varDecs.size() > size)
-		varDecs.removeLast();
+//	    if (addedUnInitializedVar == false)
+//	    {
+		int size = varDecLen.pop();
+		while (varDecs.size() > size)
+		    varDecs.removeLast();
+//	    } else
+//		addedUnInitializedVar = false;
+	}
 	}
     }
     // public boolean visit(SimpleName node)
