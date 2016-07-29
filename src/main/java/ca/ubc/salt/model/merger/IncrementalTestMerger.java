@@ -139,10 +139,10 @@ public class IncrementalTestMerger
 
 	    Settings.consoleLogger.error(String.format("merging %s", connectedComponent.toString()));
 
-	    connectedComponent = new HashSet<String>();
-	    connectedComponent.add("SimplexSolverTest.testMath272");
-	    connectedComponent.add("SimplexSolverTest.testMath293");
-//	    connectedComponent.add("DiagonalMatrixTest.testConstructor3");
+//	    connectedComponent = new HashSet<String>();
+//	    connectedComponent.add("Array2DRowRealMatrixTest.testGetRowMatrix");
+//	    connectedComponent.add("Array2DRowRealMatrixTest.testGetSubMatrix");
+//	    connectedComponent.add("Array2DRowRealMatrixTest.testCopySubMatrix");
 	    // connectedComponent.add("ComplexTest.testExp");
 	    // connectedComponent.add("ComplexTest.testScalarAdd");
 
@@ -206,17 +206,18 @@ public class IncrementalTestMerger
 		Settings.consoleLogger.error("first phase finished");
 		if (!assertions.isEmpty())
 		{
-		    frontier = prevFrontier;
 		    Map<String, Set<String>> assertionView = Planning.getTestCaseTestStatementStringMapping(assertions);
 		    Map<String, Map<String, TestStatement>> allStmtsView = Planning
 			    .getTestCaseTestStatementMapping(allTestStatements);
 		    for (Entry<String, Set<String>> testCaseEntry : assertionView.entrySet())
 		    {
+			frontier = prevFrontier;
 			String testCase = testCaseEntry.getKey();
 			Set<String> assertionsToCover = testCaseEntry.getValue();
 			do
 			{
-			    frontier = Planning.dijkstra(frontier.getFirst(), graph, frontier.getSecond(), readValues,
+			    prevFrontier = frontier;
+			    frontier = Planning.forward(frontier.getFirst(), graph, frontier.getSecond(), readValues,
 				    connectedComponentsMap, allStmtsView.get(testCase), assertionsToCover, 3);
 			    if (frontier == null)
 				break;
@@ -425,7 +426,7 @@ public class IncrementalTestMerger
 	    Map<String, Set<SimpleName>> readVars = ReadVariableDetector
 		    .populateReadVarsForTestCaseOfFile(Utils.getTestCaseFile(testCase), testCase);
 
-	    System.out.println(readVars);
+//	    System.out.println(readVars);
 	    // ReadVariableDetector.accumulateReadVars(readVars);
 
 	    // state1 ->

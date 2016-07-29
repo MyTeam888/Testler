@@ -15,6 +15,7 @@ import org.eclipse.jdt.core.dom.Statement;
 
 import ca.ubc.salt.model.composer.TestCaseComposer;
 import ca.ubc.salt.model.utils.FileUtils;
+import ca.ubc.salt.model.utils.Pair;
 import ca.ubc.salt.model.utils.Utils;
 
 public class TestStatement extends TestModelNode
@@ -26,26 +27,33 @@ public class TestStatement extends TestModelNode
     public Statement refactoredStatement;
     String methodCall;
     String input;
-    Collection<String> sideEffects;
+    Map<String, Pair<String, String>> sideEffects;
+    Map<String, String> newVars;
 
     public long time = 1000;
 
     public void initSideEffects(List<String> testCases)
     {
-	sideEffects = new ArrayList<String>();
+	sideEffects = new HashMap<String, Pair<String, String>>();
+	newVars = new HashMap<String, String>();
 	try
 	{
 	    Map<String, String> before = TestCaseComposer.nameValuePairs.get(this.name);
 	    String nextState = Utils.nextOrPrevState(testCases, this.name, true);
 	    Map<String, String> after = TestCaseComposer.nameValuePairs.get(nextState);
 
-	    for (Entry<String, String> entry : before.entrySet())
+	    for (Entry<String, String> entry : after.entrySet())
 	    {
 		String varName = entry.getKey();
-		String varValBefore = entry.getValue();
-		String varValAfter = after.get(varName);
-		if (!varValBefore.equals(varValAfter) && !varValBefore.equals("<null/>"))
-		    sideEffects.add(varName);
+		String varValAfter = entry.getValue();
+		String varValBefore = after.get(varName);
+		if (!varValAfter.equals(varValBefore))
+		{
+		    if (!varValBefore.equals("<null/>") && varValBefore != null)
+			sideEffects.put(varName, new Pair<String, String>(varValBefore, varValAfter));
+		    else
+			newVars.put(varName, varValAfter);
+		}
 	    }
 	} catch (ExecutionException e)
 	{
@@ -145,7 +153,7 @@ public class TestStatement extends TestModelNode
 
     }
 
-    public Collection<String> getSideEffects()
+    public Map<String, Pair<String, String>> getSideEffects()
     {
 	return sideEffects;
     }

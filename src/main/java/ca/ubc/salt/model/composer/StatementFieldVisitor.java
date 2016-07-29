@@ -43,7 +43,11 @@ public class StatementFieldVisitor extends ASTVisitor
 //		System.out.println(ivb.getVariableDeclaration().getJavaElement());
 		
 		if (className == null)
+		{
+		    if (ivb.getDeclaringClass() == null)
+			return true;
 		    className = ivb.getDeclaringClass().getName();
+		}
 		
 		Utils.addToTheSetInMap(vars, ivb.getDeclaringClass().getName(), node.getIdentifier());
 		
