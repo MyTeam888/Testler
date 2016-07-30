@@ -130,7 +130,12 @@ public class FileUtils
 	    int end = str.indexOf("</vars>");
 	    if (end == -1)
 		return "";
+	    try{
 	    return str.substring(end + 8);
+	    }catch(StringIndexOutOfBoundsException e)
+	    {
+		return "";
+	    }
 	} catch (IOException e)
 	{
 	    // TODO Auto-generated catch block

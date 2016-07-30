@@ -8,6 +8,7 @@ import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.DoStatement;
 import org.eclipse.jdt.core.dom.EnhancedForStatement;
 import org.eclipse.jdt.core.dom.Expression;
@@ -25,12 +26,14 @@ import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.dom.WhileStatement;
 
+import ca.ubc.salt.model.utils.Pair;
 import ca.ubc.salt.model.utils.Utils;
 
 public class ReadVariableVisitor extends ASTVisitor
 {
 
     Map<String, Set<SimpleName>> readVars;
+    Map<String, Set<Pair<String, SimpleName>>> needToBeDefinedVars;
     String methodName;
     int counter = -1;
 
@@ -39,14 +42,27 @@ public class ReadVariableVisitor extends ASTVisitor
 	this.methodName = methodName;
     }
 
-    public boolean visit(ExpressionStatement node)
+    public boolean visit(ExpressionStatement exp)
     {
 	// System.out.println(node.toString());
+
 	counter++;
-	getReadVars(node);
+	Expression e = exp.getExpression();
+	if (e instanceof Assignment)
+	{
+	    Assignment a = (Assignment) e;
+	    if (a.getLeftHandSide().getNodeType() == ASTNode.SIMPLE_NAME)
+	    {
+		SimpleName left = (SimpleName) a.getLeftHandSide();
+		Utils.addToTheSetInMap(needToBeDefinedVars, methodName + "-" + counter + ".xml", new Pair<String, SimpleName>(left.resolveBinding().toString(), left));
+	    }
+	    getReadVars(a.getRightHandSide());
+
+	} else
+	    getReadVars(exp);
 	return false; // do not continue
     }
-    
+
     public boolean visit(VariableDeclarationStatement node)
     {
 	counter++;
@@ -72,61 +88,64 @@ public class ReadVariableVisitor extends ASTVisitor
 	StatementReadVariableVisitor srvv = new StatementReadVariableVisitor();
 	node.accept(srvv);
 	Utils.addAllTheSetInMap(readVars, methodName + "-" + counter + ".xml", srvv.readVars);
-	
+
     }
-    
-    
+
     public boolean visit(IfStatement node)
     {
 	counter++;
 	getReadVars(node);
 	return false;
     }
+
     public boolean visit(WhileStatement node)
     {
 	counter++;
 	getReadVars(node);
 	return false;
     }
+
     public boolean visit(EnhancedForStatement node)
     {
 	counter++;
 	getReadVars(node);
 	return false;
     }
+
     public boolean visit(ForStatement node)
     {
 	counter++;
 	getReadVars(node);
 	return false;
     }
+
     public boolean visit(TryStatement node)
     {
 	counter++;
 	getReadVars(node);
 	return false;
     }
+
     public boolean visit(SwitchStatement node)
     {
 	counter++;
 	getReadVars(node);
 	return false;
     }
+
     public boolean visit(SwitchCase node)
     {
 	counter++;
 	getReadVars(node);
 	return false;
     }
+
     public boolean visit(DoStatement node)
     {
 	counter++;
 	getReadVars(node);
 	return false;
     }
-    
-    
-    
 
     public Map<String, Set<SimpleName>> getReadVars()
     {

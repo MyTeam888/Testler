@@ -46,10 +46,10 @@ public class TestStatement extends TestModelNode
 	    {
 		String varName = entry.getKey();
 		String varValAfter = entry.getValue();
-		String varValBefore = after.get(varName);
+		String varValBefore = before.get(varName);
 		if (!varValAfter.equals(varValBefore))
 		{
-		    if (!varValBefore.equals("<null/>") && varValBefore != null)
+		    if (varValBefore != null && !varValBefore.equals("<null/>"))
 			sideEffects.put(varName, new Pair<String, String>(varValBefore, varValAfter));
 		    else
 			newVars.put(varName, varValAfter);
@@ -158,6 +158,16 @@ public class TestStatement extends TestModelNode
 	return sideEffects;
     }
 
+    public Map<String, String> getNewVars()
+    {
+        return newVars;
+    }
+
+    public void setNewVars(Map<String, String> newVars)
+    {
+        this.newVars = newVars;
+    }
+
     // @Override
     // public int hashCode()
     // {
@@ -167,4 +177,6 @@ public class TestStatement extends TestModelNode
     //
     // }
 
+    
+    
 }
