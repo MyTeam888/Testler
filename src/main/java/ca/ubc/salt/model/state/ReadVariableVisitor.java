@@ -14,6 +14,7 @@ import org.eclipse.jdt.core.dom.EnhancedForStatement;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.ForStatement;
+import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IfStatement;
 import org.eclipse.jdt.core.dom.MethodInvocation;
@@ -33,7 +34,7 @@ public class ReadVariableVisitor extends ASTVisitor
 {
 
     Map<String, Set<SimpleName>> readVars;
-    Map<String, Set<Pair<String, SimpleName>>> needToBeDefinedVars;
+    Map<String, Set<Pair<String, SimpleName>>> needToBeDefinedVars = new HashMap<String, Set<Pair<String, SimpleName>>>();
     String methodName;
     int counter = -1;
 
@@ -54,7 +55,13 @@ public class ReadVariableVisitor extends ASTVisitor
 	    if (a.getLeftHandSide().getNodeType() == ASTNode.SIMPLE_NAME)
 	    {
 		SimpleName left = (SimpleName) a.getLeftHandSide();
-		Utils.addToTheSetInMap(needToBeDefinedVars, methodName + "-" + counter + ".xml", new Pair<String, SimpleName>(left.resolveBinding().toString(), left));
+		IBinding binding = left.resolveTypeBinding();
+		if (binding != null)
+		    Utils.addToTheSetInMap(needToBeDefinedVars, methodName + "-" + counter + ".xml",
+			    new Pair<String, SimpleName>(binding.toString(), left));
+		else
+		    System.out.println(exp.toString() + left.resolveBinding().toString() + ",   "
+			    + left.resolveTypeBinding().toString());
 	    }
 	    getReadVars(a.getRightHandSide());
 

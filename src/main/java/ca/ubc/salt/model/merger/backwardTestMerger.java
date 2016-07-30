@@ -139,12 +139,12 @@ public class backwardTestMerger
 
 	    Settings.consoleLogger.error(String.format("merging %s", connectedComponent.toString()));
 
-	    connectedComponent = new HashSet<String>();
+//	    connectedComponent = new HashSet<String>();
 //	    connectedComponent.add("Array2DRowRealMatrixTest.testGetRowMatrix");
 //	    connectedComponent.add("Array2DRowRealMatrixTest.testGetSubMatrix");
 //	    connectedComponent.add("Array2DRowRealMatrixTest.testCopySubMatrix");
-	    connectedComponent.add("Array2DRowRealMatrixTest.testSetColumn");
-	     connectedComponent.add("Array2DRowRealMatrixTest.testGetColumn");
+//	    connectedComponent.add("Array2DRowRealMatrixTest.testSetColumn");
+//	     connectedComponent.add("Array2DRowRealMatrixTest.testGetColumn");
 	    // connectedComponent.add("ComplexTest.testExp");
 	    // connectedComponent.add("ComplexTest.testScalarAdd");
 
@@ -359,7 +359,7 @@ public class backwardTestMerger
 	    TestStatement parent, TestStatement stmt, RunningState runningState, int bonus)
 	    throws CloneNotSupportedException
     {
-	long newD = parent.distFrom.get(root) + stmt.time - bonus + stmt.getSideEffects().size() * 1000000;
+	long newD = parent.distFrom.get(root) + stmt.time - bonus + stmt.getSideEffects().size() * 1000000 + TestCaseComposer.getTestStatementNumber(stmt.getName());
 	Long childDist = stmt.distFrom.get(root);
 	if (childDist == null || newD < childDist)
 	{

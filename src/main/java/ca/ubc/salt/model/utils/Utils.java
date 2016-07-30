@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 
 import org.eclipse.jdt.core.JavaCore;
@@ -229,7 +230,7 @@ public class Utils
 	Map<K2, V> m = map.get(key1);
 	if (m == null)
 	{
-	    m = new HashMap<K2, V>();
+	    m = new TreeMap<K2, V>(new NaturalOrderComparator());
 	    map.put(key1, m);
 	}
 	m.put(key2, value);

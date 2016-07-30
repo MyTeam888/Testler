@@ -23,6 +23,8 @@ import java.util.Set;
 
 import org.eclipse.jdt.core.dom.SimpleName;
 
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Multiset;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
 
@@ -91,21 +93,22 @@ public class Planning
 	    Map<String, TestStatement> testStatementMap)
 	    throws CloneNotSupportedException
     {
-	PriorityQueue<TwoPair<Long, LinkedList<TestStatement>, Set<String>, Set<Pair<String, String>>>> queue = new PriorityQueue<TwoPair<Long, LinkedList<TestStatement>, Set<String>, Set<Pair<String, String>>>>();
+	PriorityQueue<TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Set<Pair<String, String>>>> queue = new PriorityQueue<TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Set<Pair<String, String>>>>();
 
 	LinkedList<TestStatement> initialList = new LinkedList<TestStatement>();
 	initialList.add(goal);
-	Set<String> initGoals = new HashSet<String>(readValues.get(goal.getName()).values());
-	queue.add(new TwoPair<Long, LinkedList<TestStatement>, Set<String>, Set<Pair<String, String>>>((long)0, initialList, initGoals, null));
+	Multiset<String> initGoals = HashMultiset.create();
+	initGoals.addAll(readValues.get(goal.getName()).values());
+	queue.add(new TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Set<Pair<String, String>>>((long)0, initialList, initGoals, null));
 	
 	while (queue.size() != 0)
 	{
 
-	    TwoPair<Long, LinkedList<TestStatement>, Set<String>, Set<Pair<String, String>>> frontier = queue.poll();
+	    TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Set<Pair<String, String>>> frontier = queue.poll();
 
 	    Long cost = frontier.getFirst();
 	    LinkedList<TestStatement> listTillNow = frontier.getSecond();
-	    Set<String> pGoals = frontier.getThird();
+	    Multiset<String> pGoals = frontier.getThird();
 	    Set<Pair<String, String>> pDefines = frontier.getForth();
 
 	    if (areGoalsSatisfied(pGoals, pDefines, initialState))
@@ -115,13 +118,16 @@ public class Planning
 
 	    for (TestStatement preq : preqs)
 	    {
-		Set<String> newGoals = new HashSet<String>(pGoals);
+		if (listTillNow.contains(preq))
+		    continue;
+		Multiset<String> newGoals = HashMultiset.create();
+		newGoals.addAll(pGoals);
 		LinkedList<TestStatement> newList = new LinkedList<TestStatement>();
 		newList.add(preq);
 		newList.addAll(listTillNow);
 		
 		updateGoals(preq, newGoals, pDefines, readValues);
-		queue.add(new TwoPair<Long, LinkedList<TestStatement>, Set<String>, Set<Pair<String, String>>>(cost + preq.time, newList, newGoals, pDefines));
+		queue.add(new TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Set<Pair<String, String>>>(cost + preq.time, newList, newGoals, pDefines));
 	    }
 
 	}
@@ -130,22 +136,22 @@ public class Planning
 
     }
 
-    private static boolean areGoalsSatisfied(Set<String> readGoals, Set<Pair<String, String>> defineGoals,
+    private static boolean areGoalsSatisfied(Multiset<String> readGoals, Set<Pair<String, String>> defineGoals,
 	    RunningState initialState)
     {
-	for (String readGoal : readGoals)
+	for (String readGoal : readGoals.elementSet())
 	{
 	    Set<String> names = initialState.getName(readGoal);
-	    if (names == null || names.isEmpty())
+	    if (names == null || names.size() < readGoals.count(readGoal))
 		return false;
 	}
 	return true;
     }
 
-    private static void updateGoals(TestStatement stmt, Set<String> readGoals, Set<Pair<String, String>> defineGoals,
+    private static void updateGoals(TestStatement stmt, Multiset<String> readGoals, Set<Pair<String, String>> defineGoals,
 	    Map<String, Map<String, String>> readValues)
     {
-	for (Pair changedVal : stmt.getSideEffects().values())
+	for (Pair<String, String> changedVal : stmt.getSideEffects().values())
 	{
 	    readGoals.remove(changedVal.getSecond());
 	}
@@ -160,7 +166,7 @@ public class Planning
 
     }
 
-    private static List<TestStatement> getPreqStmts(TestStatement stmt, Set<String> readGoals,
+    private static List<TestStatement> getPreqStmts(TestStatement stmt, Multiset<String> readGoals,
 	    Set<Pair<String, String>> defineGoals, Map<String, TestStatement> testStatementMap)
     {
 	List<TestStatement> preqs = new LinkedList<TestStatement>();
@@ -168,9 +174,9 @@ public class Planning
 	{
 
 	    TestStatement testStmt = entry.getValue();
-	    for (Pair changedVal : testStmt.getSideEffects().values())
+	    for (Pair<String, String> changedVal : testStmt.getSideEffects().values())
 	    {
-		if (readGoals.contains(changedVal))
+		if (readGoals.contains(changedVal.getSecond()))
 		{
 		    preqs.add(testStmt);
 		    continue outer;
