@@ -1,6 +1,8 @@
 package ca.ubc.salt.model.composer;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -10,7 +12,7 @@ import org.eclipse.jdt.core.dom.SimpleName;
 
 public class StatementVariableVisitor extends ASTVisitor
 {
-    Set<SimpleName> vars = new HashSet<SimpleName>();
+    Map<String, SimpleName> vars = new HashMap<String, SimpleName>();
 
     public boolean visit(SimpleName node)
     {
@@ -18,7 +20,7 @@ public class StatementVariableVisitor extends ASTVisitor
 	if (nodeBinding instanceof IVariableBinding)
 	{
 	    IVariableBinding ivb = (IVariableBinding) nodeBinding;
-	    vars.add(node);
+	    vars.put(node.getIdentifier(), node);
 	    // System.out.println(ivb.getName());
 	    // System.out.println(ivb.getType().getQualifiedName());
 	}
@@ -29,12 +31,12 @@ public class StatementVariableVisitor extends ASTVisitor
 	return true;
     }
 
-    public Set<SimpleName> getVars()
+    public Map<String, SimpleName> getVars()
     {
 	return vars;
     }
 
-    public void setVars(Set<SimpleName> readVars)
+    public void setVars(Map<String, SimpleName> readVars)
     {
 	this.vars = readVars;
     }

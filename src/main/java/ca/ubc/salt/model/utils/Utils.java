@@ -344,7 +344,7 @@ public class Utils
 	return nameSet;
     }
 
-    public static Set<String> getNameSet(Set<SimpleName> readVars)
+    public static Set<String> getNameSet(Collection<SimpleName> readVars)
     {
 	Set<String> varNames = new HashSet<String>();
 	for (SimpleName var : readVars)

@@ -137,14 +137,15 @@ public class BackwardTestMerger
 
 	    // System.out.println(connectedComponentsMap);
 
-	    Settings.consoleLogger.error(String.format("merging %s", connectedComponent.toString()));
+	    Settings.consoleLogger.error(String.format("merging %d tests : %s",connectedComponent.size(), connectedComponent.toString()));
 
-//	    connectedComponent = new HashSet<String>();
-//	    connectedComponent.add("Array2DRowRealMatrixTest.testGetRowMatrix");
-//	    connectedComponent.add("Array2DRowRealMatrixTest.testGetSubMatrix");
-//	    connectedComponent.add("Array2DRowRealMatrixTest.testCopySubMatrix");
-//	    connectedComponent.add("Array2DRowRealMatrixTest.testSetColumn");
-//	     connectedComponent.add("Array2DRowRealMatrixTest.testGetColumn");
+	    
+	     connectedComponent = new HashSet<String>();
+	     connectedComponent.add("FastFourierTransformerTest.test2DData");
+	     connectedComponent.add("FastFourierTransformerTest.testSinFunction");
+	     connectedComponent.add("FastFourierTransformerTest.test2DDataUnitary");
+	     connectedComponent.add("FastFourierTransformerTest.testAdHocData");
+	    // connectedComponent.add("Array2DRowRealMatrixTest.testGetColumn");
 	    // connectedComponent.add("ComplexTest.testExp");
 	    // connectedComponent.add("ComplexTest.testScalarAdd");
 
@@ -220,11 +221,12 @@ public class BackwardTestMerger
 			for (String assertion : assertionsToCover)
 			{
 			    List<TestStatement> stmts = Planning.backward(allTestStatements.get(assertion),
-				    runningState, readValues, connectedComponentsMap, allStmtsView.get(testCase));
+				    runningState, readValues, connectedComponentsMap, allStmtsView.get(testCase),
+				    definitionPreq);
 
 			    for (TestStatement stmt : stmts)
 			    {
-				TestCaseComposer.updateRunningState(stmt, runningState, readValues);
+				TestCaseComposer.updateRunningState(stmt, runningState, readValues, definitionPreq);
 			    }
 			    secondPhasePath.addAll(stmts);
 
@@ -237,7 +239,7 @@ public class BackwardTestMerger
 		paths.add(mergedPath);
 		mergedPath.addAll(secondPhasePath);
 		TestCaseComposer.composeTestCase(mergedPath, connectedComponent,
-			TestCaseComposer.generateTestCaseName(connectedComponent), readValues);
+			TestCaseComposer.generateTestCaseName(connectedComponent), readValues, definitionPreq);
 
 	    }
 	    // while (first != null);
@@ -311,7 +313,8 @@ public class BackwardTestMerger
     public static Pair<TestStatement, RunningState> dijkstra(TestStatement root, Map<String, TestState> graph,
 	    RunningState runningState, Map<String, Map<String, String>> readValues,
 	    Map<String, List<String>> connectedComponentsMap, Map<String, TestStatement> testStatementMap,
-	    Set<String> assertions, Map<String, Set<VarDefinitionPreq>> definitionPreq) throws CloneNotSupportedException
+	    Set<String> assertions, Map<String, Set<VarDefinitionPreq>> definitionPreq)
+	    throws CloneNotSupportedException
     {
 
 	Set<TestStatement> visited = new HashSet<TestStatement>();
@@ -336,7 +339,7 @@ public class BackwardTestMerger
 		return new Pair<TestStatement, RunningState>(parent, runningState.clone());
 	    }
 
-	    TestCaseComposer.updateRunningState(parent, runningState, readValues);
+	    TestCaseComposer.updateRunningState(parent, runningState, readValues, definitionPreq);
 	    List<Pair<Integer, TestStatement>> comps = getAllCompatibleTestStatements(testStatementMap, readValues,
 		    runningState, visited, definitionPreq);
 
@@ -360,7 +363,8 @@ public class BackwardTestMerger
 	    TestStatement parent, TestStatement stmt, RunningState runningState, int bonus)
 	    throws CloneNotSupportedException
     {
-	long newD = parent.distFrom.get(root) + stmt.time - bonus + stmt.getSideEffects().size() * 1000000 + TestCaseComposer.getTestStatementNumber(stmt.getName());
+	long newD = parent.distFrom.get(root) + stmt.time - bonus + stmt.getSideEffects().size() * 1000000
+		+ TestCaseComposer.getTestStatementNumber(stmt.getName());
 	Long childDist = stmt.distFrom.get(root);
 	if (childDist == null || newD < childDist)
 	{
@@ -409,6 +413,21 @@ public class BackwardTestMerger
 
 	    }
 
+	    Set<VarDefinitionPreq> defPreqs = definitionPreq.get(stmt.getName());
+	    if (defPreqs != null)
+	    {
+		for (VarDefinitionPreq defPreq : defPreqs)
+		{
+		    String neededType = defPreq.getType();
+		    Set<String> varsInState = runningState.getNameForType(neededType);
+		    if (varsInState == null || varsInState.isEmpty())
+		    {
+			isComp = false;
+			break;
+		    }
+		}
+	    }
+
 	    if (isComp)
 		comps.add(new Pair<Integer, TestStatement>(readVals.size(), stmt));
 
@@ -417,10 +436,11 @@ public class BackwardTestMerger
 	return comps;
     }
 
-    public static Map<String, Map<String, String>> getAllReadValues(List<String> testCases, Map<String, Set<VarDefinitionPreq>> definitionPreq) throws IOException
+    public static Map<String, Map<String, String>> getAllReadValues(List<String> testCases,
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq) throws IOException
     {
 	Map<String, Map<String, String>> readValues = new HashMap<String, Map<String, String>>();
-	
+
 	for (String testCase : testCases)
 	{
 	    // state1 -> <a, b, c>

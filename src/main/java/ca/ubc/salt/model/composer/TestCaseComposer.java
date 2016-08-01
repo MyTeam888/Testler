@@ -46,6 +46,7 @@ import ca.ubc.salt.model.instrumenter.Method;
 import ca.ubc.salt.model.instrumenter.ProductionClassInstrumenter;
 import ca.ubc.salt.model.state.StatementReadVariableVisitor;
 import ca.ubc.salt.model.state.TestStatement;
+import ca.ubc.salt.model.state.VarDefinitionPreq;
 import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Pair;
 import ca.ubc.salt.model.utils.Settings;
@@ -74,24 +75,19 @@ public class TestCaseComposer
     }
 
     public static void updateRunningState(TestStatement statement, RunningState valueNamePairForCurrentState,
-	    Map<String, Map<String, String>> readVals)
+	    Map<String, Map<String, String>> readVals, Map<String, Set<VarDefinitionPreq>> definitionPreq)
     {
 
 	Map<String, String> renameMap = new HashMap<String, String>();
 
-	findPreqVarsRenames(statement, valueNamePairForCurrentState, renameMap, readVals);
+	findPreqVarsRenames(statement, valueNamePairForCurrentState, renameMap, readVals, definitionPreq);
 
 	findPostreqVarsRenames(statement, valueNamePairForCurrentState, renameMap);
 
-	Set<SimpleName> vars = getAllVars(statement.statement);
-	if (vars == null)
-	    return;
-	Set<String> varsName = Utils.getNameSet(vars);
-
-	valueNamePairForCurrentState.update(statement.getName(), renameMap, varsName);
+	valueNamePairForCurrentState.update(statement, renameMap);
     }
 
-    public static Set<SimpleName> getAllVars(Statement statement)
+    public static Map<String, SimpleName> getAllVars(Statement statement)
     {
 	if (statement == null)
 	    return null;
@@ -101,7 +97,7 @@ public class TestCaseComposer
 
     }
 
-    public static Set<SimpleName> getAllRightHandSideVars(Statement statement)
+    public static Map<String, SimpleName> getAllRightHandSideVars(Statement statement)
     {
 	if (statement == null)
 	    return null;
@@ -122,7 +118,7 @@ public class TestCaseComposer
 
     }
 
-    public static List<SimpleName> getSimpleNamesInTheStatement(ASTNode statement, Set<SimpleName> vars)
+    public static List<SimpleName> getSimpleNamesInTheStatement(ASTNode statement, Collection<SimpleName> vars)
     {
 	if (statement == null)
 	    return null;
@@ -140,11 +136,11 @@ public class TestCaseComposer
 
     }
 
-    public static ASTNode rename(ASTNode stmt, Set<SimpleName> vars, Map<String, String> renameSet)
+    public static ASTNode rename(ASTNode stmt, Map<String, SimpleName> vars, Map<String, String> renameSet)
     {
 
 	ASTNode cpyStmt = ASTNode.copySubtree(stmt.getAST(), stmt);
-	List<SimpleName> cpyVars = getSimpleNamesInTheStatement(cpyStmt, vars);
+	List<SimpleName> cpyVars = getSimpleNamesInTheStatement(cpyStmt, vars.values());
 	for (SimpleName var : cpyVars)
 	{
 	    String renamedVar = renameSet.get(var.getIdentifier());
@@ -198,7 +194,7 @@ public class TestCaseComposer
     // }
 
     public static void composeTestCase(List<TestStatement> path, Set<String> testCases, String name,
-	    Map<String, Map<String, String>> readVals)
+	    Map<String, Map<String, String>> readVals, Map<String, Set<VarDefinitionPreq>> definitionPreq)
     {
 
 	// populateStateField(path);
@@ -207,7 +203,8 @@ public class TestCaseComposer
 
 	String mainClassName = Utils.getTestClassWithMaxNumberOfTestCases(testClasses);
 
-	List<TestStatement> renamedStatements = performRenaming(path, testCases, mainClassName, readVals);
+	List<TestStatement> renamedStatements = performRenaming(path, testCases, mainClassName, readVals,
+		definitionPreq);
 
 	try
 	{
@@ -278,8 +275,8 @@ public class TestCaseComposer
 				SimpleName varInFieldDec = varDec.getName();
 				if (usedFields.contains(varInFieldDec.getIdentifier()))
 				{
-				    Set<SimpleName> varSet = new HashSet<SimpleName>();
-				    varSet.add(varInFieldDec);
+				    Map<String, SimpleName> varSet = new HashMap<String, SimpleName>();
+				    varSet.put(varInFieldDec.getIdentifier(), varInFieldDec);
 				    Map<String, String> renameMap = new HashMap<String, String>();
 				    renameMap.put(varInFieldDec.getIdentifier(),
 					    varInFieldDec.getIdentifier() + "_" + className);
@@ -304,7 +301,7 @@ public class TestCaseComposer
     private static void renameFieldVarsInStmt(TestStatement statement, StatementFieldVisitor sfv)
     {
 	HashMap<String, String> renameMap = new HashMap<String, String>();
-	for (SimpleName sn : sfv.fields)
+	for (SimpleName sn : sfv.fields.values())
 	{
 	    renameMap.put(sn.getIdentifier(), sn.getIdentifier() + "_" + sfv.className);
 	}
@@ -623,26 +620,26 @@ public class TestCaseComposer
     }
 
     public static Statement renameTestStatement(TestStatement statement, RunningState valueNamePairForCurrentState,
-	    Map<String, Map<String, String>> readVals)
+	    Map<String, Map<String, String>> readVals, Map<String, Set<VarDefinitionPreq>> definitionPreq)
     {
 	Map<String, String> renameMap = new HashMap<String, String>();
 
-	findPreqVarsRenames(statement, valueNamePairForCurrentState, renameMap, readVals);
+	findPreqVarsRenames(statement, valueNamePairForCurrentState, renameMap, readVals, definitionPreq);
 
 	findPostreqVarsRenames(statement, valueNamePairForCurrentState, renameMap);
 
-	Set<SimpleName> vars = getAllVars(statement.statement);
+	Map<String, SimpleName> vars = statement.getAllVars();
 	if (vars == null)
 	    return null;
-	Set<String> varsName = Utils.getNameSet(vars);
 
-	valueNamePairForCurrentState.update(statement.getName(), renameMap, varsName);
+	valueNamePairForCurrentState.update(statement, renameMap);
 
 	return (Statement) rename(statement.statement, vars, renameMap);
     }
 
     private static List<TestStatement> performRenaming(List<TestStatement> path, Set<String> testCases,
-	    String mainClassName, Map<String, Map<String, String>> readVals)
+	    String mainClassName, Map<String, Map<String, String>> readVals,
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq)
     {
 
 	List<TestStatement> renamedStatements = new LinkedList<TestStatement>();
@@ -667,7 +664,8 @@ public class TestCaseComposer
 	    if (statement.statement.toString().contains("Array2DRowRealMatrix m2"))
 		System.out.println();
 
-	    Statement renamedStatement = renameTestStatement(statement, valueNamePairForCurrentState, readVals);
+	    Statement renamedStatement = renameTestStatement(statement, valueNamePairForCurrentState, readVals,
+		    definitionPreq);
 	    cpyStatement.refactoredStatement = renamedStatement;
 	    renamedStatements.add(cpyStatement);
 	}
@@ -687,6 +685,8 @@ public class TestCaseComposer
 	for (SimpleName var : vars)
 	{
 	    String varInStmt = var.getIdentifier();
+	    // if (renameMap.containsKey(varInStmt))
+	    // varInStmt = renameMap.get(varInStmt);
 	    String varInState = curState.getValue(varInStmt);
 	    if (varInState != null)
 	    {
@@ -705,8 +705,9 @@ public class TestCaseComposer
 	}
     }
 
-    private static void findPreqVarsRenames(TestStatement stmt, RunningState valueNamePairForCurrentState,
-	    Map<String, String> renameMap, Map<String, Map<String, String>> readVals)
+    private static void findPreqVarsRenames(TestStatement stmt, RunningState runningState,
+	    Map<String, String> renameMap, Map<String, Map<String, String>> readVals,
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq)
     {
 	// if
 	// (stmt.statement.toString().contains("Assert.assertTrue(mColumn3[0]"))
@@ -723,7 +724,7 @@ public class TestCaseComposer
 
 	    String value = entry.getValue();
 
-	    Set<String> varNameInState = valueNamePairForCurrentState.getName(value);
+	    Set<String> varNameInState = runningState.getName(value);
 	    if (varNameInState == null || varNameInState.size() == 0)
 	    {
 		Settings.consoleLogger.error(
@@ -751,6 +752,24 @@ public class TestCaseComposer
 	    } else
 	    {
 		chosenNames.add(varNameInStmt);
+	    }
+	}
+
+	Set<VarDefinitionPreq> defPreqs = definitionPreq.get(stmt.getName());
+	if (defPreqs != null)
+	{
+	    for (VarDefinitionPreq defPreq : defPreqs)
+	    {
+		String neededType = defPreq.getType();
+		Set<String> varsInState = runningState.getNameForType(neededType);
+		if (varsInState == null || varsInState.isEmpty())
+		    Settings.consoleLogger.error(
+			    String.format("something's wrong with %s--%s", stmt.getName(), stmt.statement.toString()));
+		else
+		{
+		    renameMap.put(defPreq.getName().getIdentifier(), varsInState.iterator().next());
+		}
+
 	    }
 	}
     }

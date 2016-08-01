@@ -17,7 +17,7 @@ public class StatementFieldVisitor extends ASTVisitor
     // class -> fields
     Map<String, Set<String>> vars = new HashMap<String, Set<String>>();
 
-    Set<SimpleName> fields = new HashSet<SimpleName>();
+    Map<String, SimpleName> fields = new HashMap<String, SimpleName>();
 
     String className = null;
 
@@ -51,7 +51,7 @@ public class StatementFieldVisitor extends ASTVisitor
 		
 		Utils.addToTheSetInMap(vars, ivb.getDeclaringClass().getName(), node.getIdentifier());
 		
-		fields.add(node);
+		fields.put(node.getIdentifier(), node);
 	    }
 	    // System.out.println(ivb.getName());
 	    // System.out.println(ivb.getType().getQualifiedName());

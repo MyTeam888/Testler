@@ -58,7 +58,7 @@ public class ReadVariableVisitor extends ASTVisitor
 		IBinding binding = left.resolveTypeBinding();
 		if (binding != null)
 		    Utils.addToTheSetInMap(needToBeDefinedVars, methodName + "-" + counter + ".xml",
-			    new VarDefinitionPreq(left, binding.toString()));
+			    new VarDefinitionPreq(left, binding.getName()));
 		else
 		    System.out.println(exp.toString() + left.resolveBinding().toString() + ",   "
 			    + left.resolveTypeBinding().toString());

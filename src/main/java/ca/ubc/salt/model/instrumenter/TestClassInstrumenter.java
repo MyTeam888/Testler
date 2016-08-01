@@ -64,7 +64,8 @@ public class TestClassInstrumenter
 
 	    String source = FileUtils.readFileToString(testClass);
 	    Document document = new Document(source);
-	    List<ClassModel> classes = ClassModel.getClasses(document.get());
+	    List<ClassModel> classes = ClassModel.getClasses(document.get(), true, testClassPath,
+		    new String[] { Settings.PROJECT_PATH }, new String[] { Settings.LIBRARY_JAVA });
 
 	    for (ClassModel clazz : classes)
 		document = instrumentClass(clazz, null, document, clazz.typeDec.getName().toString());
@@ -110,14 +111,12 @@ public class TestClassInstrumenter
 
 	edits.apply(newDocument);
 
-	Utils.addImports(newDocument, Arrays.asList(new String[] { "instrument.InstrumentClassGenerator" }));
+	Utils.addImports(newDocument, Arrays.asList(new String[] { "instrument.InstrumentClassGenerator", "instrument.NullValueType" }));
 
 	return newDocument;
 
     }
 
-   
-    
     // public static void instrumentClass2(String testClassPath) throws
     // IOException
     // {
@@ -213,21 +212,22 @@ public class TestClassInstrumenter
     public static void main(String[] args)
 	    throws IOException, IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException
     {
-	 instrumentClass(
-	 "/Users/arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/analysis/integration/RombergIntegratorTest.java");
+	instrumentClass(
+		"/Users/arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/analysis/integration/RombergIntegratorTest.java");
 	// instrumentClass(
 	// "/Users/arash/Library/Mobile
 	// Documents/com~apple~CloudDocs/Research/Calculator/src/calc/CalculatorTest.java");
-//	instrumentClass(Settings.TEST_CLASS);
+	// instrumentClass(Settings.TEST_CLASS);
     }
 
-    public static ASTNode generateInstrumentationHeader(ClassModel clazz, int randomNumber, String fileName, String methodName)
+    public static ASTNode generateInstrumentationHeader(ClassModel clazz, int randomNumber, String fileName,
+	    String methodName)
     {
-	
+
 	StringBuilder sb = new StringBuilder();
-	sb.append(String.format(
-		"InstrumentClassGenerator.init(\"%s.%s\");InstrumentClassGenerator.initTestStatement(0);",
-		fileName, methodName));
+	sb.append(
+		String.format("InstrumentClassGenerator.init(\"%s.%s\");InstrumentClassGenerator.initTestStatement(0);",
+			fileName, methodName));
 	sb.append(getTextForInstrumentation(clazz.getVarDecsOfFields(), 1, null));
 	return Utils.createBlockWithText(sb.toString());
 
@@ -239,11 +239,12 @@ public class TestClassInstrumenter
     }
 
     public static ASTNode generateInstrumentationBlock(int randomNumber,
-	    LinkedList<VariableDeclarationFragment> varDecs, String methodName, int counter, Map<String, VariableDeclarationFragment> unassignedVars)
+	    LinkedList<VariableDeclarationFragment> varDecs, String methodName, int counter,
+	    Map<String, VariableDeclarationFragment> unassignedVars)
     {
 
 	String text = getTextForInstrumentation(varDecs, counter, unassignedVars);
-	
+
 	return Utils.createBlockWithText(text);
 
     }
@@ -300,7 +301,8 @@ public class TestClassInstrumenter
     //
     // }
 
-    public static String getTextForInstrumentation(List<VariableDeclarationFragment> list, int counter, Map<String, VariableDeclarationFragment> unassignedVars)
+    public static String getTextForInstrumentation(List<VariableDeclarationFragment> list, int counter,
+	    Map<String, VariableDeclarationFragment> unassignedVars)
     {
 	StringBuilder sb = new StringBuilder();
 	sb.append(String.format("InstrumentClassGenerator.traceTestStatementExecution("));
@@ -319,9 +321,9 @@ public class TestClassInstrumenter
 	for (VariableDeclarationFragment var : list)
 	{
 	    if (unassignedVars == null || !unassignedVars.containsKey(var.getName().toString()))
-	    sb.append(var.getName());
+		sb.append(var.getName());
 	    else
-		sb.append("null");
+		sb.append("new NullValueType(\"" + var.getName().resolveTypeBinding().getName() + "\")");
 	    sb.append(',');
 	}
 	if (list.size() > 0)

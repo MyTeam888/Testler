@@ -54,8 +54,11 @@ public class Instrumenter
 
 	    String source = FileUtils.readFileToString(fClass);
 	    Document document = new Document(source);
-	    List<ClassModel> classes = ClassModel.getClasses(document.get());
-
+	    List<ClassModel> classes = ClassModel.getClasses(document.get(), true, classPath,
+		    new String[] { Settings.PROJECT_PATH }, new String[] { Settings.LIBRARY_JAVA });
+	    
+	    
+	    
 	    if (!Utils.isTestClass(fClass))
 	    {
 		Settings.consoleLogger.error(String.format("prod : %s", classPath));

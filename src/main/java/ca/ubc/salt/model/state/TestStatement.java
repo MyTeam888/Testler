@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
 
 import ca.ubc.salt.model.composer.TestCaseComposer;
@@ -29,7 +30,9 @@ public class TestStatement extends TestModelNode
     String input;
     Map<String, Pair<String, String>> sideEffects;
     Map<String, String> newVars;
-
+    
+    Map<String, SimpleName> vars;
+    
     public long time = 1000;
 
     public void initSideEffects(List<String> testCases)
@@ -49,7 +52,7 @@ public class TestStatement extends TestModelNode
 		String varValBefore = before.get(varName);
 		if (!varValAfter.equals(varValBefore))
 		{
-		    if (varValBefore != null && !varValBefore.equals("<null/>"))
+		    if (varValBefore != null)
 			sideEffects.put(varName, new Pair<String, String>(varValBefore, varValAfter));
 		    else
 			newVars.put(varName, varValAfter);
@@ -177,6 +180,20 @@ public class TestStatement extends TestModelNode
     //
     // }
 
+    public Map<String, SimpleName> getAllVars()
+    {
+	if (this.vars == null)
+	    this.vars = TestCaseComposer.getAllVars(this.statement);
+	return this.vars;
+    }
     
+    public String getTypeOfVar(String varName)
+    {
+	Map<String, SimpleName> varSims = getAllVars();
+	SimpleName sim = varSims.get(varName);
+	if (sim == null)
+	    return "";
+	return sim.resolveTypeBinding().getName();
+    }
     
 }

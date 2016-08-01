@@ -36,6 +36,7 @@ import ca.ubc.salt.model.state.ReadVariableDetector;
 import ca.ubc.salt.model.state.StateComparator;
 import ca.ubc.salt.model.state.TestState;
 import ca.ubc.salt.model.state.TestStatement;
+import ca.ubc.salt.model.state.VarDefinitionPreq;
 import ca.ubc.salt.model.utils.Counter;
 import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Pair;
@@ -46,77 +47,102 @@ import ca.ubc.salt.model.utils.Utils;
 public class Planning
 {
 
-    public static Pair<TestStatement, RunningState> forward(TestStatement root, Map<String, TestState> graph,
-	    RunningState runningState, Map<String, Map<String, String>> readValues,
-	    Map<String, List<String>> connectedComponentsMap, Map<String, TestStatement> testStatementMap,
-	    Set<String> assertions, int cutoff) throws CloneNotSupportedException
+    // public static Pair<TestStatement, RunningState> forward(TestStatement
+    // root, Map<String, TestState> graph,
+    // RunningState runningState, Map<String, Map<String, String>> readValues,
+    // Map<String, List<String>> connectedComponentsMap, Map<String,
+    // TestStatement> testStatementMap,
+    // Set<String> assertions, int cutoff) throws CloneNotSupportedException
+    // {
+    //
+    // TestStatement.curStart = root;
+    // root.distFrom.put(root, (long) 0);
+    // PriorityQueue<Pair<TestStatement, RunningState>> queue = new
+    // PriorityQueue<Pair<TestStatement, RunningState>>();
+    //
+    // queue.add(new Pair<TestStatement, RunningState>(root, runningState));
+    //
+    // while (queue.size() != 0)
+    // {
+    // Pair<TestStatement, RunningState> pair = queue.poll();
+    // TestStatement parent = pair.getFirst();
+    // runningState = pair.getSecond();
+    //
+    // if (parent.distFrom.get(TestStatement.curStart) > cutoff * 1000)
+    // return null;
+    //
+    // if (connectedComponentsMap.containsKey(parent.getName()) ||
+    // assertions.contains(parent.getName()))
+    // {
+    // return new Pair<TestStatement, RunningState>(parent,
+    // runningState.clone());
+    // }
+    //
+    // TestCaseComposer.updateRunningState(parent, runningState, readValues);
+    // List<Pair<Integer, TestStatement>> comps = BackwardTestMerger
+    // .getAllCompatibleTestStatements(testStatementMap, readValues,
+    // runningState, null, null);
+    //
+    // Collections.sort(comps, Collections.reverseOrder());
+    // for (Pair<Integer, TestStatement> stmtPair : comps)
+    // {
+    // TestStatement stmt = stmtPair.getSecond();
+    // relaxChild(root, queue, parent, stmt, runningState, stmtPair.getFirst());
+    // }
+    // }
+    //
+    // return null;
+    // }
+
+    public static Map<String, VarDefinitionPreq> getTheVarDefMap(Set<VarDefinitionPreq> defPreq)
     {
-
-	TestStatement.curStart = root;
-	root.distFrom.put(root, (long) 0);
-	PriorityQueue<Pair<TestStatement, RunningState>> queue = new PriorityQueue<Pair<TestStatement, RunningState>>();
-
-	queue.add(new Pair<TestStatement, RunningState>(root, runningState));
-
-	while (queue.size() != 0)
+	Map<String, VarDefinitionPreq> preqs = new HashMap<String, VarDefinitionPreq>();
+	if (defPreq != null)
 	{
-	    Pair<TestStatement, RunningState> pair = queue.poll();
-	    TestStatement parent = pair.getFirst();
-	    runningState = pair.getSecond();
-
-	    if (parent.distFrom.get(TestStatement.curStart) > cutoff * 1000)
-		return null;
-
-	    if (connectedComponentsMap.containsKey(parent.getName()) || assertions.contains(parent.getName()))
+	    for (VarDefinitionPreq def : defPreq)
 	    {
-		return new Pair<TestStatement, RunningState>(parent, runningState.clone());
-	    }
-
-	    TestCaseComposer.updateRunningState(parent, runningState, readValues);
-	    List<Pair<Integer, TestStatement>> comps = BackwardTestMerger
-		    .getAllCompatibleTestStatements(testStatementMap, readValues, runningState, null, null);
-
-	    Collections.sort(comps, Collections.reverseOrder());
-	    for (Pair<Integer, TestStatement> stmtPair : comps)
-	    {
-		TestStatement stmt = stmtPair.getSecond();
-		relaxChild(root, queue, parent, stmt, runningState, stmtPair.getFirst());
+		preqs.put(def.getType(), def);
 	    }
 	}
-
-	return null;
+	return preqs;
     }
 
     public static List<TestStatement> backward(TestStatement goal, RunningState initialState,
 	    Map<String, Map<String, String>> readValues, Map<String, List<String>> connectedComponentsMap,
-	    Map<String, TestStatement> testStatementMap)
+	    Map<String, TestStatement> testStatementMap, Map<String, Set<VarDefinitionPreq>> definitionPreq)
 	    throws CloneNotSupportedException
     {
-	PriorityQueue<TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Set<Pair<String, String>>>> queue = new PriorityQueue<TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Set<Pair<String, String>>>>();
+	PriorityQueue<TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Map<String, VarDefinitionPreq>>> queue = new PriorityQueue<TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Map<String, VarDefinitionPreq>>>();
 
 	LinkedList<TestStatement> initialList = new LinkedList<TestStatement>();
 	initialList.add(goal);
 	Multiset<String> initGoals = HashMultiset.create();
 	initGoals.addAll(readValues.get(goal.getName()).values());
-	queue.add(new TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Set<Pair<String, String>>>((long)0, initialList, initGoals, null));
-	
+	queue.add(new TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Map<String, VarDefinitionPreq>>(
+		(long) 0, initialList, initGoals, getTheVarDefMap(definitionPreq.get(goal.getName()))));
+
 	while (queue.size() != 0)
 	{
 
-	    TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Set<Pair<String, String>>> frontier = queue.poll();
+	    TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Map<String, VarDefinitionPreq>> frontier = queue
+		    .poll();
 
 	    Long cost = frontier.getFirst();
 	    LinkedList<TestStatement> listTillNow = frontier.getSecond();
 	    Multiset<String> pGoals = frontier.getThird();
-	    Set<Pair<String, String>> pDefines = frontier.getForth();
+	    Map<String, VarDefinitionPreq> pDefines = frontier.getForth();
 
 	    if (areGoalsSatisfied(pGoals, pDefines, initialState))
 		return frontier.getSecond();
 	    TestStatement parent = listTillNow.get(0);
 	    List<TestStatement> preqs = getPreqStmts(parent, pGoals, pDefines, testStatementMap);
 
+	    int parentInd = TestCaseComposer.getTestStatementNumber(parent.getName());
 	    for (TestStatement preq : preqs)
 	    {
+		int preqInd = TestCaseComposer.getTestStatementNumber(preq.getName());
+		if (preqInd >= parentInd)
+		    continue;
 		if (listTillNow.contains(preq))
 		    continue;
 		Multiset<String> newGoals = HashMultiset.create();
@@ -124,18 +150,20 @@ public class Planning
 		LinkedList<TestStatement> newList = new LinkedList<TestStatement>();
 		newList.add(preq);
 		newList.addAll(listTillNow);
-		
-		updateGoals(preq, newGoals, pDefines, readValues);
-		queue.add(new TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Set<Pair<String, String>>>(cost + preq.time, newList, newGoals, pDefines));
+
+		int score = updateGoals(preq, newGoals, initialState, pDefines, readValues);
+		queue.add(
+			new TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Map<String, VarDefinitionPreq>>(
+				cost + preq.time - score* 100, newList, newGoals, pDefines));
 	    }
 
 	}
-	
+
 	return null;
 
     }
 
-    private static boolean areGoalsSatisfied(Multiset<String> readGoals, Set<Pair<String, String>> defineGoals,
+    private static boolean areGoalsSatisfied(Multiset<String> readGoals, Map<String, VarDefinitionPreq> defineGoals,
 	    RunningState initialState)
     {
 	for (String readGoal : readGoals.elementSet())
@@ -144,29 +172,62 @@ public class Planning
 	    if (names == null || names.size() < readGoals.count(readGoal))
 		return false;
 	}
+	for (VarDefinitionPreq defPreq : defineGoals.values())
+	{
+	    String neededType = defPreq.getType();
+	    Set<String> varsInState = initialState.getNameForType(neededType);
+	    if (varsInState == null || varsInState.isEmpty())
+		return false;
+
+	}
 	return true;
     }
 
-    private static void updateGoals(TestStatement stmt, Multiset<String> readGoals, Set<Pair<String, String>> defineGoals,
-	    Map<String, Map<String, String>> readValues)
+    private static int updateGoals(TestStatement stmt, Multiset<String> readGoals, RunningState rs,
+	    Map<String, VarDefinitionPreq> defineGoals, Map<String, Map<String, String>> readValues)
     {
+	int score = 0;
 	for (Pair<String, String> changedVal : stmt.getSideEffects().values())
 	{
-	    readGoals.remove(changedVal.getSecond());
+	    if (readGoals.contains(changedVal.getSecond()))
+	    {
+		readGoals.remove(changedVal.getSecond());
+		if (rs.getName(changedVal.getSecond()) == null)
+		    score += 10;
+	    }
 	}
-	for (String newVal : stmt.getNewVars().values())
+	for (Entry<String, String> entry : stmt.getNewVars().entrySet())
 	{
-	    readGoals.remove(newVal);
+	    String name = entry.getKey();
+	    String newVal = entry.getValue();
+	    if (readGoals.contains(newVal))
+	    {
+		readGoals.remove(newVal);
+		if (rs.getName(newVal) == null)
+		    score += 10;
+	    }
+	    String type = stmt.getTypeOfVar(name);
+	    if (defineGoals.containsKey(type))
+	    {
+		defineGoals.remove(type);
+		if (rs.getNameForType(type) == null)
+		    score += 10;
+	    }
+
 	}
-	for (String readVal : readValues.get(stmt.getName()).values())
+	for (Entry<String, String> entry : readValues.get(stmt.getName()).entrySet())
 	{
+	    String name = entry.getKey();
+	    String readVal = entry.getValue();
 	    readGoals.add(readVal);
 	}
+	
+	return score;
 
     }
 
     private static List<TestStatement> getPreqStmts(TestStatement stmt, Multiset<String> readGoals,
-	    Set<Pair<String, String>> defineGoals, Map<String, TestStatement> testStatementMap)
+	    Map<String, VarDefinitionPreq> defineGoals, Map<String, TestStatement> testStatementMap)
     {
 	List<TestStatement> preqs = new LinkedList<TestStatement>();
 	outer: for (Entry<String, TestStatement> entry : testStatementMap.entrySet())
@@ -182,13 +243,22 @@ public class Planning
 		}
 	    }
 
-	    for (String changedVal : testStmt.getNewVars().values())
+	    for (Entry<String, String> newEntry : testStmt.getNewVars().entrySet())
 	    {
-		if (readGoals.contains(changedVal))
+		String name = newEntry.getKey();
+		String newVal = newEntry.getValue();
+		if (readGoals.contains(newVal))
 		{
 		    preqs.add(testStmt);
 		    continue outer;
 		}
+
+		if (defineGoals.containsKey(stmt.getTypeOfVar(name)))
+		{
+		    preqs.add(testStmt);
+		    continue outer;
+		}
+
 	    }
 
 	}
