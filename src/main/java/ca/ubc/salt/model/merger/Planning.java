@@ -73,15 +73,14 @@ public class Planning
 	    }
 
 	    TestCaseComposer.updateRunningState(parent, runningState, readValues);
-	    List<Pair<Integer, TestStatement>> comps = IncrementalTestMerger
-		    .getAllCompatibleTestStatements(testStatementMap, readValues, runningState, null);
+	    List<Pair<Integer, TestStatement>> comps = BackwardTestMerger
+		    .getAllCompatibleTestStatements(testStatementMap, readValues, runningState, null, null);
 
 	    Collections.sort(comps, Collections.reverseOrder());
 	    for (Pair<Integer, TestStatement> stmtPair : comps)
 	    {
 		TestStatement stmt = stmtPair.getSecond();
 		relaxChild(root, queue, parent, stmt, runningState, stmtPair.getFirst());
-
 	    }
 	}
 

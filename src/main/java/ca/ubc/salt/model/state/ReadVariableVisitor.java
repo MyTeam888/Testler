@@ -34,7 +34,7 @@ public class ReadVariableVisitor extends ASTVisitor
 {
 
     Map<String, Set<SimpleName>> readVars;
-    Map<String, Set<Pair<String, SimpleName>>> needToBeDefinedVars = new HashMap<String, Set<Pair<String, SimpleName>>>();
+    Map<String, Set<VarDefinitionPreq>> needToBeDefinedVars;
     String methodName;
     int counter = -1;
 
@@ -58,7 +58,7 @@ public class ReadVariableVisitor extends ASTVisitor
 		IBinding binding = left.resolveTypeBinding();
 		if (binding != null)
 		    Utils.addToTheSetInMap(needToBeDefinedVars, methodName + "-" + counter + ".xml",
-			    new Pair<String, SimpleName>(binding.toString(), left));
+			    new VarDefinitionPreq(left, binding.toString()));
 		else
 		    System.out.println(exp.toString() + left.resolveBinding().toString() + ",   "
 			    + left.resolveTypeBinding().toString());
@@ -163,5 +163,16 @@ public class ReadVariableVisitor extends ASTVisitor
     {
 	this.readVars = readVars;
     }
+
+    public Map<String, Set<VarDefinitionPreq>> getNeedToBeDefinedVars()
+    {
+        return needToBeDefinedVars;
+    }
+
+    public void setNeedToBeDefinedVars(Map<String, Set<VarDefinitionPreq>> needToBeDefinedVars)
+    {
+        this.needToBeDefinedVars = needToBeDefinedVars;
+    }
+    
 
 }

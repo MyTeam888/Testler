@@ -31,6 +31,7 @@ import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
 
 import ca.ubc.salt.model.state.ReadVariableVisitor;
+import ca.ubc.salt.model.state.VarDefinitionPreq;
 
 public class Method
 {
@@ -145,10 +146,11 @@ public class Method
 	    listRewrite.remove((ASTNode) obj, null);
     }
 
-    public void populateReadVars(Document document, List<String> loadedClassVars, Map<String, Set<SimpleName>> readVars)
+    public void populateReadVars(Document document, List<String> loadedClassVars, Map<String, Set<SimpleName>> readVars, Map<String, Set<VarDefinitionPreq>> definitionPreq)
     {
 	ReadVariableVisitor visitor = new ReadVariableVisitor(className + "." + methodDec.getName().toString());
 	visitor.setReadVars(readVars);
+	visitor.setNeedToBeDefinedVars(definitionPreq);
 	this.methodDec.accept(visitor);
 	// System.out.println(visitor.getReadVars());
     }

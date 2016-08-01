@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Formatter;
 import java.util.HashMap;
@@ -34,13 +33,14 @@ import ca.ubc.salt.model.state.ReadVariableDetector;
 import ca.ubc.salt.model.state.StateComparator;
 import ca.ubc.salt.model.state.TestState;
 import ca.ubc.salt.model.state.TestStatement;
+import ca.ubc.salt.model.state.VarDefinitionPreq;
 import ca.ubc.salt.model.utils.Counter;
 import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Pair;
 import ca.ubc.salt.model.utils.Settings;
 import ca.ubc.salt.model.utils.Utils;
 
-public class backwardTestMerger
+public class BackwardTestMerger
 {
 
     public static void main(String[] args)
@@ -151,7 +151,8 @@ public class backwardTestMerger
 	    List<String> testCases = new LinkedList<String>();
 	    testCases.addAll(connectedComponent);
 
-	    Map<String, Map<String, String>> readValues = getAllReadValues(testCases);
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq = new HashMap<String, Set<VarDefinitionPreq>>();
+	    Map<String, Map<String, String>> readValues = getAllReadValues(testCases, definitionPreq);
 	    // System.out.println(readValues);
 
 	    testCases.add("init.init");
@@ -196,7 +197,7 @@ public class backwardTestMerger
 		{
 		    prevFrontier = frontier;
 		    frontier = dijkstra(frontier.getFirst(), graph, frontier.getSecond(), readValues,
-			    connectedComponentsMap, allTestStatements, assertions);
+			    connectedComponentsMap, allTestStatements, assertions, definitionPreq);
 		    if (frontier == null)
 			break;
 		    TestMerger.markAsCovered(frontier.getFirst(), connectedComponentsMap);
@@ -310,7 +311,7 @@ public class backwardTestMerger
     public static Pair<TestStatement, RunningState> dijkstra(TestStatement root, Map<String, TestState> graph,
 	    RunningState runningState, Map<String, Map<String, String>> readValues,
 	    Map<String, List<String>> connectedComponentsMap, Map<String, TestStatement> testStatementMap,
-	    Set<String> assertions) throws CloneNotSupportedException
+	    Set<String> assertions, Map<String, Set<VarDefinitionPreq>> definitionPreq) throws CloneNotSupportedException
     {
 
 	Set<TestStatement> visited = new HashSet<TestStatement>();
@@ -337,7 +338,7 @@ public class backwardTestMerger
 
 	    TestCaseComposer.updateRunningState(parent, runningState, readValues);
 	    List<Pair<Integer, TestStatement>> comps = getAllCompatibleTestStatements(testStatementMap, readValues,
-		    runningState, visited);
+		    runningState, visited, definitionPreq);
 
 	    Collections.sort(comps, Collections.reverseOrder());
 	    for (Pair<Integer, TestStatement> stmtPair : comps)
@@ -374,7 +375,7 @@ public class backwardTestMerger
 
     public static List<Pair<Integer, TestStatement>> getAllCompatibleTestStatements(
 	    Map<String, TestStatement> allTestStatements, Map<String, Map<String, String>> readValues,
-	    RunningState runningState, Set<TestStatement> visited)
+	    RunningState runningState, Set<TestStatement> visited, Map<String, Set<VarDefinitionPreq>> definitionPreq)
     {
 	List<Pair<Integer, TestStatement>> comps = new LinkedList<Pair<Integer, TestStatement>>();
 	for (TestStatement stmt : allTestStatements.values())
@@ -416,15 +417,15 @@ public class backwardTestMerger
 	return comps;
     }
 
-    public static Map<String, Map<String, String>> getAllReadValues(List<String> testCases) throws IOException
+    public static Map<String, Map<String, String>> getAllReadValues(List<String> testCases, Map<String, Set<VarDefinitionPreq>> definitionPreq) throws IOException
     {
 	Map<String, Map<String, String>> readValues = new HashMap<String, Map<String, String>>();
-
+	
 	for (String testCase : testCases)
 	{
 	    // state1 -> <a, b, c>
 	    Map<String, Set<SimpleName>> readVars = ReadVariableDetector
-		    .populateReadVarsForTestCaseOfFile(Utils.getTestCaseFile(testCase), testCase);
+		    .populateReadVarsForTestCaseOfFile(Utils.getTestCaseFile(testCase), testCase, definitionPreq);
 
 	    // System.out.println(readVars);
 	    // ReadVariableDetector.accumulateReadVars(readVars);

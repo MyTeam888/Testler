@@ -38,7 +38,7 @@ public class ReadVariableDetector
     // "/Users/Arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/fraction/FractionTest.java");
     // }
 
-    public static Map<String, Set<SimpleName>> populateReadVarsForFile(String path) throws IOException
+    public static Map<String, Set<SimpleName>> populateReadVarsForFile(String path, Map<String, Set<VarDefinitionPreq>> definitionPreq) throws IOException
     {
 	File testClass = new File(path);
 	if (testClass.isFile())
@@ -54,7 +54,7 @@ public class ReadVariableDetector
 	    Map<String, Set<SimpleName>> readVars = new HashMap<String, Set<SimpleName>>();
 
 	    for (ClassModel clazz : classes)
-		populateReadVarsForClass(clazz, null, document, readVars);
+		populateReadVarsForClass(clazz, null, document, readVars, definitionPreq);
 	    return readVars;
 
 	}
@@ -91,7 +91,7 @@ public class ReadVariableDetector
     }
     
     
-    public static Map<String, Set<SimpleName>> populateReadVarsForTestCaseOfFile(String path, String testcase)
+    public static Map<String, Set<SimpleName>> populateReadVarsForTestCaseOfFile(String path, String testcase, Map<String, Set<VarDefinitionPreq>> definitionPreq)
 	    throws IOException
     {
 	File testClass = new File(path);
@@ -108,7 +108,7 @@ public class ReadVariableDetector
 	    Map<String, Set<SimpleName>> readVars = new HashMap<String, Set<SimpleName>>();
 
 	    for (ClassModel clazz : classes)
-		populateReadVarsForTestCaseOfClass(clazz, null, document, readVars, testcase);
+		populateReadVarsForTestCaseOfClass(clazz, null, document, readVars, testcase, definitionPreq);
 	    return readVars;
 
 	}
@@ -125,7 +125,7 @@ public class ReadVariableDetector
     }
 
     public static void populateReadVarsForClass(ClassModel srcClass, List<String> loadedClasses, Document document,
-	    Map<String, Set<SimpleName>> readVars)
+	    Map<String, Set<SimpleName>> readVars, Map<String, Set<VarDefinitionPreq>> definitionPreq)
     {
 	if (readVars == null)
 	    readVars = new HashMap<String, Set<SimpleName>>();
@@ -133,13 +133,13 @@ public class ReadVariableDetector
 
 	for (Method m : methods)
 	{
-	    m.populateReadVars(document, loadedClasses, readVars);
+	    m.populateReadVars(document, loadedClasses, readVars, definitionPreq);
 	}
 
     }
 
     public static void populateReadVarsForTestCaseOfClass(ClassModel srcClass, List<String> loadedClasses,
-	    Document document, Map<String, Set<SimpleName>> readVars, String testcase)
+	    Document document, Map<String, Set<SimpleName>> readVars, String testcase, Map<String, Set<VarDefinitionPreq>> definitionPreq)
     {
 	if (readVars == null)
 	    readVars = new HashMap<String, Set<SimpleName>>();
@@ -148,7 +148,7 @@ public class ReadVariableDetector
 	for (Method m : methods)
 	{
 	    if (m.getMethodDec().getName().toString().equals(Utils.getTestCaseName(testcase)))
-		m.populateReadVars(document, loadedClasses, readVars);
+		m.populateReadVars(document, loadedClasses, readVars, definitionPreq);
 	}
 
     }
