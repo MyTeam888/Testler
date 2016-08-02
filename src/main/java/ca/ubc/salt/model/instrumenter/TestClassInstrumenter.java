@@ -323,7 +323,7 @@ public class TestClassInstrumenter
 	    if (unassignedVars == null || !unassignedVars.containsKey(var.getName().toString()))
 		sb.append(var.getName());
 	    else
-		sb.append("new NullValueType(\"" + var.getName().resolveTypeBinding().getName() + "\")");
+		sb.append("new NullValueType(\"" + var.getName().resolveTypeBinding().getName() + "\", \"" + var.getName().getIdentifier() + "\")");
 	    sb.append(',');
 	}
 	if (list.size() > 0)

@@ -64,6 +64,7 @@ public class ReadVariableVisitor extends ASTVisitor
 			    + left.resolveTypeBinding().toString());
 	    }
 	    getReadVars(a.getRightHandSide());
+//	    getReadVars(a);
 
 	} else
 	    getReadVars(exp);

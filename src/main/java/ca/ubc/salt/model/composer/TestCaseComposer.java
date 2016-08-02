@@ -75,16 +75,18 @@ public class TestCaseComposer
     }
 
     public static void updateRunningState(TestStatement statement, RunningState valueNamePairForCurrentState,
-	    Map<String, Map<String, String>> readVals, Map<String, Set<VarDefinitionPreq>> definitionPreq)
+	    Map<String, Map<String, String>> readVals, Map<String, Set<VarDefinitionPreq>> definitionPreq,
+	    Map<String, String> batchRename)
     {
 
 	Map<String, String> renameMap = new HashMap<String, String>();
 
-	findPreqVarsRenames(statement, valueNamePairForCurrentState, renameMap, readVals, definitionPreq);
+	findPreqVarsRenames(statement, valueNamePairForCurrentState, renameMap, readVals, definitionPreq, batchRename);
 
 	findPostreqVarsRenames(statement, valueNamePairForCurrentState, renameMap);
 
 	valueNamePairForCurrentState.update(statement, renameMap);
+	batchRename.putAll(renameMap);
     }
 
     public static Map<String, SimpleName> getAllVars(Statement statement)
@@ -620,11 +622,12 @@ public class TestCaseComposer
     }
 
     public static Statement renameTestStatement(TestStatement statement, RunningState valueNamePairForCurrentState,
-	    Map<String, Map<String, String>> readVals, Map<String, Set<VarDefinitionPreq>> definitionPreq)
+	    Map<String, Map<String, String>> readVals, Map<String, Set<VarDefinitionPreq>> definitionPreq,
+	    Map<String, String> batchRename)
     {
 	Map<String, String> renameMap = new HashMap<String, String>();
 
-	findPreqVarsRenames(statement, valueNamePairForCurrentState, renameMap, readVals, definitionPreq);
+	findPreqVarsRenames(statement, valueNamePairForCurrentState, renameMap, readVals, definitionPreq, batchRename);
 
 	findPostreqVarsRenames(statement, valueNamePairForCurrentState, renameMap);
 
@@ -633,6 +636,8 @@ public class TestCaseComposer
 	    return null;
 
 	valueNamePairForCurrentState.update(statement, renameMap);
+
+	batchRename.putAll(renameMap);
 
 	return (Statement) rename(statement.statement, vars, renameMap);
     }
@@ -645,6 +650,7 @@ public class TestCaseComposer
 	List<TestStatement> renamedStatements = new LinkedList<TestStatement>();
 
 	RunningState valueNamePairForCurrentState = new RunningState(testCases, mainClassName);
+	Map<String, String> batchRename = new HashMap<String, String>();
 	for (TestStatement statement : path)
 	{
 
@@ -665,7 +671,7 @@ public class TestCaseComposer
 		System.out.println();
 
 	    Statement renamedStatement = renameTestStatement(statement, valueNamePairForCurrentState, readVals,
-		    definitionPreq);
+		    definitionPreq, batchRename);
 	    cpyStatement.refactoredStatement = renamedStatement;
 	    renamedStatements.add(cpyStatement);
 	}
@@ -707,7 +713,7 @@ public class TestCaseComposer
 
     private static void findPreqVarsRenames(TestStatement stmt, RunningState runningState,
 	    Map<String, String> renameMap, Map<String, Map<String, String>> readVals,
-	    Map<String, Set<VarDefinitionPreq>> definitionPreq)
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq, Map<String, String> batchRename)
     {
 	// if
 	// (stmt.statement.toString().contains("Assert.assertTrue(mColumn3[0]"))
@@ -767,7 +773,36 @@ public class TestCaseComposer
 			    String.format("something's wrong with %s--%s", stmt.getName(), stmt.statement.toString()));
 		else
 		{
-		    renameMap.put(defPreq.getName().getIdentifier(), varsInState.iterator().next());
+		    String renamedName = renameMap.get(defPreq.getName().getIdentifier());
+		    if (renamedName == null)
+		    {
+			renamedName = defPreq.getName().getIdentifier();
+		    }
+		    if ((runningState.getValue(renamedName) == null
+			    || !runningState.getType(renamedName).equals(neededType))
+			    || !batchRename.containsValue(renamedName))
+		    {
+			boolean renamed = false;
+			for (String var : varsInState)
+			{
+			    if (!batchRename.containsValue(var))
+			    {
+				renamed = true;
+				renameMap.put(defPreq.getName().getIdentifier(), var);
+				break;
+			    }
+
+			}
+			if (renamed == false)
+			{
+			    if (batchRename.containsKey(renamedName))
+				renameMap.put(renamedName, batchRename.get(renamedName));
+			    else
+				Settings.consoleLogger.error(String.format("renaming happend for  %s--%s",
+					stmt.getName(), stmt.statement.toString()));
+
+			}
+		    }
 		}
 
 	    }

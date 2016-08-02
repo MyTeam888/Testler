@@ -34,6 +34,11 @@ public class TestStatement extends TestModelNode
     Map<String, SimpleName> vars;
     
     public long time = 1000;
+    
+    
+    public Map<String, Set<String>> readGoals;
+    public Map<String, Set<VarDefinitionPreq>> defineGoals;
+    
 
     public void initSideEffects(List<String> testCases)
     {

@@ -94,14 +94,14 @@ public class Planning
     // return null;
     // }
 
-    public static Map<String, VarDefinitionPreq> getTheVarDefMap(Set<VarDefinitionPreq> defPreq)
+    public static Map<String, Set<VarDefinitionPreq>> getTheVarDefMap(Set<VarDefinitionPreq> defPreq)
     {
-	Map<String, VarDefinitionPreq> preqs = new HashMap<String, VarDefinitionPreq>();
+	Map<String, Set<VarDefinitionPreq>> preqs = new HashMap<String, Set<VarDefinitionPreq>>();
 	if (defPreq != null)
 	{
 	    for (VarDefinitionPreq def : defPreq)
 	    {
-		preqs.put(def.getType(), def);
+		Utils.addToTheSetInMap(preqs, def.getType(), def);
 	    }
 	}
 	return preqs;
@@ -112,25 +112,25 @@ public class Planning
 	    Map<String, TestStatement> testStatementMap, Map<String, Set<VarDefinitionPreq>> definitionPreq)
 	    throws CloneNotSupportedException
     {
-	PriorityQueue<TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Map<String, VarDefinitionPreq>>> queue = new PriorityQueue<TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Map<String, VarDefinitionPreq>>>();
+	PriorityQueue<TwoPair<Long, List<TestStatement>, Map<String, Set<String>>, Map<String, Set<VarDefinitionPreq>>>> queue = new PriorityQueue<TwoPair<Long, List<TestStatement>, Map<String, Set<String>>, Map<String, Set<VarDefinitionPreq>>>>();
 
-	LinkedList<TestStatement> initialList = new LinkedList<TestStatement>();
+	ArrayList<TestStatement> initialList = new ArrayList<TestStatement>();
 	initialList.add(goal);
-	Multiset<String> initGoals = HashMultiset.create();
-	initGoals.addAll(readValues.get(goal.getName()).values());
-	queue.add(new TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Map<String, VarDefinitionPreq>>(
-		(long) 0, initialList, initGoals, getTheVarDefMap(definitionPreq.get(goal.getName()))));
+	Map<String, Set<String>> initGoals = initGoal(goal, readValues);
+	queue.add(
+		new TwoPair<Long, List<TestStatement>, Map<String, Set<String>>, Map<String, Set<VarDefinitionPreq>>>(
+			(long) 0, initialList, initGoals, getTheVarDefMap(definitionPreq.get(goal.getName()))));
 
 	while (queue.size() != 0)
 	{
 
-	    TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Map<String, VarDefinitionPreq>> frontier = queue
+	    TwoPair<Long, List<TestStatement>, Map<String, Set<String>>, Map<String, Set<VarDefinitionPreq>>> frontier = queue
 		    .poll();
 
 	    Long cost = frontier.getFirst();
-	    LinkedList<TestStatement> listTillNow = frontier.getSecond();
-	    Multiset<String> pGoals = frontier.getThird();
-	    Map<String, VarDefinitionPreq> pDefines = frontier.getForth();
+	    List<TestStatement> listTillNow = frontier.getSecond();
+	    Map<String, Set<String>> pGoals = frontier.getThird();
+	    Map<String, Set<VarDefinitionPreq>> pDefines = frontier.getForth();
 
 	    if (areGoalsSatisfied(pGoals, pDefines, initialState))
 		return frontier.getSecond();
@@ -145,16 +145,19 @@ public class Planning
 		    continue;
 		if (listTillNow.contains(preq))
 		    continue;
-		Multiset<String> newGoals = HashMultiset.create();
-		newGoals.addAll(pGoals);
-		LinkedList<TestStatement> newList = new LinkedList<TestStatement>();
+		Map<String, Set<String>> newGoals = new HashMap<String, Set<String>>();
+		for (Entry<String, Set<String>> entry : pGoals.entrySet())
+		{
+		    Utils.addAllTheSetInMap(newGoals, entry.getKey(), entry.getValue());
+		}
+		List<TestStatement> newList = new ArrayList<TestStatement>();
 		newList.add(preq);
 		newList.addAll(listTillNow);
 
-		int score = updateGoals(preq, newGoals, initialState, pDefines, readValues);
+		int score = updateGoals(preq, newGoals, initialState, pDefines, readValues, definitionPreq);
 		queue.add(
-			new TwoPair<Long, LinkedList<TestStatement>, Multiset<String>, Map<String, VarDefinitionPreq>>(
-				cost + preq.time - score* 100, newList, newGoals, pDefines));
+			new TwoPair<Long, List<TestStatement>, Map<String, Set<String>>, Map<String, Set<VarDefinitionPreq>>>(
+				cost + preq.time - score * 100, newList, newGoals, pDefines));
 	    }
 
 	}
@@ -163,35 +166,66 @@ public class Planning
 
     }
 
-    private static boolean areGoalsSatisfied(Multiset<String> readGoals, Map<String, VarDefinitionPreq> defineGoals,
-	    RunningState initialState)
+    public static Map<String, Set<String>> initGoal(TestStatement goal, Map<String, Map<String, String>> readValues)
     {
-	for (String readGoal : readGoals.elementSet())
+	Map<String, Set<String>> initGoals = new HashMap<String, Set<String>>();
+	for (Entry<String, String> entry : readValues.get(goal.getName()).entrySet())
 	{
+	    Utils.addToTheSetInMap(initGoals, entry.getValue(), entry.getKey());
+	}
+	return initGoals;
+    }
+
+    private static boolean areGoalsSatisfied(Map<String, Set<String>> readGoals,
+	    Map<String, Set<VarDefinitionPreq>> defineGoals, RunningState initialState)
+    {
+	for (Entry<String, Set<String>> entry : readGoals.entrySet())
+	{
+	    String readGoal = entry.getKey();
+	    Set<String> goalNames = entry.getValue();
 	    Set<String> names = initialState.getName(readGoal);
-	    if (names == null || names.size() < readGoals.count(readGoal))
+	    if (goalNames.size() != 0 && (names == null || names.size() < goalNames.size()))
 		return false;
 	}
-	for (VarDefinitionPreq defPreq : defineGoals.values())
+	for (Entry<String, Set<VarDefinitionPreq>> entry : defineGoals.entrySet())
 	{
-	    String neededType = defPreq.getType();
+
+	    String neededType = entry.getKey();
+	    Set<VarDefinitionPreq> preqs = entry.getValue();
 	    Set<String> varsInState = initialState.getNameForType(neededType);
-	    if (varsInState == null || varsInState.isEmpty())
+	    if (varsInState == null || varsInState.size() < preqs.size())
 		return false;
 
 	}
 	return true;
     }
 
-    private static int updateGoals(TestStatement stmt, Multiset<String> readGoals, RunningState rs,
-	    Map<String, VarDefinitionPreq> defineGoals, Map<String, Map<String, String>> readValues)
+    public static int updateGoals(TestStatement stmt, Map<String, Set<String>> readGoals, RunningState rs,
+	    Map<String, Set<VarDefinitionPreq>> defineGoals, Map<String, Map<String, String>> readValues,
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq)
     {
 	int score = 0;
-	for (Pair<String, String> changedVal : stmt.getSideEffects().values())
+	for (Entry<String, Pair<String, String>> entry : stmt.getSideEffects().entrySet())
 	{
-	    if (readGoals.contains(changedVal.getSecond()))
+	    String name = entry.getKey();
+	    Pair<String, String> changedVal = entry.getValue();
+	    if (readGoals.containsKey(changedVal.getSecond()))
 	    {
-		readGoals.remove(changedVal.getSecond());
+		Set<String> set = readGoals.get(changedVal.getSecond());
+		if (set.contains(name))
+		    set.remove(name);
+		else
+		{
+		    if (set.size() != 0)
+		    {
+			String str = set.iterator().next();
+			set.remove(str);
+			if (set.isEmpty())
+			{
+			    readGoals.remove(changedVal.getSecond());
+			}
+		    }
+		}
 		if (rs.getName(changedVal.getSecond()) == null)
 		    score += 10;
 	    }
@@ -200,16 +234,31 @@ public class Planning
 	{
 	    String name = entry.getKey();
 	    String newVal = entry.getValue();
-	    if (readGoals.contains(newVal))
+	    if (readGoals.containsKey(newVal))
 	    {
-		readGoals.remove(newVal);
+		Set<String> set = readGoals.get(newVal);
+		if (set.contains(name))
+		    set.remove(name);
+		else
+		{
+		    if (set.size() != 0)
+		    {
+			String str = set.iterator().next();
+			set.remove(str);
+			if (set.isEmpty())
+			{
+			    readGoals.remove(newVal);
+			}
+		    }
+		}
 		if (rs.getName(newVal) == null)
 		    score += 10;
 	    }
 	    String type = stmt.getTypeOfVar(name);
 	    if (defineGoals.containsKey(type))
 	    {
-		defineGoals.remove(type);
+		Set<VarDefinitionPreq> set = defineGoals.get(type);
+		set.remove(set.iterator().next());
 		if (rs.getNameForType(type) == null)
 		    score += 10;
 	    }
@@ -219,15 +268,19 @@ public class Planning
 	{
 	    String name = entry.getKey();
 	    String readVal = entry.getValue();
-	    readGoals.add(readVal);
+	    Utils.addToTheSetInMap(readGoals, readVal, name);
 	}
-	
+
+	for (VarDefinitionPreq defPreq : definitionPreq.get(stmt.getName()))
+	{
+	    Utils.addToTheSetInMap(defineGoals, defPreq.getType(), defPreq);
+	}
 	return score;
 
     }
 
-    private static List<TestStatement> getPreqStmts(TestStatement stmt, Multiset<String> readGoals,
-	    Map<String, VarDefinitionPreq> defineGoals, Map<String, TestStatement> testStatementMap)
+    private static List<TestStatement> getPreqStmts(TestStatement stmt, Map<String, Set<String>> readGoals,
+	    Map<String, Set<VarDefinitionPreq>> defineGoals, Map<String, TestStatement> testStatementMap)
     {
 	List<TestStatement> preqs = new LinkedList<TestStatement>();
 	outer: for (Entry<String, TestStatement> entry : testStatementMap.entrySet())
@@ -236,7 +289,7 @@ public class Planning
 	    TestStatement testStmt = entry.getValue();
 	    for (Pair<String, String> changedVal : testStmt.getSideEffects().values())
 	    {
-		if (readGoals.contains(changedVal.getSecond()))
+		if (readGoals.containsKey(changedVal.getSecond()))
 		{
 		    preqs.add(testStmt);
 		    continue outer;
@@ -247,7 +300,7 @@ public class Planning
 	    {
 		String name = newEntry.getKey();
 		String newVal = newEntry.getValue();
-		if (readGoals.contains(newVal))
+		if (readGoals.containsKey(newVal))
 		{
 		    preqs.add(testStmt);
 		    continue outer;

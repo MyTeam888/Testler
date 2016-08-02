@@ -38,6 +38,7 @@ import ca.ubc.salt.model.utils.Counter;
 import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Pair;
 import ca.ubc.salt.model.utils.Settings;
+import ca.ubc.salt.model.utils.Triple;
 import ca.ubc.salt.model.utils.Utils;
 
 public class BackwardTestMerger
@@ -137,14 +138,16 @@ public class BackwardTestMerger
 
 	    // System.out.println(connectedComponentsMap);
 
-	    Settings.consoleLogger.error(String.format("merging %d tests : %s",connectedComponent.size(), connectedComponent.toString()));
+	    Settings.consoleLogger.error(
+		    String.format("merging %d tests : %s", connectedComponent.size(), connectedComponent.toString()));
 
-	    
-	     connectedComponent = new HashSet<String>();
-	     connectedComponent.add("FastFourierTransformerTest.test2DData");
-	     connectedComponent.add("FastFourierTransformerTest.testSinFunction");
-	     connectedComponent.add("FastFourierTransformerTest.test2DDataUnitary");
-	     connectedComponent.add("FastFourierTransformerTest.testAdHocData");
+	    // connectedComponent = new HashSet<String>();
+	    // //
+	    // connectedComponent.add("FastFourierTransformerTest.test2DData");
+	    // connectedComponent.add("FastFourierTransformerTest.testSinFunction");
+	    // //
+	    // connectedComponent.add("FastFourierTransformerTest.test2DDataUnitary");
+	    // connectedComponent.add("FastFourierTransformerTest.testAdHocData");
 	    // connectedComponent.add("Array2DRowRealMatrixTest.testGetColumn");
 	    // connectedComponent.add("ComplexTest.testExp");
 	    // connectedComponent.add("ComplexTest.testScalarAdd");
@@ -191,9 +194,9 @@ public class BackwardTestMerger
 		LinkedList<TestStatement> path = new LinkedList<TestStatement>();
 
 		TestStatement rootStmt = new TestStatement(root, root, "init.xml");
-		Pair<TestStatement, RunningState> frontier = new Pair<TestStatement, RunningState>(rootStmt,
-			initialState);
-		Pair<TestStatement, RunningState> prevFrontier;
+		Triple<TestStatement, RunningState, Map<String, String>> frontier = new Triple<TestStatement, RunningState, Map<String, String>>(
+			rootStmt, initialState, new HashMap<String, String>());
+		Triple<TestStatement, RunningState, Map<String, String>> prevFrontier;
 		do
 		{
 		    prevFrontier = frontier;
@@ -224,10 +227,15 @@ public class BackwardTestMerger
 				    runningState, readValues, connectedComponentsMap, allStmtsView.get(testCase),
 				    definitionPreq);
 
+			    populateGoalsInStatements(definitionPreq, readValues, runningState, stmts);
+			    
+			    Map<String, String> batchRename = new HashMap<String, String>();
 			    for (TestStatement stmt : stmts)
 			    {
-				TestCaseComposer.updateRunningState(stmt, runningState, readValues, definitionPreq);
+				TestCaseComposer.updateRunningState(stmt, runningState, readValues, definitionPreq,
+					batchRename);
 			    }
+
 			    secondPhasePath.addAll(stmts);
 
 			}
@@ -259,6 +267,20 @@ public class BackwardTestMerger
 	Settings.consoleLogger
 		.error(String.format("Before merging : %d, After merging : %d", totalBeforeMerging, totalAftermerging));
 	// TestCaseComposer.composeTestCases(mergedTestCases);
+    }
+
+    public static void populateGoalsInStatements(Map<String, Set<VarDefinitionPreq>> definitionPreq,
+	    Map<String, Map<String, String>> readValues, RunningState runningState, List<TestStatement> stmts)
+    {
+	Map<String, Set<String>> readGoals = Planning.initGoal(stmts.get(stmts.size() - 1), readValues);
+	Map<String, Set<VarDefinitionPreq>> defineGoals = Planning.getTheVarDefMap(definitionPreq.get(stmts.get(stmts.size() - 1).getName()));
+
+	for (int i = stmts.size() - 2; i >= 0; i--)
+	{
+	stmts.get(i).defineGoals = defineGoals;
+	stmts.get(i).readGoals = readGoals;
+	Planning.updateGoals(stmts.get(i), readGoals, runningState, defineGoals, readValues, definitionPreq);
+	}
     }
 
     public static List<TestStatement> getSavedStmts(Map<String, TestStatement> allTestStatements,
@@ -310,8 +332,8 @@ public class BackwardTestMerger
 	return false;
     }
 
-    public static Pair<TestStatement, RunningState> dijkstra(TestStatement root, Map<String, TestState> graph,
-	    RunningState runningState, Map<String, Map<String, String>> readValues,
+    public static Triple<TestStatement, RunningState, Map<String, String>> dijkstra(TestStatement root,
+	    Map<String, TestState> graph, RunningState runningState, Map<String, Map<String, String>> readValues,
 	    Map<String, List<String>> connectedComponentsMap, Map<String, TestStatement> testStatementMap,
 	    Set<String> assertions, Map<String, Set<VarDefinitionPreq>> definitionPreq)
 	    throws CloneNotSupportedException
@@ -320,15 +342,17 @@ public class BackwardTestMerger
 	Set<TestStatement> visited = new HashSet<TestStatement>();
 	root.curStart = root;
 	root.distFrom.put(root, (long) 0);
-	PriorityQueue<Pair<TestStatement, RunningState>> queue = new PriorityQueue<Pair<TestStatement, RunningState>>();
+	PriorityQueue<Triple<TestStatement, RunningState, Map<String, String>>> queue = new PriorityQueue<Triple<TestStatement, RunningState, Map<String, String>>>();
 
-	queue.add(new Pair<TestStatement, RunningState>(root, runningState));
+	queue.add(new Triple<TestStatement, RunningState, Map<String, String>>(root, runningState,
+		new HashMap<String, String>()));
 
 	while (queue.size() != 0)
 	{
-	    Pair<TestStatement, RunningState> pair = queue.poll();
+	    Triple<TestStatement, RunningState, Map<String, String>> pair = queue.poll();
 	    TestStatement parent = pair.getFirst();
 	    runningState = pair.getSecond();
+	    Map<String, String> batchRename = pair.getThird();
 	    if (visited.contains(parent))
 		continue;
 
@@ -336,10 +360,13 @@ public class BackwardTestMerger
 
 	    if (connectedComponentsMap.containsKey(parent.getName()) || assertions.contains(parent.getName()))
 	    {
-		return new Pair<TestStatement, RunningState>(parent, runningState.clone());
+		Map<String, String> renameClone = new HashMap<String, String>();
+		renameClone.putAll(batchRename);
+		return new Triple<TestStatement, RunningState, Map<String, String>>(parent, runningState.clone(),
+			renameClone);
 	    }
 
-	    TestCaseComposer.updateRunningState(parent, runningState, readValues, definitionPreq);
+	    TestCaseComposer.updateRunningState(parent, runningState, readValues, definitionPreq, batchRename);
 	    List<Pair<Integer, TestStatement>> comps = getAllCompatibleTestStatements(testStatementMap, readValues,
 		    runningState, visited, definitionPreq);
 
@@ -349,8 +376,9 @@ public class BackwardTestMerger
 		TestStatement stmt = stmtPair.getSecond();
 		if (!visited.contains(stmt))
 		{
+
 		    relaxChild(root, queue, parent, stmt, runningState,
-			    stmtPair.getFirst() + readValues.get(stmt.getName()).size());
+			    stmtPair.getFirst() + readValues.get(stmt.getName()).size(), batchRename);
 		}
 
 	    }
@@ -359,8 +387,9 @@ public class BackwardTestMerger
 	return null;
     }
 
-    private static void relaxChild(TestStatement root, PriorityQueue<Pair<TestStatement, RunningState>> queue,
-	    TestStatement parent, TestStatement stmt, RunningState runningState, int bonus)
+    private static void relaxChild(TestStatement root,
+	    PriorityQueue<Triple<TestStatement, RunningState, Map<String, String>>> queue, TestStatement parent,
+	    TestStatement stmt, RunningState runningState, int bonus, Map<String, String> batchRename)
 	    throws CloneNotSupportedException
     {
 	long newD = parent.distFrom.get(root) + stmt.time - bonus + stmt.getSideEffects().size() * 1000000
@@ -372,7 +401,10 @@ public class BackwardTestMerger
 	    stmt.distFrom.put(root, newD);
 	    stmt.curStart = root;
 	    // queue.remove(stmt);
-	    queue.add(new Pair<TestStatement, RunningState>(stmt, runningState.clone()));
+	    Map<String, String> renameClone = new HashMap<String, String>();
+	    renameClone.putAll(batchRename);
+	    queue.add(new Triple<TestStatement, RunningState, Map<String, String>>(stmt, runningState.clone(),
+		    renameClone));
 	    // queue.add(child.clone());
 	}
     }
