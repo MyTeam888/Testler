@@ -20,6 +20,7 @@ import java.util.Map.Entry;
 
 import Comparator.NaturalOrderComparator;
 import ca.ubc.salt.model.state.TestStatement;
+import ca.ubc.salt.model.state.VarDefinitionPreq;
 import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Settings;
 import ca.ubc.salt.model.utils.Utils;
@@ -76,7 +77,7 @@ public class RunningState
 	// valueNamePairForCurrentState.put(value, name);
     }
 
-    public void update(TestStatement stmt, Map<String, String> renameMap)
+    public void update(TestStatement stmt, Map<String, String> renameMap, Map<String, Set<VarDefinitionPreq>> defPreqs)
     {
 	String prevState = stmt.getName();
 	Map<String, SimpleName> vars = stmt.getAllVars();
@@ -98,35 +99,49 @@ public class RunningState
 	for (Entry<String, String> entry : nameValuePair.entrySet())
 	{
 	    String name = entry.getKey();
-	    if (varsName.contains(name))
-	    {
-		String value = entry.getValue();
-
-		String renamedName = renameMap.get(name);
-
-		SimpleName sname = vars.get(name);
-//		String type = getTypeOfValue(value);
-		String type = "";
-		if (sname != null)
-		{
-//		    ITypeBinding typeBind = sname.resolveTypeBinding();
-		    IBinding bind = sname.resolveBinding();
-		    IVariableBinding iv = (IVariableBinding) bind;
-		    ITypeBinding typeBind = iv.getType();
-		    if (typeBind != null)
-			type = typeBind.getName();
-		    else
-		    {
-			Settings.consoleLogger.error("typeBinding is null for " + sname.toString() + " in " + stmt.toString());
-		    }
-		}
-		if (renamedName != null)
-		    name = renamedName;
-
-		this.put(name, value, type);
-	    }
+	    String value = entry.getValue();
+	    putTheVar(stmt, renameMap, vars, varsName, name, value);
 	}
+	if (defPreqs.get(stmt.getName()) != null)
+	    for (VarDefinitionPreq preq : defPreqs.get(stmt.getName()))
+	    {
+		String name = preq.getName().getIdentifier();
+		String value = nameValuePair.get(name);
+		putTheVar(stmt, renameMap, vars, varsName, name, value);
+	    }
 
+    }
+
+    public void putTheVar(TestStatement stmt, Map<String, String> renameMap, Map<String, SimpleName> vars,
+	    Set<String> varsName, String name, String value)
+    {
+	if (varsName.contains(name))
+	{
+
+	    String renamedName = renameMap.get(name);
+
+	    SimpleName sname = vars.get(name);
+	    // String type = getTypeOfValue(value);
+	    String type = "";
+	    if (sname != null)
+	    {
+		// ITypeBinding typeBind = sname.resolveTypeBinding();
+		IBinding bind = sname.resolveBinding();
+		IVariableBinding iv = (IVariableBinding) bind;
+		ITypeBinding typeBind = iv.getType();
+		if (typeBind != null)
+		    type = typeBind.getName();
+		else
+		{
+		    Settings.consoleLogger
+			    .error("typeBinding is null for " + sname.toString() + " in " + stmt.toString());
+		}
+	    }
+	    if (renamedName != null)
+		name = renamedName;
+
+	    this.put(name, value, type);
+	}
     }
 
     @Override
@@ -148,7 +163,7 @@ public class RunningState
 	    Set<String> newSet = new HashSet<String>();
 	    newSet.addAll(entry.getValue());
 	    rs.typeNamePairForCurrentState.put(entry.getKey(), newSet);
-	    
+
 	}
 	return rs;
     }
@@ -183,8 +198,7 @@ public class RunningState
 	    begin += 7;
 	    end = origVal.indexOf("</type>");
 	    return origVal.substring(begin, end);
-	}
-	else
+	} else
 	    return val;
     }
 

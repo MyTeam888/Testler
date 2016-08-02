@@ -44,6 +44,7 @@ import com.google.common.cache.LoadingCache;
 import ca.ubc.salt.model.instrumenter.ClassModel;
 import ca.ubc.salt.model.instrumenter.Method;
 import ca.ubc.salt.model.instrumenter.ProductionClassInstrumenter;
+import ca.ubc.salt.model.merger.BackwardTestMerger;
 import ca.ubc.salt.model.state.StatementReadVariableVisitor;
 import ca.ubc.salt.model.state.TestStatement;
 import ca.ubc.salt.model.state.VarDefinitionPreq;
@@ -85,7 +86,7 @@ public class TestCaseComposer
 
 	findPostreqVarsRenames(statement, valueNamePairForCurrentState, renameMap);
 
-	valueNamePairForCurrentState.update(statement, renameMap);
+	valueNamePairForCurrentState.update(statement, renameMap, definitionPreq);
 	batchRename.putAll(renameMap);
     }
 
@@ -196,7 +197,7 @@ public class TestCaseComposer
     // }
 
     public static void composeTestCase(List<TestStatement> path, Set<String> testCases, String name,
-	    Map<String, Map<String, String>> readVals, Map<String, Set<VarDefinitionPreq>> definitionPreq)
+	    Map<String, Map<String, String>> readVals, Map<String, Set<VarDefinitionPreq>> definitionPreq, List<TestStatement> additionalStmts)
     {
 
 	// populateStateField(path);
@@ -207,6 +208,7 @@ public class TestCaseComposer
 
 	List<TestStatement> renamedStatements = performRenaming(path, testCases, mainClassName, readVals,
 		definitionPreq);
+	renamedStatements.addAll(additionalStmts);
 
 	try
 	{
@@ -625,7 +627,11 @@ public class TestCaseComposer
 	    Map<String, Map<String, String>> readVals, Map<String, Set<VarDefinitionPreq>> definitionPreq,
 	    Map<String, String> batchRename)
     {
-	Map<String, String> renameMap = new HashMap<String, String>();
+	Map<String, String> renameMap;
+	if (statement.renameMap == null)
+	    renameMap = new HashMap<String, String>();
+	else
+	    renameMap = statement.renameMap;
 
 	findPreqVarsRenames(statement, valueNamePairForCurrentState, renameMap, readVals, definitionPreq, batchRename);
 
@@ -635,7 +641,7 @@ public class TestCaseComposer
 	if (vars == null)
 	    return null;
 
-	valueNamePairForCurrentState.update(statement, renameMap);
+	valueNamePairForCurrentState.update(statement, renameMap, definitionPreq);
 
 	batchRename.putAll(renameMap);
 
@@ -647,10 +653,43 @@ public class TestCaseComposer
 	    Map<String, Set<VarDefinitionPreq>> definitionPreq)
     {
 
-	List<TestStatement> renamedStatements = new LinkedList<TestStatement>();
+	RunningState runningState = new RunningState(testCases, mainClassName);
 
-	RunningState valueNamePairForCurrentState = new RunningState(testCases, mainClassName);
+	List<TestStatement> renamedStatements = cloneStatements(path);
+
 	Map<String, String> batchRename = new HashMap<String, String>();
+	BackwardTestMerger.populateGoalsInStatements(definitionPreq, readVals, runningState, renamedStatements);
+	for (TestStatement statement : renamedStatements)
+	{
+	    Statement renamedStatement = renameTestStatement(statement, runningState, readVals,
+		    definitionPreq, batchRename);
+	    statement.refactoredStatement = renamedStatement;
+	}
+
+	return renamedStatements;
+    }
+    public static List<TestStatement> performRenamingWithRunningState(List<TestStatement> path, Set<String> testCases,
+	    String mainClassName, Map<String, Map<String, String>> readVals,
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq, RunningState runningState)
+    {
+	
+	List<TestStatement> renamedStatements = cloneStatements(path);
+	
+	Map<String, String> batchRename = new HashMap<String, String>();
+	BackwardTestMerger.populateGoalsInStatements(definitionPreq, readVals, runningState, renamedStatements);
+	for (TestStatement statement : renamedStatements)
+	{
+	    Statement renamedStatement = renameTestStatement(statement, runningState, readVals,
+		    definitionPreq, batchRename);
+	    statement.refactoredStatement = renamedStatement;
+	}
+	
+	return renamedStatements;
+    }
+
+    public static List<TestStatement> cloneStatements(List<TestStatement> path)
+    {
+	List<TestStatement> renamedStatements = new ArrayList<TestStatement>();
 	for (TestStatement statement : path)
 	{
 
@@ -667,15 +706,8 @@ public class TestCaseComposer
 		e.printStackTrace();
 	    }
 
-	    if (statement.statement.toString().contains("Array2DRowRealMatrix m2"))
-		System.out.println();
-
-	    Statement renamedStatement = renameTestStatement(statement, valueNamePairForCurrentState, readVals,
-		    definitionPreq, batchRename);
-	    cpyStatement.refactoredStatement = renamedStatement;
 	    renamedStatements.add(cpyStatement);
 	}
-
 	return renamedStatements;
     }
 
@@ -726,8 +758,11 @@ public class TestCaseComposer
 	Set<String> chosenNames = new HashSet<String>();
 	for (Entry<String, String> entry : nameValuePairOfStmtBefore.entrySet())
 	{
+
 	    String varNameInStmt = entry.getKey();
 
+	    if (renameMap.containsKey(varNameInStmt))
+		continue;
 	    String value = entry.getValue();
 
 	    Set<String> varNameInState = runningState.getName(value);
@@ -773,34 +808,62 @@ public class TestCaseComposer
 			    String.format("something's wrong with %s--%s", stmt.getName(), stmt.statement.toString()));
 		else
 		{
-		    String renamedName = renameMap.get(defPreq.getName().getIdentifier());
-		    if (renamedName == null)
-		    {
-			renamedName = defPreq.getName().getIdentifier();
-		    }
-		    if ((runningState.getValue(renamedName) == null
-			    || !runningState.getType(renamedName).equals(neededType))
-			    || !batchRename.containsValue(renamedName))
+		    if (renameMap.containsKey(defPreq.getName().getIdentifier()))
+			continue;
+		    if (stmt.readGoals != null)
 		    {
 			boolean renamed = false;
-			for (String var : varsInState)
+			for (String varName : varsInState)
 			{
-			    if (!batchRename.containsValue(var))
+			    String value = runningState.getValue(varName);
+			    Set<String> neededVals = stmt.readGoals.get(value);
+			    Set<String> namesWithThisValue = runningState.getName(value);
+			    if (neededVals == null || neededVals.size() <= namesWithThisValue.size() - 1)
 			    {
+				renameMap.put(defPreq.getName().getIdentifier(), varName);
 				renamed = true;
-				renameMap.put(defPreq.getName().getIdentifier(), var);
 				break;
 			    }
-
 			}
+
 			if (renamed == false)
 			{
-			    if (batchRename.containsKey(renamedName))
-				renameMap.put(renamedName, batchRename.get(renamedName));
-			    else
-				Settings.consoleLogger.error(String.format("renaming happend for  %s--%s",
-					stmt.getName(), stmt.statement.toString()));
+			    Settings.consoleLogger.error(String.format("renaming happend for  %s--%s", stmt.getName(),
+				    stmt.statement.toString()));
+			}
+		    } else
+		    {
 
+			String renamedName = renameMap.get(defPreq.getName().getIdentifier());
+			if (renamedName == null)
+			{
+			    renamedName = defPreq.getName().getIdentifier();
+			}
+
+			if ((runningState.getValue(renamedName) == null
+				|| !runningState.getType(renamedName).equals(neededType))
+				|| !batchRename.containsValue(renamedName))
+			{
+			    boolean renamed = false;
+			    for (String var : varsInState)
+			    {
+				if (!batchRename.containsValue(var))
+				{
+				    renamed = true;
+				    renameMap.put(defPreq.getName().getIdentifier(), var);
+				    break;
+				}
+
+			    }
+			    if (renamed == false)
+			    {
+				if (batchRename.containsKey(renamedName))
+				    renameMap.put(renamedName, batchRename.get(renamedName));
+				else
+				    Settings.consoleLogger.error(String.format("renaming happend for  %s--%s",
+					    stmt.getName(), stmt.statement.toString()));
+
+			    }
 			}
 		    }
 		}

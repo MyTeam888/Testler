@@ -204,13 +204,13 @@ public class Utils
     public static <K, V> void addAllTheSetInMap(Map<K, Set<V>> map, K key, Set<V> value)
     {
 	Set<V> list = map.get(key);
+	if (value == null)
+	    return;
 	if (list == null)
 	{
 	    list = new HashSet<V>();
 	    map.put(key, list);
 	}
-	if (value == null)
-	    return;
 	list.addAll(value);
     }
     

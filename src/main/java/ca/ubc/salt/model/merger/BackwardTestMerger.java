@@ -130,7 +130,9 @@ public class BackwardTestMerger
 	List<Pair<Set<String>, List<List<TestStatement>>>> mergedTestCases = new LinkedList<Pair<Set<String>, List<List<TestStatement>>>>();
 
 	int totalBeforeMerging = 0, totalAftermerging = 0;
-
+	int numberOfMergedTests = 0;
+	int counter = 0;
+	int limit = 0;
 	for (Set<String> connectedComponent : connectedComponents)
 	{
 	    if (connectedComponent.size() < 2)
@@ -141,11 +143,13 @@ public class BackwardTestMerger
 	    Settings.consoleLogger.error(
 		    String.format("merging %d tests : %s", connectedComponent.size(), connectedComponent.toString()));
 
+	    counter++;
+	    if (counter < limit)
+		continue;
+
 	    // connectedComponent = new HashSet<String>();
-	    // //
 	    // connectedComponent.add("FastFourierTransformerTest.test2DData");
 	    // connectedComponent.add("FastFourierTransformerTest.testSinFunction");
-	    // //
 	    // connectedComponent.add("FastFourierTransformerTest.test2DDataUnitary");
 	    // connectedComponent.add("FastFourierTransformerTest.testAdHocData");
 	    // connectedComponent.add("Array2DRowRealMatrixTest.testGetColumn");
@@ -227,14 +231,25 @@ public class BackwardTestMerger
 				    runningState, readValues, connectedComponentsMap, allStmtsView.get(testCase),
 				    definitionPreq);
 
-			    populateGoalsInStatements(definitionPreq, readValues, runningState, stmts);
-			    
-			    Map<String, String> batchRename = new HashMap<String, String>();
-			    for (TestStatement stmt : stmts)
+			    // populateGoalsInStatements(definitionPreq,
+			    // readValues, runningState, stmts);
+			    //
+			    // Map<String, String> batchRename = new
+			    // HashMap<String, String>();
+			    // for (TestStatement stmt : stmts)
+			    // {
+			    // TestCaseComposer.updateRunningState(stmt,
+			    // runningState, readValues, definitionPreq,
+			    // batchRename);
+			    // }
+
+			    if (stmts == null)
 			    {
-				TestCaseComposer.updateRunningState(stmt, runningState, readValues, definitionPreq,
-					batchRename);
+				Settings.consoleLogger.error(String.format("Couldn't satisfay %s - %s", allTestStatements.get(assertion), assertion));
+				continue;
 			    }
+			    stmts = TestCaseComposer.performRenamingWithRunningState(stmts, connectedComponent,
+				    mainClassName, readValues, definitionPreq, runningState);
 
 			    secondPhasePath.addAll(stmts);
 
@@ -245,9 +260,14 @@ public class BackwardTestMerger
 
 		List<TestStatement> mergedPath = TestMerger.returnThePath(rootStmt, path);
 		paths.add(mergedPath);
-		mergedPath.addAll(secondPhasePath);
-		TestCaseComposer.composeTestCase(mergedPath, connectedComponent,
-			TestCaseComposer.generateTestCaseName(connectedComponent), readValues, definitionPreq);
+		paths.add(secondPhasePath);
+		// mergedPath.addAll(secondPhasePath);
+
+		ArrayList<TestStatement> arrMergedPath = new ArrayList<TestStatement>();
+		arrMergedPath.addAll(mergedPath);
+		TestCaseComposer.composeTestCase(arrMergedPath, connectedComponent,
+			TestCaseComposer.generateTestCaseName(connectedComponent), readValues, definitionPreq,
+			secondPhasePath);
 
 	    }
 	    // while (first != null);
@@ -262,10 +282,12 @@ public class BackwardTestMerger
 	    // paths.get(0)));
 	    totalBeforeMerging += totalNumberOfStatements;
 	    totalAftermerging += totalMerged;
+	    numberOfMergedTests += connectedComponent.size();
+	    Settings.consoleLogger.error(
+		    String.format("Total Before merging : %d, After merging : %d, NumberOfTestsBefore : %d, After : %d",
+			    totalBeforeMerging, totalAftermerging, numberOfMergedTests, counter));
 	}
 
-	Settings.consoleLogger
-		.error(String.format("Before merging : %d, After merging : %d", totalBeforeMerging, totalAftermerging));
 	// TestCaseComposer.composeTestCases(mergedTestCases);
     }
 
@@ -273,13 +295,29 @@ public class BackwardTestMerger
 	    Map<String, Map<String, String>> readValues, RunningState runningState, List<TestStatement> stmts)
     {
 	Map<String, Set<String>> readGoals = Planning.initGoal(stmts.get(stmts.size() - 1), readValues);
-	Map<String, Set<VarDefinitionPreq>> defineGoals = Planning.getTheVarDefMap(definitionPreq.get(stmts.get(stmts.size() - 1).getName()));
+	Map<String, Set<VarDefinitionPreq>> defineGoals = Planning
+		.getTheVarDefMap(definitionPreq.get(stmts.get(stmts.size() - 1).getName()));
 
 	for (int i = stmts.size() - 2; i >= 0; i--)
 	{
-	stmts.get(i).defineGoals = defineGoals;
-	stmts.get(i).readGoals = readGoals;
-	Planning.updateGoals(stmts.get(i), readGoals, runningState, defineGoals, readValues, definitionPreq);
+
+	    Map<String, Set<String>> newGoals = new HashMap<String, Set<String>>();
+	    for (Entry<String, Set<String>> entry : readGoals.entrySet())
+	    {
+		Utils.addAllTheSetInMap(newGoals, entry.getKey(), entry.getValue());
+	    }
+
+	    Map<String, Set<VarDefinitionPreq>> newDefGoal = new HashMap<String, Set<VarDefinitionPreq>>();
+	    for (Entry<String, Set<VarDefinitionPreq>> entry : defineGoals.entrySet())
+	    {
+		Utils.addAllTheSetInMap(newDefGoal, entry.getKey(), entry.getValue());
+	    }
+	    stmts.get(i).defineGoals = newDefGoal;
+	    stmts.get(i).readGoals = newGoals;
+	    Map<String, String> renameMap = new HashMap<String, String>();
+	    Planning.updateGoals(stmts.get(i), readGoals, runningState, defineGoals, readValues, definitionPreq,
+		    renameMap);
+	    // stmts.get(i).renameMap = renameMap;
 	}
     }
 

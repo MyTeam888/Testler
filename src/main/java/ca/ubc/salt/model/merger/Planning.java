@@ -117,9 +117,8 @@ public class Planning
 	ArrayList<TestStatement> initialList = new ArrayList<TestStatement>();
 	initialList.add(goal);
 	Map<String, Set<String>> initGoals = initGoal(goal, readValues);
-	queue.add(
-		new TwoPair<Long, List<TestStatement>, Map<String, Set<String>>, Map<String, Set<VarDefinitionPreq>>>(
-			(long) 0, initialList, initGoals, getTheVarDefMap(definitionPreq.get(goal.getName()))));
+	queue.add(new TwoPair<Long, List<TestStatement>, Map<String, Set<String>>, Map<String, Set<VarDefinitionPreq>>>(
+		(long) 0, initialList, initGoals, getTheVarDefMap(definitionPreq.get(goal.getName()))));
 
 	while (queue.size() != 0)
 	{
@@ -150,14 +149,22 @@ public class Planning
 		{
 		    Utils.addAllTheSetInMap(newGoals, entry.getKey(), entry.getValue());
 		}
+
+		Map<String, Set<VarDefinitionPreq>> newDefGoal = new HashMap<String, Set<VarDefinitionPreq>>();
+		for (Entry<String, Set<VarDefinitionPreq>> entry : pDefines.entrySet())
+		{
+		    Utils.addAllTheSetInMap(newDefGoal, entry.getKey(), entry.getValue());
+		}
+
 		List<TestStatement> newList = new ArrayList<TestStatement>();
 		newList.add(preq);
 		newList.addAll(listTillNow);
 
-		int score = updateGoals(preq, newGoals, initialState, pDefines, readValues, definitionPreq);
+		int score = updateGoals(preq, newGoals, initialState, newDefGoal, readValues, definitionPreq,
+			new HashMap<String, String>());
 		queue.add(
 			new TwoPair<Long, List<TestStatement>, Map<String, Set<String>>, Map<String, Set<VarDefinitionPreq>>>(
-				cost + preq.time - score * 100, newList, newGoals, pDefines));
+				cost + preq.time - score * 100, newList, newGoals, newDefGoal));
 	    }
 
 	}
@@ -169,6 +176,7 @@ public class Planning
     public static Map<String, Set<String>> initGoal(TestStatement goal, Map<String, Map<String, String>> readValues)
     {
 	Map<String, Set<String>> initGoals = new HashMap<String, Set<String>>();
+//	if (readValues.get(goal.getName()) != null)
 	for (Entry<String, String> entry : readValues.get(goal.getName()).entrySet())
 	{
 	    Utils.addToTheSetInMap(initGoals, entry.getValue(), entry.getKey());
@@ -193,7 +201,7 @@ public class Planning
 	    String neededType = entry.getKey();
 	    Set<VarDefinitionPreq> preqs = entry.getValue();
 	    Set<String> varsInState = initialState.getNameForType(neededType);
-	    if (varsInState == null || varsInState.size() < preqs.size())
+	    if ((varsInState == null ? 0 : varsInState.size()) < preqs.size())
 		return false;
 
 	}
@@ -202,7 +210,7 @@ public class Planning
 
     public static int updateGoals(TestStatement stmt, Map<String, Set<String>> readGoals, RunningState rs,
 	    Map<String, Set<VarDefinitionPreq>> defineGoals, Map<String, Map<String, String>> readValues,
-	    Map<String, Set<VarDefinitionPreq>> definitionPreq)
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq, Map<String, String> renameMap)
     {
 	int score = 0;
 	for (Entry<String, Pair<String, String>> entry : stmt.getSideEffects().entrySet())
@@ -220,6 +228,7 @@ public class Planning
 		    {
 			String str = set.iterator().next();
 			set.remove(str);
+			renameMap.put(name, str);
 			if (set.isEmpty())
 			{
 			    readGoals.remove(changedVal.getSecond());
@@ -230,51 +239,61 @@ public class Planning
 		    score += 10;
 	    }
 	}
-	for (Entry<String, String> entry : stmt.getNewVars().entrySet())
-	{
-	    String name = entry.getKey();
-	    String newVal = entry.getValue();
-	    if (readGoals.containsKey(newVal))
+	if (stmt.getNewVars() != null)
+	    for (Entry<String, String> entry : stmt.getNewVars().entrySet())
 	    {
-		Set<String> set = readGoals.get(newVal);
-		if (set.contains(name))
-		    set.remove(name);
-		else
+		String name = entry.getKey();
+		String newVal = entry.getValue();
+		if (readGoals.containsKey(newVal))
 		{
-		    if (set.size() != 0)
+		    Set<String> set = readGoals.get(newVal);
+		    if (set.contains(name))
+			set.remove(name);
+		    else
 		    {
-			String str = set.iterator().next();
-			set.remove(str);
-			if (set.isEmpty())
+			if (set.size() != 0)
 			{
-			    readGoals.remove(newVal);
+			    String str = set.iterator().next();
+			    set.remove(str);
+			    renameMap.put(name, str);
+			    if (set.isEmpty())
+			    {
+				readGoals.remove(newVal);
+			    }
 			}
 		    }
+		    if (rs.getName(newVal) == null)
+			score += 10;
 		}
-		if (rs.getName(newVal) == null)
-		    score += 10;
+		String type = stmt.getTypeOfVar(name);
+		if (defineGoals.containsKey(type))
+		{
+		    Set<VarDefinitionPreq> set = defineGoals.get(type);
+		    if (set.size() > 0)
+		    {
+			VarDefinitionPreq preq = set.iterator().next();
+			set.remove(preq);
+			renameMap.put(name, preq.getName().getIdentifier());
+		    } else
+			defineGoals.remove(set);
+		    if (rs.getNameForType(type) == null)
+			score += 10;
+		}
+
 	    }
-	    String type = stmt.getTypeOfVar(name);
-	    if (defineGoals.containsKey(type))
+	if (readValues.get(stmt.getName()) != null)
+	    for (Entry<String, String> entry : readValues.get(stmt.getName()).entrySet())
 	    {
-		Set<VarDefinitionPreq> set = defineGoals.get(type);
-		set.remove(set.iterator().next());
-		if (rs.getNameForType(type) == null)
-		    score += 10;
+		String name = entry.getKey();
+		String readVal = entry.getValue();
+		Utils.addToTheSetInMap(readGoals, readVal, name);
 	    }
 
-	}
-	for (Entry<String, String> entry : readValues.get(stmt.getName()).entrySet())
-	{
-	    String name = entry.getKey();
-	    String readVal = entry.getValue();
-	    Utils.addToTheSetInMap(readGoals, readVal, name);
-	}
-
-	for (VarDefinitionPreq defPreq : definitionPreq.get(stmt.getName()))
-	{
-	    Utils.addToTheSetInMap(defineGoals, defPreq.getType(), defPreq);
-	}
+	if (definitionPreq.get(stmt.getName()) != null)
+	    for (VarDefinitionPreq defPreq : definitionPreq.get(stmt.getName()))
+	    {
+		Utils.addToTheSetInMap(defineGoals, defPreq.getType(), defPreq);
+	    }
 	return score;
 
     }

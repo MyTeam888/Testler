@@ -287,7 +287,7 @@ public class FileUtils
 	    @Override
 	    public boolean accept(File dir, String name)
 	    {
-		return name.contains(testCase + "-");
+		return name.startsWith(testCase + "-");
 	    }
 	};
 
@@ -304,7 +304,7 @@ public class FileUtils
 	    @Override
 	    public boolean accept(File dir, String name)
 	    {
-		return name.contains(testCase + "-");
+		return name.startsWith(testCase + "-");
 	    }
 	};
 

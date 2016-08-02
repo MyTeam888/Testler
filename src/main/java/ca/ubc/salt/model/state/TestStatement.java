@@ -30,15 +30,14 @@ public class TestStatement extends TestModelNode
     String input;
     Map<String, Pair<String, String>> sideEffects;
     Map<String, String> newVars;
-    
+
     Map<String, SimpleName> vars;
-    
+
     public long time = 1000;
-    
-    
+
     public Map<String, Set<String>> readGoals;
     public Map<String, Set<VarDefinitionPreq>> defineGoals;
-    
+    public Map<String, String> renameMap;
 
     public void initSideEffects(List<String> testCases)
     {
@@ -157,6 +156,25 @@ public class TestStatement extends TestModelNode
 	clone.time = this.time;
 	clone.parent.putAll(this.parent);
 	clone.distFrom.putAll(this.distFrom);
+	if (readGoals != null)
+	{
+	    Map<String, Set<String>> newGoals = new HashMap<String, Set<String>>();
+	    for (Entry<String, Set<String>> entry : this.readGoals.entrySet())
+	    {
+		Utils.addAllTheSetInMap(newGoals, entry.getKey(), entry.getValue());
+	    }
+	    clone.readGoals = newGoals;
+	}
+	if (defineGoals != null)
+	{
+
+	    Map<String, Set<VarDefinitionPreq>> newDefGoal = new HashMap<String, Set<VarDefinitionPreq>>();
+	    for (Entry<String, Set<VarDefinitionPreq>> entry : this.defineGoals.entrySet())
+	    {
+		Utils.addAllTheSetInMap(newDefGoal, entry.getKey(), entry.getValue());
+	    }
+	    clone.defineGoals = newDefGoal;
+	}
 	return clone;
 
     }
@@ -168,12 +186,12 @@ public class TestStatement extends TestModelNode
 
     public Map<String, String> getNewVars()
     {
-        return newVars;
+	return newVars;
     }
 
     public void setNewVars(Map<String, String> newVars)
     {
-        this.newVars = newVars;
+	this.newVars = newVars;
     }
 
     // @Override
@@ -191,7 +209,7 @@ public class TestStatement extends TestModelNode
 	    this.vars = TestCaseComposer.getAllVars(this.statement);
 	return this.vars;
     }
-    
+
     public String getTypeOfVar(String varName)
     {
 	Map<String, SimpleName> varSims = getAllVars();
@@ -200,5 +218,5 @@ public class TestStatement extends TestModelNode
 	    return "";
 	return sim.resolveTypeBinding().getName();
     }
-    
+
 }

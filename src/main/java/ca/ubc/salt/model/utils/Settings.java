@@ -154,7 +154,7 @@ public class Settings
 	    "SimplexSolverTest.testMath828Cycle", "NaturalRankingTest.testDefault",
 	    "ValueServerTest.testNextDigestFail", "OpenIntToDoubleHashMapTest.testPutKeysWithCollision2",
 	    "CovarianceTest.testConsistency", "MultidimensionalCounterTest.testIterator",
-	    "GammaTest.testGammaNegativeInteger", "ThreeEighthesIntegratorTest.testKepler", "EulerIntegratorTest.testStepSize"};
+	    "GammaTest.testGammaNegativeInteger", "ThreeEighthesIntegratorTest.testKepler", "EulerIntegratorTest.testStepSize", "BicubicInterpolatingFunctionTest.testIsValidPoint"};
     public static final Set<String> blackListSet = new HashSet<String>(Arrays.asList(methodBlackList));
 
     public static final String TEST_CLASS = "/Users/arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/transform/FastFourierTransformerTest.java";
