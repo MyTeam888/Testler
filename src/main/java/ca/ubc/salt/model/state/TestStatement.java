@@ -30,7 +30,6 @@ public class TestStatement extends TestModelNode
     String input;
     Map<String, Pair<String, String>> sideEffects;
     Map<String, String> newVars;
-
     Map<String, SimpleName> vars;
 
     public long time = 1000;
@@ -39,7 +38,7 @@ public class TestStatement extends TestModelNode
     public Map<String, Set<VarDefinitionPreq>> defineGoals;
     public Map<String, String> renameMap;
 
-    public void initSideEffects(List<String> testCases)
+    public void initSideEffects(List<String> testCases, Set<VarDefinitionPreq> defPreq)
     {
 	sideEffects = new HashMap<String, Pair<String, String>>();
 	newVars = new HashMap<String, String>();
@@ -60,6 +59,14 @@ public class TestStatement extends TestModelNode
 			sideEffects.put(varName, new Pair<String, String>(varValBefore, varValAfter));
 		    else
 			newVars.put(varName, varValAfter);
+		} else
+		{
+		    if (defPreq != null)
+			for (VarDefinitionPreq def : defPreq)
+			{
+			    if (def.getName().getIdentifier().equals(varName))
+				sideEffects.put(varName, new Pair<String, String>(varValBefore, varValAfter));
+			}
 		}
 	    }
 	} catch (ExecutionException e)
@@ -153,9 +160,11 @@ public class TestStatement extends TestModelNode
 	clone.statement = this.statement;
 	clone.refactoredStatement = this.refactoredStatement;
 	clone.sideEffects = this.sideEffects;
+	clone.newVars = this.newVars;
 	clone.time = this.time;
 	clone.parent.putAll(this.parent);
 	clone.distFrom.putAll(this.distFrom);
+	clone.renameMap = this.renameMap;
 	if (readGoals != null)
 	{
 	    Map<String, Set<String>> newGoals = new HashMap<String, Set<String>>();

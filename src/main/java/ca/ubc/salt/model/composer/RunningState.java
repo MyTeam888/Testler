@@ -22,6 +22,7 @@ import Comparator.NaturalOrderComparator;
 import ca.ubc.salt.model.state.TestStatement;
 import ca.ubc.salt.model.state.VarDefinitionPreq;
 import ca.ubc.salt.model.utils.FileUtils;
+import ca.ubc.salt.model.utils.Pair;
 import ca.ubc.salt.model.utils.Settings;
 import ca.ubc.salt.model.utils.Utils;
 
@@ -79,41 +80,42 @@ public class RunningState
 
     public void update(TestStatement stmt, Map<String, String> renameMap, Map<String, Set<VarDefinitionPreq>> defPreqs)
     {
-	String prevState = stmt.getName();
 	Map<String, SimpleName> vars = stmt.getAllVars();
 	if (vars == null)
 	    return;
 	Set<String> varsName = Utils.getNameSet(vars.values());
-	String nextState = Utils.nextOrPrevState(
-		Arrays.asList(new String[] { Utils.getTestCaseNameFromTestStatement(prevState) }), prevState, true);
-	Map<String, String> nameValuePair = null;
-	try
+
+	for (Entry<String, Pair<String, String>> entry : stmt.getSideEffects().entrySet())
 	{
-	    nameValuePair = TestCaseComposer.nameValuePairs.get(nextState);
-	} catch (ExecutionException e)
-	{
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
+	    String name = entry.getKey();
+	    String value = entry.getValue().getSecond();
+	    String oldValue = entry.getValue().getFirst();
+	    putTheVar(stmt, renameMap, vars, varsName, name, value, oldValue);
 	}
 
-	for (Entry<String, String> entry : nameValuePair.entrySet())
+	for (Entry<String, String> entry : stmt.getNewVars().entrySet())
 	{
 	    String name = entry.getKey();
 	    String value = entry.getValue();
-	    putTheVar(stmt, renameMap, vars, varsName, name, value);
+	    putTheVar(stmt, renameMap, vars, varsName, name, value, null);
 	}
+
 	if (defPreqs.get(stmt.getName()) != null)
 	    for (VarDefinitionPreq preq : defPreqs.get(stmt.getName()))
 	    {
 		String name = preq.getName().getIdentifier();
-		String value = nameValuePair.get(name);
-		putTheVar(stmt, renameMap, vars, varsName, name, value);
+		Pair<String, String> sideEffect = stmt.getSideEffects().get(name);
+		if (sideEffect != null)
+		{
+		    String value = sideEffect.getSecond();
+		    putTheVar(stmt, renameMap, vars, varsName, name, value, null);
+		}
 	    }
 
     }
 
     public void putTheVar(TestStatement stmt, Map<String, String> renameMap, Map<String, SimpleName> vars,
-	    Set<String> varsName, String name, String value)
+	    Set<String> varsName, String name, String value, String oldValue)
     {
 	if (varsName.contains(name))
 	{
@@ -141,6 +143,15 @@ public class RunningState
 		name = renamedName;
 
 	    this.put(name, value, type);
+	} else
+	{
+	    Set<String> names = this.getName(oldValue);
+	    if (names != null && !names.isEmpty())
+	    {
+		String inStateName = names.contains(name) ? name : names.iterator().next();
+		this.put(inStateName, value, this.getType(inStateName));
+	    } else
+		Settings.consoleLogger.error("Stmt changes a var's value that is not in the state");
 	}
     }
 

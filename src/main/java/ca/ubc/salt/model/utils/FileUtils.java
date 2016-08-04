@@ -331,6 +331,8 @@ public class FileUtils
 	    nameValuePair.put(stateVar, XMLUtils.getXMLString(nodeList.item(index)));
 	    index++;
 	}
+	if (index != stateVarNames.size())
+	    Settings.consoleLogger.error("XStream error with " + stateName);
 
 	return nameValuePair;
     }

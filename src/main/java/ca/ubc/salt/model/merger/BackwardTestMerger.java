@@ -76,11 +76,11 @@ public class BackwardTestMerger
 	return ts;
     }
 
-    public static void initSideEffectForStatements(Map<String, TestStatement> testStatements, List<String> testCases)
+    public static void initSideEffectForStatements(Map<String, TestStatement> testStatements, List<String> testCases, Map<String, Set<VarDefinitionPreq>> defPreq)
     {
 	for (Entry<String, TestStatement> entry : testStatements.entrySet())
 	{
-	    entry.getValue().initSideEffects(testCases);
+	    entry.getValue().initSideEffects(testCases, defPreq.get(entry.getKey()));
 	}
     }
 
@@ -96,7 +96,7 @@ public class BackwardTestMerger
 	{
 	    long setupCost = 10;
 	    Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
-	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(1,
+	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(10,
 		    uniqueTestStatements);
 	    // connectedComponents.remove(0);
 
@@ -132,7 +132,7 @@ public class BackwardTestMerger
 	int totalBeforeMerging = 0, totalAftermerging = 0;
 	int numberOfMergedTests = 0;
 	int counter = 0;
-	int limit = 0;
+	int limit = 11;
 	for (Set<String> connectedComponent : connectedComponents)
 	{
 	    if (connectedComponent.size() < 2)
@@ -183,7 +183,7 @@ public class BackwardTestMerger
 	    Map<String, TestStatement> allTestStatements = getAllTestStatements(allStates, graph);
 	    TestCaseComposer.populateStateField(allTestStatements.values());
 
-	    initSideEffectForStatements(allTestStatements, testCases);
+	    initSideEffectForStatements(allTestStatements, testCases, definitionPreq);
 
 	    Set<String> assertions = getAllAssertions(allTestStatements);
 

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -318,7 +319,18 @@ public class TestCaseComposer
     {
 	for (FieldDeclaration fieldDec : fieldDecs)
 	{
-	    fieldDec.modifiers().clear();
+	    List mds = fieldDec.modifiers();
+	    for (Iterator iterator = mds.iterator(); iterator.hasNext();)
+	    {
+		Object obj = iterator.next();
+		if (obj instanceof Modifier)
+		{
+		    Modifier mod = (Modifier) obj;
+		    if(!mod.isFinal())
+			iterator.remove();
+			
+		}
+	    }
 	    path.add(0, fieldDec);
 	}
     }
@@ -388,6 +400,7 @@ public class TestCaseComposer
 	return path;
     }
 
+    
     private static void writeBackMergedTestCases(List<TestStatement> originalStatements, Set<String> testCases,
 	    String name, Map<String, Set<String>> testClasses, String mainClassName) throws IOException
     {

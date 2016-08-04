@@ -140,8 +140,8 @@ public class Planning
 	    for (TestStatement preq : preqs)
 	    {
 		int preqInd = TestCaseComposer.getTestStatementNumber(preq.getName());
-		if (preqInd >= parentInd)
-		    continue;
+//		if (preqInd >= parentInd)
+//		    continue;
 		if (listTillNow.contains(preq))
 		    continue;
 		Map<String, Set<String>> newGoals = new HashMap<String, Set<String>>();
