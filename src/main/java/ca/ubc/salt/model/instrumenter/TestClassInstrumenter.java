@@ -111,7 +111,8 @@ public class TestClassInstrumenter
 
 	edits.apply(newDocument);
 
-	Utils.addImports(newDocument, Arrays.asList(new String[] { "instrument.InstrumentClassGenerator", "instrument.NullValueType" }));
+	Utils.addImports(newDocument,
+		Arrays.asList(new String[] { "instrument.InstrumentClassGenerator", "instrument.NullValueType" }));
 
 	return newDocument;
 
@@ -213,7 +214,7 @@ public class TestClassInstrumenter
 	    throws IOException, IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException
     {
 	instrumentClass(
-		"/Users/arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/analysis/integration/RombergIntegratorTest.java");
+		"/Users/arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/linear/ConjugateGradientTest.java");
 	// instrumentClass(
 	// "/Users/arash/Library/Mobile
 	// Documents/com~apple~CloudDocs/Research/Calculator/src/calc/CalculatorTest.java");
@@ -323,7 +324,8 @@ public class TestClassInstrumenter
 	    if (unassignedVars == null || !unassignedVars.containsKey(var.getName().toString()))
 		sb.append(var.getName());
 	    else
-		sb.append("new NullValueType(\"" + var.getName().resolveTypeBinding().getName() + "\", \"" + var.getName().getIdentifier() + "\")");
+		sb.append("new NullValueType(\"" + var.getName().resolveTypeBinding().getName() + "\", \""
+			+ var.getName().getIdentifier() + "\")");
 	    sb.append(',');
 	}
 	if (list.size() > 0)

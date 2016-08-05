@@ -229,6 +229,16 @@ public class Method
 		NormalAnnotation ma = (NormalAnnotation) obj;
 		if (ma.getTypeName().getFullyQualifiedName().contains("Test"))
 		{
+		    List values = ma.values();
+		    for (Object objV : values)
+		    {
+			if (objV instanceof MemberValuePair)
+			{
+			    MemberValuePair mvp = (MemberValuePair) objV;
+			    if (mvp.getName().getIdentifier().contains("expected"))
+				return false;
+			}
+		    }
 		    return true;
 		}
 	    }
