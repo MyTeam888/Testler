@@ -1,6 +1,5 @@
 package ca.ubc.salt.model.composer;
 
-import java.beans.Expression;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -20,7 +19,9 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
+import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.ChildListPropertyDescriptor;
+import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.ITypeBinding;
@@ -29,6 +30,7 @@ import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
@@ -65,10 +67,9 @@ public class TestCaseComposer
     static
     {
 	nameValuePairs = CacheBuilder.newBuilder().maximumSize(1000)
-		.build(new CacheLoader<String, Map<String, String>>()
-		{ // build
-		  // the
-		  // cacheloader
+		.build(new CacheLoader<String, Map<String, String>>() { // build
+									// the
+									// cacheloader
 
 		    @Override
 		    public Map<String, String> load(String stmt) throws Exception
@@ -86,7 +87,9 @@ public class TestCaseComposer
 
 	Map<String, String> renameMap = new HashMap<String, String>();
 
-	findPreqVarsRenames(statement, valueNamePairForCurrentState, renameMap, readVals, definitionPreq, batchRename);
+	Map<String, String> castToMap = new HashMap<String, String>();
+	findPreqVarsRenames(statement, valueNamePairForCurrentState, renameMap, readVals, definitionPreq, batchRename,
+		castToMap);
 
 	findPostreqVarsRenames(statement, valueNamePairForCurrentState, renameMap);
 
@@ -143,7 +146,8 @@ public class TestCaseComposer
 
     }
 
-    public static ASTNode rename(ASTNode stmt, Map<String, SimpleName> vars, Map<String, String> renameSet)
+    public static ASTNode rename(ASTNode stmt, Map<String, SimpleName> vars, Map<String, String> renameSet,
+	    Map<String, String> castToMap)
     {
 
 	ASTNode cpyStmt = ASTNode.copySubtree(stmt.getAST(), stmt);
@@ -153,54 +157,85 @@ public class TestCaseComposer
 	    String renamedVar = renameSet.get(var.getIdentifier());
 	    if (renamedVar != null)
 	    {
-		ASTNode node = var.getParent();
-		if (node.getNodeType() == ASTNode.VARIABLE_DECLARATION_FRAGMENT)
-		{
-		    VariableDeclarationFragment vdf = (VariableDeclarationFragment) node;
-		    vdf.setName(vdf.getAST().newSimpleName(renamedVar));
-		} else
+		ASTNode parentNode = var.getParent();
+//		if (parentNode.getNodeType() == ASTNode.VARIABLE_DECLARATION_FRAGMENT)
+//		{
+//		    VariableDeclarationFragment vdf = (VariableDeclarationFragment) parentNode;
+//		    vdf.setName(vdf.getAST().newSimpleName(renamedVar));
+//		    
+//		} else
 		{
 		    int index = renamedVar.indexOf('.');
 		    if (index == -1)
+		    {
 			var.setIdentifier(renamedVar);
-		    else
+			if (castToMap != null && castToMap.containsKey(renamedVar))
+			{
+			    ASTNode replacement = getCastStructure(castToMap, renamedVar, var.getAST(), var);
+			    replaceSimpleNameWithASTNode(var, parentNode, replacement);
+			    
+			}
+		    } else
 		    {
 			String q = renamedVar.substring(0, index);
 			String v = renamedVar.substring(index + 1);
-			AST ast = node.getAST();
-			ASTNode r = ast.newQualifiedName(ast.newName(q), ast.newSimpleName(v));
-			StructuralPropertyDescriptor property = var.getLocationInParent();
-			if (property instanceof ChildListPropertyDescriptor)
-			{
-			    if (node instanceof MethodInvocation)
-			    {
-				List params = ((MethodInvocation) node).arguments();
-				int counter = 0;
-				for (Iterator it = params.listIterator(); it.hasNext(); counter++)
-				{
-				    Object ex = it.next();
-				    if (ex instanceof SimpleName)
-				    {
-					if (ex.equals(var))
-					{
-					    it.remove();
-					    params.add(counter, r);
-					    break;
-					}
+			AST ast = parentNode.getAST();
 
-				    }
-				}
-			    }
-			    else
-				Settings.consoleLogger.error("unsupported type renaming");
-			} else
-			    node.setStructuralProperty(var.getLocationInParent(), r);
+			ASTNode replacement = ast.newQualifiedName(ast.newName(q), ast.newSimpleName(v));
+			if (castToMap != null && castToMap.containsKey(renamedVar))
+			{
+			    replacement = getCastStructure(castToMap, renamedVar, ast, replacement);
+			}
+
+			replaceSimpleNameWithASTNode(var, parentNode, replacement);
 		    }
 		}
 	    }
 	}
 
 	return cpyStmt;
+    }
+
+    private static void replaceSimpleNameWithASTNode(SimpleName simpleName, ASTNode parent, ASTNode replacement)
+    {
+	StructuralPropertyDescriptor property = simpleName.getLocationInParent();
+	if (property instanceof ChildListPropertyDescriptor)
+	{
+	    if (parent instanceof MethodInvocation)
+	    {
+		List params = ((MethodInvocation) parent).arguments();
+		int counter = 0;
+		for (Iterator it = params.listIterator(); it.hasNext(); counter++)
+		{
+		    Object ex = it.next();
+		    if (ex instanceof SimpleName)
+		    {
+			if (ex.equals(simpleName))
+			{
+			    it.remove();
+			    params.add(counter, replacement);
+			    break;
+			}
+
+		    }
+		}
+	    } else
+		Settings.consoleLogger.error("unsupported type renaming");
+	} else
+	    parent.setStructuralProperty(simpleName.getLocationInParent(), replacement);
+    }
+
+    private static ASTNode getCastStructure(Map<String, String> castToMap, String renamedVar, AST ast,
+	    ASTNode replacement)
+    {
+	String type = castToMap.get(renamedVar);
+	CastExpression ce = ast.newCastExpression();
+	ce.setExpression((Expression) replacement);
+	ce.setType(ast.newSimpleType(ast.newName(type)));
+	ParenthesizedExpression pe = ast.newParenthesizedExpression();
+	pe.setExpression(ce);
+	replacement = pe;
+	return replacement;
     }
 
     public static String generateTestCaseName(Set<String> testCases)
@@ -326,7 +361,8 @@ public class TestCaseComposer
 				    Map<String, String> renameMap = new HashMap<String, String>();
 				    renameMap.put(varInFieldDec.getIdentifier(),
 					    varInFieldDec.getIdentifier() + "_" + className);
-				    fieldDecStatements.add((FieldDeclaration) rename(fieldDec, varSet, renameMap));
+				    fieldDecStatements
+					    .add((FieldDeclaration) rename(fieldDec, varSet, renameMap, null));
 				}
 
 			    }
@@ -352,7 +388,7 @@ public class TestCaseComposer
 	    renameMap.put(sn.getIdentifier(), sn.getIdentifier() + "_" + sfv.className);
 	}
 
-	Statement renamedStmt = (Statement) rename(statement.refactoredStatement, sfv.fields, renameMap);
+	Statement renamedStmt = (Statement) rename(statement.refactoredStatement, sfv.fields, renameMap, null);
 	statement.refactoredStatement = renamedStmt;
     }
 
@@ -690,7 +726,10 @@ public class TestCaseComposer
 	else
 	    renameMap = statement.renameMap;
 
-	findPreqVarsRenames(statement, valueNamePairForCurrentState, renameMap, readVals, definitionPreq, batchRename);
+	Map<String, String> castToMap = new HashMap<String, String>();
+
+	findPreqVarsRenames(statement, valueNamePairForCurrentState, renameMap, readVals, definitionPreq, batchRename,
+		castToMap);
 
 	findPostreqVarsRenames(statement, valueNamePairForCurrentState, renameMap);
 
@@ -702,7 +741,7 @@ public class TestCaseComposer
 
 	batchRename.putAll(renameMap);
 
-	return (Statement) rename(statement.statement, vars, renameMap);
+	return (Statement) rename(statement.statement, vars, renameMap, castToMap);
     }
 
     private static List<TestStatement> performRenaming(List<TestStatement> path, Set<String> testCases,
@@ -803,7 +842,8 @@ public class TestCaseComposer
 
     private static void findPreqVarsRenames(TestStatement stmt, RunningState runningState,
 	    Map<String, String> renameMap, Map<String, Map<String, String>> readVals,
-	    Map<String, Set<VarDefinitionPreq>> definitionPreq, Map<String, String> batchRename)
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq, Map<String, String> batchRename,
+	    Map<String, String> castToMap)
     {
 	// if
 	// (stmt.statement.toString().contains("Assert.assertTrue(mColumn3[0]"))
@@ -838,6 +878,12 @@ public class TestCaseComposer
 		    if (!chosenNames.contains(name))
 		    {
 			renameMap.put(varNameInStmt, name);
+			String typeInStmt = stmt.getTypeOfVar(varNameInStmt);
+			String typeInState = runningState.getType(name);
+			if (typeInState.equals(typeInStmt))
+			{
+			    castToMap.put(varNameInStmt, typeInStmt);
+			}
 			chosenNames.add(name);
 			success = true;
 			break;
