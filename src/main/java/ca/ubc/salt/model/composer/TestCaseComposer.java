@@ -20,6 +20,7 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
+import org.eclipse.jdt.core.dom.ChildListPropertyDescriptor;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.ITypeBinding;
@@ -30,6 +31,7 @@ import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
@@ -63,9 +65,10 @@ public class TestCaseComposer
     static
     {
 	nameValuePairs = CacheBuilder.newBuilder().maximumSize(1000)
-		.build(new CacheLoader<String, Map<String, String>>() { // build
-									// the
-									// cacheloader
+		.build(new CacheLoader<String, Map<String, String>>()
+		{ // build
+		  // the
+		  // cacheloader
 
 		    @Override
 		    public Map<String, String> load(String stmt) throws Exception
@@ -166,7 +169,32 @@ public class TestCaseComposer
 			String v = renamedVar.substring(index + 1);
 			AST ast = node.getAST();
 			ASTNode r = ast.newQualifiedName(ast.newName(q), ast.newSimpleName(v));
-			node.setStructuralProperty(var.getLocationInParent(), r);
+			StructuralPropertyDescriptor property = var.getLocationInParent();
+			if (property instanceof ChildListPropertyDescriptor)
+			{
+			    if (node instanceof MethodInvocation)
+			    {
+				List params = ((MethodInvocation) node).arguments();
+				int counter = 0;
+				for (Iterator it = params.listIterator(); it.hasNext(); counter++)
+				{
+				    Object ex = it.next();
+				    if (ex instanceof SimpleName)
+				    {
+					if (ex.equals(var))
+					{
+					    it.remove();
+					    params.add(counter, r);
+					    break;
+					}
+
+				    }
+				}
+			    }
+			    else
+				Settings.consoleLogger.error("unsupported type renaming");
+			} else
+			    node.setStructuralProperty(var.getLocationInParent(), r);
 		    }
 		}
 	    }

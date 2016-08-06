@@ -51,17 +51,7 @@ public class ComposerHelper
 	    List<IExtendedModifier> mods = bd.modifiers();
 	    ListRewrite listRewrite = null;
 	    
-	    if (bd instanceof MethodDeclaration)
-		listRewrite = rewriter.getListRewrite(bd, MethodDeclaration.MODIFIERS2_PROPERTY);
-	    if (bd instanceof FieldDeclaration)
-		listRewrite = rewriter.getListRewrite(bd, FieldDeclaration.MODIFIERS2_PROPERTY);
-	    if (bd instanceof EnumConstantDeclaration)
-		listRewrite = rewriter.getListRewrite(bd, EnumConstantDeclaration.MODIFIERS2_PROPERTY);
-	    if (bd instanceof AnnotationTypeMemberDeclaration)
-		listRewrite = rewriter.getListRewrite(bd, AnnotationTypeMemberDeclaration.MODIFIERS2_PROPERTY);
-	    if (bd instanceof Initializer)
-		listRewrite = rewriter.getListRewrite(bd, Initializer.MODIFIERS2_PROPERTY);
-	    
+		listRewrite = rewriter.getListRewrite(bd, bd.getModifiersProperty());
 	    
 	    for (Iterator<IExtendedModifier> iterator = mods.iterator(); iterator.hasNext();)
 	    {
