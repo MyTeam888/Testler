@@ -87,9 +87,8 @@ public class TestCaseComposer
 
 	Map<String, String> renameMap = new HashMap<String, String>();
 
-	Map<String, String> castToMap = new HashMap<String, String>();
 	findPreqVarsRenames(statement, valueNamePairForCurrentState, renameMap, readVals, definitionPreq, batchRename,
-		castToMap);
+		null);
 
 	findPostreqVarsRenames(statement, valueNamePairForCurrentState, renameMap);
 
@@ -155,26 +154,29 @@ public class TestCaseComposer
 	for (SimpleName var : cpyVars)
 	{
 	    String renamedVar = renameSet.get(var.getIdentifier());
+	    if (renamedVar == null && castToMap != null && castToMap.containsKey(var.getIdentifier()))
+		renamedVar = var.getIdentifier();
 	    if (renamedVar != null)
 	    {
 		ASTNode parentNode = var.getParent();
-//		if (parentNode.getNodeType() == ASTNode.VARIABLE_DECLARATION_FRAGMENT)
-//		{
-//		    VariableDeclarationFragment vdf = (VariableDeclarationFragment) parentNode;
-//		    vdf.setName(vdf.getAST().newSimpleName(renamedVar));
-//		    
-//		} else
+		if (parentNode.getNodeType() == ASTNode.VARIABLE_DECLARATION_FRAGMENT)
+		{
+		    VariableDeclarationFragment vdf = (VariableDeclarationFragment) parentNode;
+		    vdf.setName(vdf.getAST().newSimpleName(renamedVar));
+
+		} else
 		{
 		    int index = renamedVar.indexOf('.');
 		    if (index == -1)
 		    {
-			var.setIdentifier(renamedVar);
-			if (castToMap != null && castToMap.containsKey(renamedVar))
+			if (castToMap != null && castToMap.containsKey(var.getIdentifier()))
 			{
-			    ASTNode replacement = getCastStructure(castToMap, renamedVar, var.getAST(), var);
+			    AST ast = var.getAST();
+			    SimpleName varCpy = ast.newSimpleName(renamedVar);
+			    ASTNode replacement = getCastStructure(castToMap, var.getIdentifier(), ast, varCpy);
 			    replaceSimpleNameWithASTNode(var, parentNode, replacement);
-			    
-			}
+			} else
+			    var.setIdentifier(renamedVar);
 		    } else
 		    {
 			String q = renamedVar.substring(0, index);
@@ -182,9 +184,9 @@ public class TestCaseComposer
 			AST ast = parentNode.getAST();
 
 			ASTNode replacement = ast.newQualifiedName(ast.newName(q), ast.newSimpleName(v));
-			if (castToMap != null && castToMap.containsKey(renamedVar))
+			if (castToMap != null && castToMap.containsKey(var.getIdentifier()))
 			{
-			    replacement = getCastStructure(castToMap, renamedVar, ast, replacement);
+			    replacement = getCastStructure(castToMap, var.getIdentifier(), ast, replacement);
 			}
 
 			replaceSimpleNameWithASTNode(var, parentNode, replacement);
@@ -225,10 +227,9 @@ public class TestCaseComposer
 	    parent.setStructuralProperty(simpleName.getLocationInParent(), replacement);
     }
 
-    private static ASTNode getCastStructure(Map<String, String> castToMap, String renamedVar, AST ast,
-	    ASTNode replacement)
+    private static ASTNode getCastStructure(Map<String, String> castToMap, String varName, AST ast, ASTNode replacement)
     {
-	String type = castToMap.get(renamedVar);
+	String type = castToMap.get(varName);
 	CastExpression ce = ast.newCastExpression();
 	ce.setExpression((Expression) replacement);
 	ce.setType(ast.newSimpleType(ast.newName(type)));
@@ -878,11 +879,14 @@ public class TestCaseComposer
 		    if (!chosenNames.contains(name))
 		    {
 			renameMap.put(varNameInStmt, name);
-			String typeInStmt = stmt.getTypeOfVar(varNameInStmt);
-			String typeInState = runningState.getType(name);
-			if (typeInState.equals(typeInStmt))
+			if (castToMap != null)
 			{
-			    castToMap.put(varNameInStmt, typeInStmt);
+			    String typeInStmt = stmt.getTypeOfVar(varNameInStmt);
+			    String typeInState = runningState.getType(name);
+			    if (!typeInState.equals(typeInStmt))
+			    {
+				castToMap.put(varNameInStmt, typeInStmt);
+			    }
 			}
 			chosenNames.add(name);
 			success = true;
@@ -897,6 +901,15 @@ public class TestCaseComposer
 	    } else
 	    {
 		chosenNames.add(varNameInStmt);
+		if (castToMap != null)
+		{
+		    String typeInStmt = stmt.getTypeOfVar(varNameInStmt);
+		    String typeInState = runningState.getType(varNameInStmt);
+		    if (!typeInState.equals(typeInStmt))
+		    {
+			castToMap.put(varNameInStmt, typeInStmt);
+		    }
+		}
 	    }
 	}
 

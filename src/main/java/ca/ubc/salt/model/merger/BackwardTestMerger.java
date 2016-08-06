@@ -132,7 +132,7 @@ public class BackwardTestMerger
 	int totalBeforeMerging = 0, totalAftermerging = 0;
 	int numberOfMergedTests = 0;
 	int counter = 0;
-	int limit = 0;
+	int limit = 2;
 
 	for (Set<String> connectedComponent : connectedComponents)
 	{
