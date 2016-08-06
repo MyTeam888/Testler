@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -132,7 +133,7 @@ public class BackwardTestMerger
 	int totalBeforeMerging = 0, totalAftermerging = 0;
 	int numberOfMergedTests = 0;
 	int counter = 0;
-	int limit = 2;
+	int limit = 0;
 
 	for (Set<String> connectedComponent : connectedComponents)
 	{
@@ -161,8 +162,23 @@ public class BackwardTestMerger
 	    testCases.addAll(connectedComponent);
 
 	    Map<String, Set<VarDefinitionPreq>> definitionPreq = new HashMap<String, Set<VarDefinitionPreq>>();
-	    Map<String, Map<String, String>> readValues = getAllReadValues(testCases, definitionPreq);
+	    Set<String> corruptedTestCases = new HashSet<String>();
+	    Map<String, Map<String, String>> readValues = getAllReadValues(testCases, definitionPreq, corruptedTestCases);
 	    // System.out.println(readValues);
+	    
+	    
+	    if (corruptedTestCases.size() != 0)
+	    {
+		Settings.consoleLogger.error("removing corrupted Test Cases " + corruptedTestCases);
+	    }
+	    for (String corruptedTest : corruptedTestCases)
+	    {
+		connectedComponent.remove(corruptedTest);
+	    }
+	    if (connectedComponent.size() == 0)
+		continue;
+	    testCases.clear();
+	    testCases.addAll(connectedComponent);
 
 	    testCases.add("init.init");
 	    Map<String, TestState> graph = StateComparator.createGraph(testCases);
@@ -508,7 +524,7 @@ public class BackwardTestMerger
     }
 
     public static Map<String, Map<String, String>> getAllReadValues(List<String> testCases,
-	    Map<String, Set<VarDefinitionPreq>> definitionPreq) throws IOException
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq, Set<String> corruptedTestCases) throws IOException
     {
 	Map<String, Map<String, String>> readValues = new HashMap<String, Map<String, String>>();
 
@@ -525,10 +541,18 @@ public class BackwardTestMerger
 	    // <object1(a), field 1, field 2, ... >
 	    // <object2(a), field 1, field 2, ... >
 	    // <object3(a), field 1, field 2, ... >
-	    ReadVariableDetector.getReadValues(readVars, readValues);
+	    ReadVariableDetector.getReadValues(readVars, readValues, corruptedTestCases);
 
 	}
 
+	for (Iterator it = readValues.entrySet().iterator(); it.hasNext();)
+	{
+	    Entry<String, Map<String, String>> entry = (Entry<String, Map<String, String>>) it.next();
+	    String stateName = entry.getKey();
+	    if (corruptedTestCases.contains(Utils.getTestCaseNameFromTestStatement(stateName)))
+		it.remove();
+	}
+	
 	return readValues;
     }
 }

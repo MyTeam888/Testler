@@ -16,11 +16,13 @@ import java.util.concurrent.ExecutionException;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ArrayType;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.ChildListPropertyDescriptor;
+import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
@@ -31,11 +33,15 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
+import org.eclipse.jdt.core.dom.PrimitiveType;
+import org.eclipse.jdt.core.dom.PrimitiveType.Code;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
+import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jface.text.BadLocationException;
@@ -67,9 +73,10 @@ public class TestCaseComposer
     static
     {
 	nameValuePairs = CacheBuilder.newBuilder().maximumSize(1000)
-		.build(new CacheLoader<String, Map<String, String>>() { // build
-									// the
-									// cacheloader
+		.build(new CacheLoader<String, Map<String, String>>()
+		{ // build
+		  // the
+		  // cacheloader
 
 		    @Override
 		    public Map<String, String> load(String stmt) throws Exception
@@ -138,7 +145,16 @@ public class TestCaseComposer
 	for (SimpleName sn : srvv.getVars())
 	{
 	    if (varNames.contains(sn.getIdentifier()))
+	    {
+		ASTNode parent = sn.getParent();
+		if (parent.getNodeType() == ASTNode.METHOD_INVOCATION)
+		{
+		    MethodInvocation mi = (MethodInvocation) parent;
+		    if (mi.getName().equals(sn))
+			continue;
+		}
 		refinedList.add(sn);
+	    }
 	}
 
 	return refinedList;
@@ -159,7 +175,8 @@ public class TestCaseComposer
 	    if (renamedVar != null)
 	    {
 		ASTNode parentNode = var.getParent();
-		if (parentNode.getNodeType() == ASTNode.VARIABLE_DECLARATION_FRAGMENT)
+
+		if (parentNode.getNodeType() == ASTNode.VARIABLE_DECLARATION_FRAGMENT && ((VariableDeclarationFragment)parentNode).getName().equals(var))
 		{
 		    VariableDeclarationFragment vdf = (VariableDeclarationFragment) parentNode;
 		    vdf.setName(vdf.getAST().newSimpleName(renamedVar));
@@ -177,6 +194,7 @@ public class TestCaseComposer
 			    replaceSimpleNameWithASTNode(var, parentNode, replacement);
 			} else
 			    var.setIdentifier(renamedVar);
+
 		    } else
 		    {
 			String q = renamedVar.substring(0, index);
@@ -203,9 +221,13 @@ public class TestCaseComposer
 	StructuralPropertyDescriptor property = simpleName.getLocationInParent();
 	if (property instanceof ChildListPropertyDescriptor)
 	{
+	    List params = null;
 	    if (parent instanceof MethodInvocation)
+		params = ((MethodInvocation) parent).arguments();
+	    if (parent instanceof ClassInstanceCreation)
+		params = ((ClassInstanceCreation) parent).arguments();
+	    if (params != null)
 	    {
-		List params = ((MethodInvocation) parent).arguments();
 		int counter = 0;
 		for (Iterator it = params.listIterator(); it.hasNext(); counter++)
 		{
@@ -224,19 +246,54 @@ public class TestCaseComposer
 	    } else
 		Settings.consoleLogger.error("unsupported type renaming");
 	} else
+	{
 	    parent.setStructuralProperty(simpleName.getLocationInParent(), replacement);
+	}
     }
 
+    private static Type getType(String type, AST ast)
+    {
+	Block a = (Block)Utils.createBlockWithText(String.format("Object b = (%s)a;", type));
+	VariableDeclarationStatement vds = (VariableDeclarationStatement) a.statements().get(0);
+	Type tp = ((CastExpression)((VariableDeclarationFragment)vds.fragments().get(0)).getInitializer()).getType();
+	Type tpcpy = (Type) ASTNode.copySubtree(ast, tp);
+	return tpcpy;
+//	int counter = 0;
+//	for (int i = 0; i < type.length();i++)
+//	{
+//	    if (type.charAt(i) == '[')
+//		counter++;
+//	}
+//	if (counter == 0)
+//	    return ast.newSimpleType(ast.newName(type));
+//	
+//	int index = type.indexOf('[');
+//	type = type.substring(0, index);
+//	
+//	Type tp = null;
+//	Code code = PrimitiveType.toCode(type);
+//	if (code != null)
+//	    tp = ast.newPrimitiveType(code);
+//	else
+//	    tp = ast.newSimpleType(ast.newName(type));
+//	
+//	
+//	ArrayType arrType = ast.newArrayType(tp, counter);
+//	return arrType;
+	
+	
+    }
+    
     private static ASTNode getCastStructure(Map<String, String> castToMap, String varName, AST ast, ASTNode replacement)
     {
 	String type = castToMap.get(varName);
 	CastExpression ce = ast.newCastExpression();
 	ce.setExpression((Expression) replacement);
-	ce.setType(ast.newSimpleType(ast.newName(type)));
+	
+	ce.setType(getType(type, ast));
 	ParenthesizedExpression pe = ast.newParenthesizedExpression();
 	pe.setExpression(ce);
-	replacement = pe;
-	return replacement;
+	return pe;
     }
 
     public static String generateTestCaseName(Set<String> testCases)
@@ -750,8 +807,10 @@ public class TestCaseComposer
 	    Map<String, Set<VarDefinitionPreq>> definitionPreq)
     {
 
+	if (path.size() == 0)
+	    return path;
 	RunningState runningState = new RunningState(testCases, mainClassName);
-
+	
 	List<TestStatement> renamedStatements = cloneStatements(path);
 
 	Map<String, String> batchRename = new HashMap<String, String>();
@@ -888,7 +947,7 @@ public class TestCaseComposer
 				castToMap.put(varNameInStmt, typeInStmt);
 			    }
 			}
-			chosenNames.add(name);
+ 			chosenNames.add(name);
 			success = true;
 			break;
 		    }

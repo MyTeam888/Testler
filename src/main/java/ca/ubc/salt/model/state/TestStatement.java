@@ -11,12 +11,16 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
 
 import ca.ubc.salt.model.composer.TestCaseComposer;
 import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Pair;
+import ca.ubc.salt.model.utils.Settings;
 import ca.ubc.salt.model.utils.Utils;
 
 public class TestStatement extends TestModelNode
@@ -225,7 +229,18 @@ public class TestStatement extends TestModelNode
 	SimpleName sim = varSims.get(varName);
 	if (sim == null)
 	    return "";
-	return sim.resolveTypeBinding().getName();
+	// ITypeBinding typeBind = sname.resolveTypeBinding();
+	IBinding bind = sim.resolveBinding();
+	IVariableBinding iv = (IVariableBinding) bind;
+	ITypeBinding typeBind = iv.getType();
+	if (typeBind != null)
+	    return typeBind.getName();
+	else
+	{
+	    Settings.consoleLogger.error("typeBinding is null for " + sim.toString() + " in " + this.toString());
+	}
+
+	return "";
     }
 
 }

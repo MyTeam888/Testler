@@ -162,6 +162,8 @@ public class TestMerger
     {
 
 	LinkedList<TestStatement> path = new LinkedList<TestStatement>();
+	if (frontierPaths.size() == 0)
+	    return path;
 	Iterator<TestStatement> it = frontierPaths.descendingIterator();
 	TestStatement cur = it.next();
 	if (cur != null)

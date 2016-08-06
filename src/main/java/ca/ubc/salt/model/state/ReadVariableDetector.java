@@ -38,7 +38,8 @@ public class ReadVariableDetector
     // "/Users/Arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/fraction/FractionTest.java");
     // }
 
-    public static Map<String, Set<SimpleName>> populateReadVarsForFile(String path, Map<String, Set<VarDefinitionPreq>> definitionPreq) throws IOException
+    public static Map<String, Set<SimpleName>> populateReadVarsForFile(String path,
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq) throws IOException
     {
 	File testClass = new File(path);
 	if (testClass.isFile())
@@ -70,29 +71,29 @@ public class ReadVariableDetector
 	// }
     }
 
-    
     public static void accumulateReadVars(Map<String, Set<SimpleName>> readVars)
     {
-	List <String> statements = new ArrayList(readVars.keySet());
+	List<String> statements = new ArrayList(readVars.keySet());
 	Collections.sort(statements);
-	
+
 	for (int i = statements.size() - 2; i >= 0; i--)
 	{
 	    String statement = statements.get(i);
-//	    String testCase = Utils.getTestCaseNameFromTestStatement(statement);
+	    // String testCase =
+	    // Utils.getTestCaseNameFromTestStatement(statement);
 
-	    String childStmt = statements.get(i+1);
-//	    String childStmtTestCase = Utils.getTestCaseNameFromTestStatement(childStmt);
+	    String childStmt = statements.get(i + 1);
+	    // String childStmtTestCase =
+	    // Utils.getTestCaseNameFromTestStatement(childStmt);
 
-//	    if (testCase.equals(childStmtTestCase))
-		readVars.get(statement).addAll(readVars.get(childStmt));
+	    // if (testCase.equals(childStmtTestCase))
+	    readVars.get(statement).addAll(readVars.get(childStmt));
 	}
-	
+
     }
-    
-    
-    public static Map<String, Set<SimpleName>> populateReadVarsForTestCaseOfFile(String path, String testcase, Map<String, Set<VarDefinitionPreq>> definitionPreq)
-	    throws IOException
+
+    public static Map<String, Set<SimpleName>> populateReadVarsForTestCaseOfFile(String path, String testcase,
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq) throws IOException
     {
 	File testClass = new File(path);
 	if (testClass.isFile())
@@ -139,7 +140,8 @@ public class ReadVariableDetector
     }
 
     public static void populateReadVarsForTestCaseOfClass(ClassModel srcClass, List<String> loadedClasses,
-	    Document document, Map<String, Set<SimpleName>> readVars, String testcase, Map<String, Set<VarDefinitionPreq>> definitionPreq)
+	    Document document, Map<String, Set<SimpleName>> readVars, String testcase,
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq)
     {
 	if (readVars == null)
 	    readVars = new HashMap<String, Set<SimpleName>>();
@@ -153,14 +155,19 @@ public class ReadVariableDetector
 
     }
 
-    public static void getReadValues(Map<String, Set<SimpleName>> readVars, Map<String, Map<String, String>> readValues)
+    public static void getReadValues(Map<String, Set<SimpleName>> readVars, Map<String, Map<String, String>> readValues,
+	    Set<String> corruptedTestCases)
     {
 	for (Entry<String, Set<SimpleName>> entry : readVars.entrySet())
 	{
 	    String stateName = entry.getKey();
 	    Map<String, String> readValuesForState = getReadValuesOfState(stateName, entry.getValue());
-	    readValues.put(stateName, readValuesForState);
-	    
+	    if (readValuesForState == null)
+	    {
+		corruptedTestCases.add(Utils.getTestCaseNameFromTestStatement(stateName));
+		return;
+	    } else
+		readValues.put(stateName, readValuesForState);
 	}
     }
 
@@ -180,15 +187,27 @@ public class ReadVariableDetector
 	int index = 0;
 	NodeList nodeList = XMLUtils.getNodeList(stateName);
 	LinkedList<String> key = new LinkedList<String>();
-	for (String stateVar : stateVarNames)
+	if (nodeList != null)
 	{
-	    if (readVarNames.contains(stateVar))
+	    for (String stateVar : stateVarNames)
 	    {
-		varStateSet.put(stateVar, XMLUtils.getXMLString(nodeList.item(index)));
-		// processObjectValues(nodeList.item(index), varStateSet, key,
-		// stateName);
+		if (readVarNames.contains(stateVar))
+		{
+		    varStateSet.put(stateVar, XMLUtils.getXMLString(nodeList.item(index)));
+		    // processObjectValues(nodeList.item(index), varStateSet,
+		    // key,
+		    // stateName);
+		}
+		index++;
 	    }
-	    index++;
+	} else
+	{
+	    if (stateVarNames.size() > 0)
+		return null;
+	}
+	if (stateVarNames.size() != index)
+	{
+	    Settings.consoleLogger.error("XStream error with " + stateName);
 	}
 	return varStateSet;
     }
