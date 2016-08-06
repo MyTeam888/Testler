@@ -231,11 +231,35 @@ public class RunningState
 	    {
 		String name = entry.getKey();
 		if (!testClass.equals(mainTestClass))
-		    name = name + "_" + testClass;
+		    name = testClass.toLowerCase() + "." + name;
 		this.put(name, entry.getValue(), getTypeOfValue(entry.getValue()));
 	    }
 	    done.add(testClass);
 	}
     }
+//    public RunningState(Collection<String> testCases, String mainTestClass)
+//    {
+//	nameValuePairForCurrentState = new HashMap<String, String>();
+//	valueNamePairForCurrentState = new HashMap<String, Set<String>>();
+//	typeNamePairForCurrentState = new HashMap<String, Set<String>>();
+//	nameTypePairForCurrentState = new HashMap<String, String>();
+//	
+//	Set<String> done = new HashSet<String>();
+//	for (String testCase : testCases)
+//	{
+//	    String testClass = Utils.getTestClassNameFromTestCase(testCase);
+//	    if (done.contains(testClass))
+//		continue;
+//	    Map<String, String> nameValuePair = FileUtils.getNameValuePairs(testCase + "-0.xml");
+//	    for (Entry<String, String> entry : nameValuePair.entrySet())
+//	    {
+//		String name = entry.getKey();
+//		if (!testClass.equals(mainTestClass))
+//		    name = name + "_" + testClass;
+//		this.put(name, entry.getValue(), getTypeOfValue(entry.getValue()));
+//	    }
+//	    done.add(testClass);
+//	}
+//    }
 
 }

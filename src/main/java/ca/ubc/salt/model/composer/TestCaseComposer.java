@@ -22,6 +22,7 @@ import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -62,10 +63,9 @@ public class TestCaseComposer
     static
     {
 	nameValuePairs = CacheBuilder.newBuilder().maximumSize(1000)
-		.build(new CacheLoader<String, Map<String, String>>()
-		{ // build
-		  // the
-		  // cacheloader
+		.build(new CacheLoader<String, Map<String, String>>() { // build
+									// the
+									// cacheloader
 
 		    @Override
 		    public Map<String, String> load(String stmt) throws Exception
@@ -156,7 +156,19 @@ public class TestCaseComposer
 		    VariableDeclarationFragment vdf = (VariableDeclarationFragment) node;
 		    vdf.setName(vdf.getAST().newSimpleName(renamedVar));
 		} else
-		    var.setIdentifier(renamedVar);
+		{
+		    int index = renamedVar.indexOf('.');
+		    if (index == -1)
+			var.setIdentifier(renamedVar);
+		    else
+		    {
+			String q = renamedVar.substring(0, index);
+			String v = renamedVar.substring(index + 1);
+			AST ast = node.getAST();
+			ASTNode r = ast.newQualifiedName(ast.newName(q), ast.newSimpleName(v));
+			node.setStructuralProperty(var.getLocationInParent(), r);
+		    }
+		}
 	    }
 	}
 
@@ -198,7 +210,8 @@ public class TestCaseComposer
     // }
 
     public static void composeTestCase(List<TestStatement> path, Set<String> testCases, String name,
-	    Map<String, Map<String, String>> readVals, Map<String, Set<VarDefinitionPreq>> definitionPreq, List<TestStatement> additionalStmts)
+	    Map<String, Map<String, String>> readVals, Map<String, Set<VarDefinitionPreq>> definitionPreq,
+	    List<TestStatement> additionalStmts)
     {
 
 	// populateStateField(path);
@@ -213,7 +226,7 @@ public class TestCaseComposer
 
 	try
 	{
-	    writeBackMergedTestCases(renamedStatements, testCases, name, testClasses, mainClassName);
+	    ComposerHelper.writeBackMergedTestCases(renamedStatements, testCases, name, testClasses, mainClassName);
 	} catch (IOException e)
 	{
 	    // TODO Auto-generated catch block
@@ -326,9 +339,9 @@ public class TestCaseComposer
 		if (obj instanceof Modifier)
 		{
 		    Modifier mod = (Modifier) obj;
-		    if(!mod.isFinal())
+		    if (!mod.isFinal())
 			iterator.remove();
-			
+
 		}
 	    }
 	    path.add(0, fieldDec);
@@ -400,7 +413,6 @@ public class TestCaseComposer
 	return path;
     }
 
-    
     private static void writeBackMergedTestCases(List<TestStatement> originalStatements, Set<String> testCases,
 	    String name, Map<String, Set<String>> testClasses, String mainClassName) throws IOException
     {
@@ -422,7 +434,9 @@ public class TestCaseComposer
 	    String testClassName = Utils.getTestClassWithMaxNumberOfTestCases(testClasses);
 
 	    Document document = getDocumentForClassName(testClassName);
-	    List<ClassModel> classes = ClassModel.getClasses(document.get());
+	    String testClassPath = Utils.getClassFileForProjectPath(testClassName, Settings.PROJECT_MERGED_PATH);
+	    List<ClassModel> classes = ClassModel.getClasses(document.get(), true, testClassPath,
+		    new String[] { Settings.PROJECT_PATH }, new String[] { Settings.LIBRARY_JAVA });
 
 	    Set<String> testCasesOfClass = testClasses.get(testClassName);
 
@@ -477,8 +491,10 @@ public class TestCaseComposer
 	addImportsAndNonTestMethodsToMainClass(nonTestMethods, mainClassName, imports);
     }
 
-    private static void getAllImports(Set<String> imports, ClassModel clazz)
+    static void getAllImports(Set<String> imports, ClassModel clazz)
     {
+	ITypeBinding bind = clazz.getTypeDec().resolveBinding();
+	imports.add(bind.getQualifiedName());
 	for (Object obj : clazz.getCu().imports())
 	{
 	    if (obj instanceof ImportDeclaration)
@@ -530,17 +546,18 @@ public class TestCaseComposer
 	}
     }
 
-    private static void addImportsAndNonTestMethodsToMainClass(Set<Method> nonTestMethods, String mainClassName,
+    public static void addImportsAndNonTestMethodsToMainClass(Set<Method> nonTestMethods, String mainClassName,
 	    Set<String> imports) throws IOException
     {
 	Document document = getDocumentForClassName(mainClassName);
-	addNonTestMethods(nonTestMethods, document, mainClassName);
+	if (nonTestMethods != null)
+	    addNonTestMethods(nonTestMethods, document, mainClassName);
 	Utils.addImports(document, imports);
 	Utils.writebackSourceCode(document,
 		Utils.getClassFileForProjectPath(mainClassName, Settings.PROJECT_MERGED_PATH));
     }
 
-    private static Document getDocumentForClassName(String testClassName) throws IOException
+    static Document getDocumentForClassName(String testClassName) throws IOException
     {
 	String testClassPath = Utils.getClassFileForProjectPath(testClassName, Settings.PROJECT_MERGED_PATH);
 
@@ -549,7 +566,7 @@ public class TestCaseComposer
 	return document;
     }
 
-    private static void addMergedTestCase(List<ASTNode> path, String name, ClassModel clazz, ListRewrite listRewrite)
+    static void addMergedTestCase(List<ASTNode> path, String name, ClassModel clazz, ListRewrite listRewrite)
     {
 	TypeDeclaration td = clazz.getTypeDec();
 	AST ast = td.getAST();
@@ -617,8 +634,7 @@ public class TestCaseComposer
 
     }
 
-    private static void removeTestCasesFromTestClass(ClassModel clazz, Set<String> testCasesOfClass,
-	    ListRewrite listRewrite)
+    static void removeTestCasesFromTestClass(ClassModel clazz, Set<String> testCasesOfClass, ListRewrite listRewrite)
     {
 	// Settings.consoleLogger.error(String.format("removing %s from %s",
 	// testCasesOfClass, clazz.getTypeDec().getName().toString()));
@@ -674,29 +690,30 @@ public class TestCaseComposer
 	BackwardTestMerger.populateGoalsInStatements(definitionPreq, readVals, runningState, renamedStatements);
 	for (TestStatement statement : renamedStatements)
 	{
-	    Statement renamedStatement = renameTestStatement(statement, runningState, readVals,
-		    definitionPreq, batchRename);
+	    Statement renamedStatement = renameTestStatement(statement, runningState, readVals, definitionPreq,
+		    batchRename);
 	    statement.refactoredStatement = renamedStatement;
 	}
 
 	return renamedStatements;
     }
+
     public static List<TestStatement> performRenamingWithRunningState(List<TestStatement> path, Set<String> testCases,
 	    String mainClassName, Map<String, Map<String, String>> readVals,
 	    Map<String, Set<VarDefinitionPreq>> definitionPreq, RunningState runningState)
     {
-	
+
 	List<TestStatement> renamedStatements = cloneStatements(path);
-	
+
 	Map<String, String> batchRename = new HashMap<String, String>();
 	BackwardTestMerger.populateGoalsInStatements(definitionPreq, readVals, runningState, renamedStatements);
 	for (TestStatement statement : renamedStatements)
 	{
-	    Statement renamedStatement = renameTestStatement(statement, runningState, readVals,
-		    definitionPreq, batchRename);
+	    Statement renamedStatement = renameTestStatement(statement, runningState, readVals, definitionPreq,
+		    batchRename);
 	    statement.refactoredStatement = renamedStatement;
 	}
-	
+
 	return renamedStatements;
     }
 

@@ -96,7 +96,7 @@ public class BackwardTestMerger
 	{
 	    long setupCost = 10;
 	    Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
-	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(10,
+	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(1,
 		    uniqueTestStatements);
 	    // connectedComponents.remove(0);
 
@@ -132,7 +132,7 @@ public class BackwardTestMerger
 	int totalBeforeMerging = 0, totalAftermerging = 0;
 	int numberOfMergedTests = 0;
 	int counter = 0;
-	int limit = 11;
+	int limit = 0;
 	for (Set<String> connectedComponent : connectedComponents)
 	{
 	    if (connectedComponent.size() < 2)

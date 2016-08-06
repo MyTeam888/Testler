@@ -25,6 +25,9 @@ public class StatementFieldVisitor extends ASTVisitor
     {
 	this.vars = vars;
     }
+    public StatementFieldVisitor()
+    {
+    }
 
     public boolean visit(SimpleName node)
     {
