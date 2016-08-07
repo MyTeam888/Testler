@@ -21,7 +21,7 @@ import ca.ubc.salt.model.utils.FileUtils;
 
 public class ClassModel
 {
-    TypeDeclaration typeDec = null;
+    public TypeDeclaration typeDec = null;
     CompilationUnit cu = null;
     List<FieldDeclaration> staticFields = null;
     List<FieldDeclaration> fields = null;

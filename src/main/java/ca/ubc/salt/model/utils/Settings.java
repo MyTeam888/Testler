@@ -25,6 +25,7 @@ public class Settings
     // "/Users/arash/Documents/workspace-mars/Calculator";
     public static final String PROJECT_INSTRUMENTED_PATH = PROJECT_PATH + "-instrumented";
     public static final String PROJECT_MERGED_PATH = PROJECT_PATH + "-merged";
+    public static final String PROJECT_STOPWATCH_PATH = PROJECT_PATH + "-stopwatched";
     public final static String tracePaths = PROJECT_INSTRUMENTED_PATH + "/traces";
     public final static String classFileMappingPath = "classFileMapping.txt";
 
@@ -154,7 +155,12 @@ public class Settings
 	    "SimplexSolverTest.testMath828Cycle", "NaturalRankingTest.testDefault",
 	    "ValueServerTest.testNextDigestFail", "OpenIntToDoubleHashMapTest.testPutKeysWithCollision2",
 	    "CovarianceTest.testConsistency", "MultidimensionalCounterTest.testIterator",
-	    "GammaTest.testGammaNegativeInteger", "ThreeEighthesIntegratorTest.testKepler", "EulerIntegratorTest.testStepSize", "BicubicInterpolatingFunctionTest.testIsValidPoint"};
+	    "GammaTest.testGammaNegativeInteger", "ThreeEighthesIntegratorTest.testKepler",
+	    "EulerIntegratorTest.testStepSize", "BicubicInterpolatingFunctionTest.testIsValidPoint",
+	    "MultidimensionalCounterTest.testPreconditions", "ValueServerTest.testEmptyReplayFile",
+	    "MultivariateSummaryStatisticsTest.testSetterIllegalState", "GammaTest.testRegularizedGammaPositiveZero",
+	    "NaturalRankingTest.testNaNsMinimalTiesMaximum", "CovarianceTest.testConstant",
+	    "TricubicInterpolatingFunctionTest.testPreconditions" };
     public static final Set<String> blackListSet = new HashSet<String>(Arrays.asList(methodBlackList));
 
     public static final String TEST_CLASS = "/Users/arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/transform/FastFourierTransformerTest.java";
@@ -165,6 +171,11 @@ public class Settings
     public static String getInstrumentedCodePath(String oldPath)
     {
 	return oldPath.replaceFirst(PROJECT_PATH, PROJECT_INSTRUMENTED_PATH);
+    }
+    
+    public static String getTimedCodePath(String oldPath)
+    {
+	return oldPath.replaceFirst(PROJECT_PATH, PROJECT_STOPWATCH_PATH);
     }
 
 }
