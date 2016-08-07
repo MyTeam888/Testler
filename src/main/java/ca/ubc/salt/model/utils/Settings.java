@@ -14,6 +14,22 @@ import org.apache.logging.log4j.Logger;
 public class Settings
 {
 
+    
+    public static boolean fatalError = false;
+    public static boolean warning = false;
+    public static boolean couldntsatisfy = false;
+    public static String mergedClassName;
+    public static String mergedTestCaseName;
+    
+    
+    
+    public static void setErrors()
+    {
+	fatalError = false;
+	warning = false;
+	couldntsatisfy = false;
+    }
+    
     public final static Logger consoleLogger = LogManager.getRootLogger();
     // public final static Logger fileLogger =
     // LogManager.getLogger("FileLogger");
@@ -160,7 +176,98 @@ public class Settings
 	    "MultidimensionalCounterTest.testPreconditions", "ValueServerTest.testEmptyReplayFile",
 	    "MultivariateSummaryStatisticsTest.testSetterIllegalState", "GammaTest.testRegularizedGammaPositiveZero",
 	    "NaturalRankingTest.testNaNsMinimalTiesMaximum", "CovarianceTest.testConstant",
-	    "TricubicInterpolatingFunctionTest.testPreconditions" };
+	    "TricubicInterpolatingFunctionTest.testPreconditions",
+	    "BetaDistributionTest.testMomentsSampling", "EulerStepInterpolatorTest.noReset",
+	    "KolmogorovSmirnovTestTest.testDRoundingMonteCarlo", "OpenIntToFieldTest.testPutAndGetWithExpectedSize",
+	    "UniformCrossoverTest.testCrossoverDimensionMismatchException", "SparseRealMatrixTest.testGetRowVector",
+	    "ContinuedFractionTest.testGoldenRatio",
+	    "MultivariateNormalMixtureModelDistributionTest.testPreconditionPositiveWeights",
+	    "MultivariateNormalMixtureModelDistributionTest.testSampling", "BlockFieldMatrixTest.testGetRowVector",
+	    "OpenIntToDoubleHashMapTest.testPutAndGetWith0ExpectedSize", "ArithmeticUtilsTest.testSubAndCheckLong",
+	    "SphericalPolygonsSetTest.testFullSphere", "DfpDecTest.testRoundDecimal10",
+	    "OpenIntToDoubleHashMapTest.testPutAndGetWithExpectedSize", "BlockFieldMatrixTest.testSetRowMatrix",
+	    "BlockFieldMatrixTest.testMath209", "DormandPrince54StepInterpolatorTest.derivativesConsistency",
+	    "SingularValueDecompositionTest.testDimensions", "TrapezoidIntegratorTest.testParameters",
+	    "ThreeEighthesStepInterpolatorTest.derivativesConsistency",
+	    "NordsieckStepInterpolatorTest.derivativesConsistency",
+	    "OpenIntToDoubleHashMapTest.testPutKeysWithCollisions", "HermiteTest.testNormalDistribution",
+	    "BlockFieldMatrixTest.testDimensions", "ValueServerTest.testReplay",
+	    "ArrayFieldVectorTest.testWalkInOptimizedOrderPreservingVisitor2",
+	    "QRDecompositionTest.testInvertShortWide",
+	    "ArrayFieldVectorTest.testWalkInOptimizedOrderPreservingVisitor1", "EvaluationTest.testLazyEvaluation",
+	    "RRQRSolverTest.testSolveDimensionErrors", "TournamentSelectionTest.testSelect",
+	    "RectangularCholeskyDecompositionTest.testDecomposition3x3", "BetaDistributionTest.testDensity",
+	    "BlockFieldMatrixTest.testGetRow", "BlockFieldMatrixTest.testMultiply",
+	    "RRQRDecompositionTest.testNonInvertible", "QRDecompositionTest.testInvertTallSkinny",
+	    "HighamHall54StepInterpolatorTest.derivativesConsistency", "DummyStepInterpolatorTest.testFixedState",
+	    "CombinatoricsUtilsTest.testBinomialCoefficientFail", "BlockRealMatrixTest.testPremultiplyVector",
+	    "TriDiagonalTransformerTest.testMatricesValues3", "Euclidean2DTest.testSerialization",
+	    "EnumeratedRealDistributionTest.testGetSupportLowerBound", "OpenIntToDoubleHashMapTest.testGetFromEmpty",
+	    "GillIntegratorTest.testKepler", "MannWhitneyUTestTest.testBigDataSetOverflow",
+	    "BlockFieldMatrixTest.testMultiply2", "GraggBulirschStoerIntegratorTest.testTooLargeFirstStep",
+	    "TriDiagonalTransformerTest.testQOrthogonal", "ContinuousOutputModelTest.testErrorConditions",
+	    "HaltonSequenceGeneratorTest.test3DReference", "OpenIntToDoubleHashMapTest.testRemove2",
+	    "BlockFieldMatrixTest.testGetSubMatrix", "BlockFieldMatrixTest.testSetSubMatrix",
+	    "NaturalRankingTest.testNaNsMaximalTiesMinimum", "OpenIntToDoubleHashMapTest.testRemove",
+	    "BlockFieldMatrixTest.testGetVectors", "RRQRDecompositionTest.testRank",
+	    "BiDiagonalTransformerTest.testAEqualUSVt", "GraggBulirschStoerStepInterpolatorTest.derivativesConsistency",
+	    "BlockRealMatrixTest.testGetSubMatrix", "NevilleInterpolatorTest.testExpm1Function",
+	    "BiDiagonalTransformerTest.testDimensions", "LutherIntegratorTest.testStepSize",
+	    "PolyhedronsSetTest.testOrientation", "PiecewiseBicubicSplineInterpolatingFunctionTest.testPreconditions",
+	    "OpenIntToDoubleHashMapTest.testContainsKey", "OpenIntToDoubleHashMapTest.testPutOnExisting",
+	    "HighamHall54StepInterpolatorTest.checkClone", "BlockFieldMatrixTest.testGetEntry",
+	    "EventFilterTest.testDecreasingOnly", "BlockFieldMatrixTest.testPremultiplyVector",
+	    "TrapezoidIntegratorTest.testQuinticFunction",
+	    "MultivariateNormalMixtureExpectationMaximizationTest.testInitialMixture",
+	    "EulerStepInterpolatorTest.derivativesConsistency", "CombinatoricsUtilsTest.testFactorial",
+	    "DummyStepInterpolatorTest.testNoReset", "MidpointIntegratorTest.testBigStep", "DfpDecTest.testNextAfter",
+	    "DormandPrince853IntegratorTest.testEventsScheduling", "RandomDataGeneratorTest.testNextZipf",
+	    "OpenMapRealMatrixTest.testMath870", "EulerStepInterpolatorTest.interpolationInside",
+	    "KMeansPlusPlusClustererTest.testPerformClusterAnalysisToManyClusters",
+	    "CombinatoricsUtilsTest.testCheckBinomial3", "BlockRealMatrixTest.testWalk",
+	    "RectangularCholeskyDecompositionTest.testFullRank", "ClassicalRungeKuttaIntegratorTest.testSanityChecks",
+	    "BicubicInterpolatorTest.testPreconditions", "HermiteTest.testNormalMean",
+	    "LegendreHighPrecisionTest.testCos", "FieldMatrixImplTest.testTrace",
+	    "TriDiagonalTransformerTest.testNoAccessBelowDiagonal", "NeuronSquareMesh2DTest.testIterator",
+	    "HighamHall54IntegratorTest.testSanityChecks", "AkimaSplineInterpolatorTest.testIllegalArguments",
+	    "LutherIntegratorTest.testSanityChecks", "FieldMatrixImplTest.testPower",
+	    "OpenIntToDoubleHashMapTest.testRemoveAbsent", "SparseRealMatrixTest.testSetSubMatrix",
+	    "BlockFieldMatrixTest.testAddFail", "EnumeratedRealDistributionTest.testIssue942",
+	    "GillStepInterpolatorTest.testDerivativesConsistency", "BlockFieldMatrixTest.testTrace",
+	    "SingularValueDecompositionTest.testConditionNumber", "BlockRealMatrixTest.testNorm",
+	    "CorrelatedRandomVectorGeneratorTest.testRank", "DormandPrince54IntegratorTest.testIncreasingTolerance",
+	    "NeuronSquareMesh2DTest.test3x3TorusNetwork2", "FieldLUDecompositionTest.testPAEqualLU",
+	    "FastHadamardTransformerTest.testNoIntInverse", "CorrelatedRandomVectorGeneratorTest.testMeanAndCovariance",
+	    "OpenIntToDoubleHashMapTest.testIterator", "CombinatoricsUtilsTest.testBinomialCoefficientLarge",
+	    "LocationFinderTest.test2x2Network", "ClassicalRungeKuttaStepInterpolatorTest.derivativesConsistency",
+	    "BlockFieldMatrixTest.testScalarAdd", "QRDecompositionTest.testQRSingular",
+	    "CorrelatedRandomVectorGeneratorTest.testMath226", "OpenIntToDoubleHashMapTest.testGetAbsent",
+	    "MultivariateNormalDistributionTest.testDensities", "OpenIntToDoubleHashMapTest.testCopy",
+	    "GaussIntegratorTest.testGetWeights", "ClassicalRungeKuttaIntegratorTest.testStepSize",
+	    "MidpointIntegratorTest.testStepSize", "DiskGeneratorTest.testRandom",
+	    "EigenDecompositionTest.testMathpbx03", "EulerStepInterpolatorTest.interpolationAtBounds",
+	    "JacobianFunctionTest.testSphere", "GillIntegratorTest.testStepSize",
+	    "DormandPrince853StepInterpolatorTest.derivativesConsistency", "NaturalRankingTest.testNaNsAndInfs",
+	    "PolygonsSetTest.testHole", "QRSolverTest.testSolveDimensionErrors",
+	    "PolynomialCurveFitterTest.testSmallError", "EventFilterTest.testIncreasingOnly",
+	    "ThreeEighthesIntegratorTest.testStepSize", "ContinuousOutputModelTest.testModelsMerging",
+	    "EventFilterTest.testTwoOppositeFilters", "OpenIntToDoubleHashMapTest.testConcurrentModification",
+	    "PrimesTest.testNextPrime", "PrimesTest.testIsPrime", "OpenIntToDoubleHashMapTest.testPutAndGet",
+	    "GraggBulirschStoerStepInterpolatorTest.checklone", "CovarianceTest.testLongly",
+	    "QRDecompositionTest.testMatricesValues",
+	    "MultivariateNormalMixtureExpectationMaximizationTest.testMaxIterationsPositive",
+	    "BlockRealMatrixTest.testGetSetRowLarge", "ThreeEighthesIntegratorTest.testBigStep",
+	    "FieldLUDecompositionTest.testLLowerTriangular", "DormandPrince54StepInterpolatorTest.checkClone",
+	    "DormandPrince853StepInterpolatorTest.checklone", "LutherStepInterpolatorTest.derivativesConsistency",
+	    "SplineInterpolatorTest.testInterpolateLinear", "PolynomialCurveFitterTest.testFit",
+	    "QRSolverTest.testSolveRankErrors", "CombinationsTest.testLexicographicIterator",
+	    "GradientFunctionTest.test2DDistance", "BicubicInterpolatingFunctionTest.testPreconditions",
+	    "CorrelatedRandomVectorGeneratorTest.testRootMatrix", "SingularValueDecompositionTest.testAEqualUSVt",
+	    "RandomDataGeneratorTest.testNextBeta", "MidpointStepInterpolatorTest.testDerivativesConsistency",
+	    "HaltonSequenceGeneratorTest.testConstructor", "OpenIntToDoubleHashMapTest.testPutAbsentOnExisting",
+	    "CombinatoricsUtilsTest.test0Choose0", "DormandPrince54IntegratorTest.testSmallLastStep",
+	    "GillIntegratorTest.testSmallStep", "ClassicalRungeKuttaIntegratorTest.testMissedEndEvent",
+	    "ClassicalRungeKuttaIntegratorTest.testTooLargeFirstStep" };
     public static final Set<String> blackListSet = new HashSet<String>(Arrays.asList(methodBlackList));
 
     public static final String TEST_CLASS = "/Users/arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/transform/FastFourierTransformerTest.java";

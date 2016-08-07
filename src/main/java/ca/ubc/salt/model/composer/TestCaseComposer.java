@@ -176,7 +176,8 @@ public class TestCaseComposer
 	    {
 		ASTNode parentNode = var.getParent();
 
-		if (parentNode.getNodeType() == ASTNode.VARIABLE_DECLARATION_FRAGMENT && ((VariableDeclarationFragment)parentNode).getName().equals(var))
+		if (parentNode.getNodeType() == ASTNode.VARIABLE_DECLARATION_FRAGMENT
+			&& ((VariableDeclarationFragment) parentNode).getName().equals(var))
 		{
 		    VariableDeclarationFragment vdf = (VariableDeclarationFragment) parentNode;
 		    vdf.setName(vdf.getAST().newSimpleName(renamedVar));
@@ -244,7 +245,10 @@ public class TestCaseComposer
 		    }
 		}
 	    } else
+		{
 		Settings.consoleLogger.error("unsupported type renaming");
+		Settings.warning = true;
+		}
 	} else
 	{
 	    parent.setStructuralProperty(simpleName.getLocationInParent(), replacement);
@@ -253,43 +257,42 @@ public class TestCaseComposer
 
     private static Type getType(String type, AST ast)
     {
-	Block a = (Block)Utils.createBlockWithText(String.format("Object b = (%s)a;", type));
+	Block a = (Block) Utils.createBlockWithText(String.format("Object b = (%s)a;", type));
 	VariableDeclarationStatement vds = (VariableDeclarationStatement) a.statements().get(0);
-	Type tp = ((CastExpression)((VariableDeclarationFragment)vds.fragments().get(0)).getInitializer()).getType();
+	Type tp = ((CastExpression) ((VariableDeclarationFragment) vds.fragments().get(0)).getInitializer()).getType();
 	Type tpcpy = (Type) ASTNode.copySubtree(ast, tp);
 	return tpcpy;
-//	int counter = 0;
-//	for (int i = 0; i < type.length();i++)
-//	{
-//	    if (type.charAt(i) == '[')
-//		counter++;
-//	}
-//	if (counter == 0)
-//	    return ast.newSimpleType(ast.newName(type));
-//	
-//	int index = type.indexOf('[');
-//	type = type.substring(0, index);
-//	
-//	Type tp = null;
-//	Code code = PrimitiveType.toCode(type);
-//	if (code != null)
-//	    tp = ast.newPrimitiveType(code);
-//	else
-//	    tp = ast.newSimpleType(ast.newName(type));
-//	
-//	
-//	ArrayType arrType = ast.newArrayType(tp, counter);
-//	return arrType;
-	
-	
+	// int counter = 0;
+	// for (int i = 0; i < type.length();i++)
+	// {
+	// if (type.charAt(i) == '[')
+	// counter++;
+	// }
+	// if (counter == 0)
+	// return ast.newSimpleType(ast.newName(type));
+	//
+	// int index = type.indexOf('[');
+	// type = type.substring(0, index);
+	//
+	// Type tp = null;
+	// Code code = PrimitiveType.toCode(type);
+	// if (code != null)
+	// tp = ast.newPrimitiveType(code);
+	// else
+	// tp = ast.newSimpleType(ast.newName(type));
+	//
+	//
+	// ArrayType arrType = ast.newArrayType(tp, counter);
+	// return arrType;
+
     }
-    
+
     private static ASTNode getCastStructure(Map<String, String> castToMap, String varName, AST ast, ASTNode replacement)
     {
 	String type = castToMap.get(varName);
 	CastExpression ce = ast.newCastExpression();
 	ce.setExpression((Expression) replacement);
-	
+
 	ce.setType(getType(type, ast));
 	ParenthesizedExpression pe = ast.newParenthesizedExpression();
 	pe.setExpression(ce);
@@ -810,7 +813,7 @@ public class TestCaseComposer
 	if (path.size() == 0)
 	    return path;
 	RunningState runningState = new RunningState(testCases, mainClassName);
-	
+
 	List<TestStatement> renamedStatements = cloneStatements(path);
 
 	Map<String, String> batchRename = new HashMap<String, String>();
@@ -928,6 +931,7 @@ public class TestCaseComposer
 	    {
 		Settings.consoleLogger.error(
 			String.format("something's wrong with %s--%s", stmt.getName(), stmt.statement.toString()));
+		Settings.fatalError = true;
 	    } else if (!varNameInState.contains(varNameInStmt))
 	    {
 		// TODO for choosing the varname do a edit distance and choose
@@ -947,7 +951,7 @@ public class TestCaseComposer
 				castToMap.put(varNameInStmt, typeInStmt);
 			    }
 			}
- 			chosenNames.add(name);
+			chosenNames.add(name);
 			success = true;
 			break;
 		    }
@@ -956,6 +960,7 @@ public class TestCaseComposer
 		{
 		    Settings.consoleLogger.error(
 			    String.format("something's wrong with %s--%s", stmt.getName(), stmt.statement.toString()));
+		    Settings.fatalError = true;
 		}
 	    } else
 	    {
@@ -980,9 +985,11 @@ public class TestCaseComposer
 		String neededType = defPreq.getType();
 		Set<String> varsInState = runningState.getNameForType(neededType);
 		if (varsInState == null || varsInState.isEmpty())
+		{
 		    Settings.consoleLogger.error(
 			    String.format("something's wrong with %s--%s", stmt.getName(), stmt.statement.toString()));
-		else
+		    Settings.fatalError = true;
+		} else
 		{
 		    if (renameMap.containsKey(defPreq.getName().getIdentifier()))
 			continue;
@@ -1036,8 +1043,11 @@ public class TestCaseComposer
 				if (batchRename.containsKey(renamedName))
 				    renameMap.put(renamedName, batchRename.get(renamedName));
 				else
-				    Settings.consoleLogger.error(String.format("renaming happend for  %s--%s",
+				{
+				    Settings.consoleLogger.error(String.format("renaming didn't happend for  %s--%s",
 					    stmt.getName(), stmt.statement.toString()));
+				    Settings.fatalError = true;
+				}
 
 			    }
 			}

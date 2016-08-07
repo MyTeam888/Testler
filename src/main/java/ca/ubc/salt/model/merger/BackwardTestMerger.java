@@ -77,7 +77,8 @@ public class BackwardTestMerger
 	return ts;
     }
 
-    public static void initSideEffectForStatements(Map<String, TestStatement> testStatements, List<String> testCases, Map<String, Set<VarDefinitionPreq>> defPreq)
+    public static void initSideEffectForStatements(Map<String, TestStatement> testStatements, List<String> testCases,
+	    Map<String, Set<VarDefinitionPreq>> defPreq)
     {
 	for (Entry<String, TestStatement> entry : testStatements.entrySet())
 	{
@@ -88,6 +89,10 @@ public class BackwardTestMerger
     private static void merge2()
 	    throws IOException, FileNotFoundException, ClassNotFoundException, CloneNotSupportedException
     {
+
+	Formatter formatter = new Formatter("mergingStat.csv");
+	formatter.format(
+		"merging test,merged test class,merged test case,before,after,saved,fatal error,warning,couldn't satisfy\n");
 	XStream xstream = new XStream(new StaxDriver());
 
 	File file = new File("components.txt");
@@ -145,9 +150,12 @@ public class BackwardTestMerger
 	    Settings.consoleLogger.error(
 		    String.format("merging %d tests : %s", connectedComponent.size(), connectedComponent.toString()));
 
+	    String testcaseName;
 	    counter++;
 	    if (counter < limit)
 		continue;
+
+	    Settings.setErrors();
 
 	    // connectedComponent = new HashSet<String>();
 	    // connectedComponent.add("FastFourierTransformerTest.test2DData");
@@ -163,10 +171,10 @@ public class BackwardTestMerger
 
 	    Map<String, Set<VarDefinitionPreq>> definitionPreq = new HashMap<String, Set<VarDefinitionPreq>>();
 	    Set<String> corruptedTestCases = new HashSet<String>();
-	    Map<String, Map<String, String>> readValues = getAllReadValues(testCases, definitionPreq, corruptedTestCases);
+	    Map<String, Map<String, String>> readValues = getAllReadValues(testCases, definitionPreq,
+		    corruptedTestCases);
 	    // System.out.println(readValues);
-	    
-	    
+
 	    if (corruptedTestCases.size() != 0)
 	    {
 		Settings.consoleLogger.error("removing corrupted Test Cases " + corruptedTestCases);
@@ -262,7 +270,9 @@ public class BackwardTestMerger
 
 			    if (stmts == null)
 			    {
-				Settings.consoleLogger.error(String.format("Couldn't satisfay %s - %s", allTestStatements.get(assertion), assertion));
+				Settings.consoleLogger.error(String.format("Couldn't satisfay %s - %s",
+					allTestStatements.get(assertion), assertion));
+				Settings.couldntsatisfy = true;
 				continue;
 			    }
 			    stmts = TestCaseComposer.performRenamingWithRunningState(stmts, connectedComponent,
@@ -282,9 +292,9 @@ public class BackwardTestMerger
 
 		ArrayList<TestStatement> arrMergedPath = new ArrayList<TestStatement>();
 		arrMergedPath.addAll(mergedPath);
-		TestCaseComposer.composeTestCase(arrMergedPath, connectedComponent,
-			TestCaseComposer.generateTestCaseName(connectedComponent), readValues, definitionPreq,
-			secondPhasePath);
+		testcaseName = TestCaseComposer.generateTestCaseName(connectedComponent);
+		TestCaseComposer.composeTestCase(arrMergedPath, connectedComponent, testcaseName, readValues,
+			definitionPreq, secondPhasePath);
 
 	    }
 	    // while (first != null);
@@ -303,9 +313,15 @@ public class BackwardTestMerger
 	    Settings.consoleLogger.error(
 		    String.format("Total Before merging : %d, After merging : %d, NumberOfTestsBefore : %d, After : %d",
 			    totalBeforeMerging, totalAftermerging, numberOfMergedTests, counter));
+	    formatter.format("%s,%s,%s,%d,%d,%d,%b,%b,%b\n", connectedComponent.toString().replaceAll(",", " "),
+		    mainClassName, testcaseName, totalNumberOfStatements, totalMerged,
+		    totalNumberOfStatements - totalMerged, Settings.fatalError, Settings.warning,
+		    Settings.couldntsatisfy);
 	}
 
 	// TestCaseComposer.composeTestCases(mergedTestCases);
+	formatter.flush();
+	formatter.close();
     }
 
     public static void populateGoalsInStatements(Map<String, Set<VarDefinitionPreq>> definitionPreq,
@@ -552,7 +568,7 @@ public class BackwardTestMerger
 	    if (corruptedTestCases.contains(Utils.getTestCaseNameFromTestStatement(stateName)))
 		it.remove();
 	}
-	
+
 	return readValues;
     }
 }
