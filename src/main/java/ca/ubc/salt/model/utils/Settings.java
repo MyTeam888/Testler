@@ -15,20 +15,9 @@ public class Settings
 {
 
     
-    public static boolean fatalError = false;
-    public static boolean warning = false;
-    public static boolean couldntsatisfy = false;
-    public static String mergedClassName;
-    public static String mergedTestCaseName;
     
     
     
-    public static void setErrors()
-    {
-	fatalError = false;
-	warning = false;
-	couldntsatisfy = false;
-    }
     
     public final static Logger consoleLogger = LogManager.getRootLogger();
     // public final static Logger fileLogger =

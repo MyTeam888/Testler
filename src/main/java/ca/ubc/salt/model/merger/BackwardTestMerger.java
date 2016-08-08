@@ -45,6 +45,10 @@ import ca.ubc.salt.model.utils.Utils;
 public class BackwardTestMerger
 {
 
+    
+    public static MergingResult mergingResult;
+    public static List<MergingResult> mergingResultsList = new ArrayList<MergingResult>();
+    
     public static void main(String[] args)
 	    throws FileNotFoundException, ClassNotFoundException, IOException, CloneNotSupportedException
     {
@@ -126,14 +130,7 @@ public class BackwardTestMerger
 	    in.close();
 	}
 
-	Formatter fr = new Formatter("stat.csv");
-	for (Set<String> connectedComponent : connectedComponents)
-	{
-	    fr.format("%d,%s\n", connectedComponent.size(), connectedComponent.toString());
-	}
-	fr.close();
-
-	List<Pair<Set<String>, List<List<TestStatement>>>> mergedTestCases = new LinkedList<Pair<Set<String>, List<List<TestStatement>>>>();
+	writeStatsToFile(connectedComponents);
 
 	int totalBeforeMerging = 0, totalAftermerging = 0;
 	int numberOfMergedTests = 0;
@@ -150,12 +147,12 @@ public class BackwardTestMerger
 	    Settings.consoleLogger.error(
 		    String.format("merging %d tests : %s", connectedComponent.size(), connectedComponent.toString()));
 
-	    String testcaseName;
+	    String mergedTestcaseName;
 	    counter++;
 	    if (counter < limit)
 		continue;
 
-	    Settings.setErrors();
+	    
 
 	    // connectedComponent = new HashSet<String>();
 	    // connectedComponent.add("FastFourierTransformerTest.test2DData");
@@ -217,6 +214,10 @@ public class BackwardTestMerger
 	    String mainClassName = Utils.getTestClassWithMaxNumberOfTestCases(testClasses);
 
 	    RunningState initialState = new RunningState(connectedComponent, mainClassName);
+	    
+	    
+	    mergingResult = new MergingResult(mainClassName, connectedComponent);
+	    
 	    // do
 	    {
 
@@ -272,7 +273,7 @@ public class BackwardTestMerger
 			    {
 				Settings.consoleLogger.error(String.format("Couldn't satisfay %s - %s",
 					allTestStatements.get(assertion), assertion));
-				Settings.couldntsatisfy = true;
+				mergingResult.couldntsatisfy = true;
 				continue;
 			    }
 			    stmts = TestCaseComposer.performRenamingWithRunningState(stmts, connectedComponent,
@@ -292,8 +293,8 @@ public class BackwardTestMerger
 
 		ArrayList<TestStatement> arrMergedPath = new ArrayList<TestStatement>();
 		arrMergedPath.addAll(mergedPath);
-		testcaseName = TestCaseComposer.generateTestCaseName(connectedComponent);
-		TestCaseComposer.composeTestCase(arrMergedPath, connectedComponent, testcaseName, readValues,
+		mergedTestcaseName = TestCaseComposer.generateTestCaseName(connectedComponent);
+		TestCaseComposer.composeTestCase(arrMergedPath, connectedComponent, mergedTestcaseName, readValues,
 			definitionPreq, secondPhasePath);
 
 	    }
@@ -314,14 +315,35 @@ public class BackwardTestMerger
 		    String.format("Total Before merging : %d, After merging : %d, NumberOfTestsBefore : %d, After : %d",
 			    totalBeforeMerging, totalAftermerging, numberOfMergedTests, counter));
 	    formatter.format("%s,%s,%s,%d,%d,%d,%b,%b,%b\n", connectedComponent.toString().replaceAll(",", " "),
-		    mainClassName, testcaseName, totalNumberOfStatements, totalMerged,
-		    totalNumberOfStatements - totalMerged, Settings.fatalError, Settings.warning,
-		    Settings.couldntsatisfy);
+		    mainClassName, mergedTestcaseName, totalNumberOfStatements, totalMerged,
+		    totalNumberOfStatements - totalMerged, mergingResult.fatalError, mergingResult.warning,
+		    mergingResult.couldntsatisfy);
+	    mergingResult.after = totalMerged;
+	    mergingResult.before = totalNumberOfStatements;
+	    mergingResult.mergedTestCaseName = mergedTestcaseName;
+	    mergingResultsList.add(mergingResult);
 	}
 
 	// TestCaseComposer.composeTestCases(mergedTestCases);
+	
+	ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("mergingResult.txt"));
+	out.writeObject(mergingResultsList);
+	out.flush();
+	out.close();
+	
+	
 	formatter.flush();
 	formatter.close();
+    }
+
+    private static void writeStatsToFile(List<Set<String>> connectedComponents) throws FileNotFoundException
+    {
+	Formatter fr = new Formatter("stat.csv");
+	for (Set<String> connectedComponent : connectedComponents)
+	{
+	    fr.format("%d,%s\n", connectedComponent.size(), connectedComponent.toString());
+	}
+	fr.close();
     }
 
     public static void populateGoalsInStatements(Map<String, Set<VarDefinitionPreq>> definitionPreq,

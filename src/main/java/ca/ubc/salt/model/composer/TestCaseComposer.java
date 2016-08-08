@@ -247,7 +247,7 @@ public class TestCaseComposer
 	    } else
 		{
 		Settings.consoleLogger.error("unsupported type renaming");
-		Settings.warning = true;
+		BackwardTestMerger.mergingResult.warning = true;
 		}
 	} else
 	{
@@ -931,7 +931,7 @@ public class TestCaseComposer
 	    {
 		Settings.consoleLogger.error(
 			String.format("something's wrong with %s--%s", stmt.getName(), stmt.statement.toString()));
-		Settings.fatalError = true;
+		BackwardTestMerger.mergingResult.fatalError = true;
 	    } else if (!varNameInState.contains(varNameInStmt))
 	    {
 		// TODO for choosing the varname do a edit distance and choose
@@ -960,7 +960,7 @@ public class TestCaseComposer
 		{
 		    Settings.consoleLogger.error(
 			    String.format("something's wrong with %s--%s", stmt.getName(), stmt.statement.toString()));
-		    Settings.fatalError = true;
+		    BackwardTestMerger.mergingResult.fatalError = true;
 		}
 	    } else
 	    {
@@ -988,7 +988,7 @@ public class TestCaseComposer
 		{
 		    Settings.consoleLogger.error(
 			    String.format("something's wrong with %s--%s", stmt.getName(), stmt.statement.toString()));
-		    Settings.fatalError = true;
+		    BackwardTestMerger.mergingResult.fatalError = true;
 		} else
 		{
 		    if (renameMap.containsKey(defPreq.getName().getIdentifier()))
@@ -1046,7 +1046,7 @@ public class TestCaseComposer
 				{
 				    Settings.consoleLogger.error(String.format("renaming didn't happend for  %s--%s",
 					    stmt.getName(), stmt.statement.toString()));
-				    Settings.fatalError = true;
+				    BackwardTestMerger.mergingResult.fatalError = true;
 				}
 
 			    }
