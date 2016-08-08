@@ -24,6 +24,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
@@ -34,11 +35,13 @@ import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.TextElement;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
+import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.internal.compiler.ast.NumberLiteral;
 import org.eclipse.jdt.internal.compiler.lookup.BlockScope;
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding;
@@ -83,14 +86,40 @@ public class TestClassInstrumenter
 
     }
 
+    String thisTestClassName = "something";
+
+    public static void addClassStringToClass(ClassModel clazz, ASTRewrite rewriter)
+    {
+	ListRewrite listRewrite = rewriter.getListRewrite(clazz.getTypeDec(),
+		TypeDeclaration.BODY_DECLARATIONS_PROPERTY);
+
+	AST ast = clazz.getTypeDec().getAST();
+
+	VariableDeclarationFragment vdf = ast.newVariableDeclarationFragment();
+	vdf.setName(ast.newSimpleName("thisTestClassName"));
+	StringLiteral sl = ast.newStringLiteral();
+	sl.setLiteralValue(clazz.name);
+	vdf.setInitializer(sl);
+	FieldDeclaration fd = ast.newFieldDeclaration(vdf);
+	fd.setType(ast.newSimpleType(ast.newName("String")));
+	listRewrite.insertFirst(fd, null);
+    }
+
     public static Document instrumentClass(ClassModel srcClass, List<ClassModel> loadedClasses, Document document,
 	    String fileName)
 	    throws IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException
     {
+
 	List<Method> methods = srcClass.getMethods();
 
 	Document newDocument = new Document(document.get());
 	ASTRewrite rewriter = ASTRewrite.create(srcClass.cu.getAST());
+
+	if (srcClass.isAbstract() == false)
+	{
+	    addClassStringToClass(srcClass, rewriter);
+	}
+
 	for (Method method : methods)
 	{
 	    if (method.isTestMethod() && !Settings.blackListSet.contains(method.getFullMethodName()))
@@ -226,9 +255,9 @@ public class TestClassInstrumenter
     {
 
 	StringBuilder sb = new StringBuilder();
-	sb.append(
-		String.format("InstrumentClassGenerator.init(\"%s.%s\");InstrumentClassGenerator.initTestStatement(0);",
-			fileName, methodName));
+	sb.append(String.format(
+		"InstrumentClassGenerator.init(%s+\".%s\");InstrumentClassGenerator.initTestStatement(0);",
+		"this.thisTestClassName", methodName));
 	sb.append(getTextForInstrumentation(clazz.getVarDecsOfFields(), 1, null));
 	return Utils.createBlockWithText(sb.toString());
 

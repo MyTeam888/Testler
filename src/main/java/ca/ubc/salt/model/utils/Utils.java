@@ -214,6 +214,21 @@ public class Utils
 	list.addAll(value);
     }
     
+    public static <K, V> void addAllTheListInMap(Map<K, List<V>> map, K key, List<V> value)
+    {
+	List<V> list = map.get(key);
+	if (value == null)
+	    return;
+	if (list == null)
+	{
+	    list = new ArrayList<V>();
+	    map.put(key, list);
+	}
+	list.addAll(value);
+    }
+    
+    
+    
     
     public static <K, V> boolean containsInSetInMap(Map<K, Set<V>> map, K key, V value)
     {
@@ -433,6 +448,17 @@ public class Utils
         }
     
         return maxTestClass;
+    }
+
+    public static Map<String, List<String>> cloneListInMap(Map<String, List<String>> toBeClonedMap)
+    {
+        Map<String, List<String>> uncoveredStmts = new TreeMap<String, List<String>>(new NaturalOrderComparator());
+        for (Entry<String, List<String>> entry : toBeClonedMap.entrySet())
+        {
+            addAllTheListInMap(uncoveredStmts, entry.getKey(), entry.getValue());
+            
+        }
+        return uncoveredStmts;
     }
 
 

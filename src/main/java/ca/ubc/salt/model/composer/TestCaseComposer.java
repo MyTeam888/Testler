@@ -3,6 +3,7 @@ package ca.ubc.salt.model.composer;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -184,6 +185,11 @@ public class TestCaseComposer
 
 		} else
 		{
+		    if (isLeftHandSide(parentNode, var))
+		    {
+			castToMap = null;
+		    }
+
 		    int index = renamedVar.indexOf('.');
 		    if (index == -1)
 		    {
@@ -217,6 +223,25 @@ public class TestCaseComposer
 	return cpyStmt;
     }
 
+    private static boolean isLeftHandSide(ASTNode parentNode, SimpleName sn)
+    {
+	if (parentNode.getNodeType() == ASTNode.EXPRESSION_STATEMENT)
+	{
+	    Expression exp = ((ExpressionStatement) parentNode).getExpression();
+	    if (exp instanceof Assignment)
+	    {
+		Assignment a = (Assignment) exp;
+		if (a.getLeftHandSide().getNodeType() == ASTNode.SIMPLE_NAME)
+		{
+		    SimpleName left = (SimpleName) a.getLeftHandSide();
+		    if (left.equals(sn))
+			return true;
+		}
+	    }
+	}
+	return false;
+    }
+
     private static void replaceSimpleNameWithASTNode(SimpleName simpleName, ASTNode parent, ASTNode replacement)
     {
 	StructuralPropertyDescriptor property = simpleName.getLocationInParent();
@@ -245,10 +270,10 @@ public class TestCaseComposer
 		    }
 		}
 	    } else
-		{
+	    {
 		Settings.consoleLogger.error("unsupported type renaming");
 		BackwardTestMerger.mergingResult.warning = true;
-		}
+	    }
 	} else
 	{
 	    parent.setStructuralProperty(simpleName.getLocationInParent(), replacement);
@@ -575,7 +600,7 @@ public class TestCaseComposer
 		    ListRewrite listRewrite = rewriter.getListRewrite(clazz.getTypeDec(),
 			    TypeDeclaration.BODY_DECLARATIONS_PROPERTY);
 
-		    removeTestCasesFromTestClass(clazz, testCasesOfClass, listRewrite);
+		    removeTestCasesFromTestClass(clazz, testCasesOfClass, rewriter);
 
 		    if (testClassName.equals(mainClassName))
 		    {
@@ -593,6 +618,7 @@ public class TestCaseComposer
 
 		}
 	    }
+
 	    TextEdit edits = rewriter.rewriteAST(document, null);
 	    try
 	    {
@@ -601,6 +627,8 @@ public class TestCaseComposer
 	    {
 		e.printStackTrace();
 	    }
+
+	    Utils.addImports(document, Arrays.asList(new String[] { "org.junit.Ignore" }));
 
 	    Utils.writebackSourceCode(document,
 		    Utils.getClassFileForProjectPath(testClassName, Settings.PROJECT_MERGED_PATH));
@@ -759,7 +787,7 @@ public class TestCaseComposer
 
     }
 
-    static void removeTestCasesFromTestClass(ClassModel clazz, Set<String> testCasesOfClass, ListRewrite listRewrite)
+    static void removeTestCasesFromTestClass(ClassModel clazz, Set<String> testCasesOfClass, ASTRewrite rewrite)
     {
 	// Settings.consoleLogger.error(String.format("removing %s from %s",
 	// testCasesOfClass, clazz.getTypeDec().getName().toString()));
@@ -770,8 +798,13 @@ public class TestCaseComposer
 	    String methodName = m.getFullMethodName();
 	    if (testCasesOfClass.contains(methodName))
 	    {
+		ListRewrite listRewrite = rewrite.getListRewrite(m.getMethodDec(),
+			MethodDeclaration.MODIFIERS2_PROPERTY);
 		// clazz.getTypeDec().bodyDeclarations().remove(m.getMethodDec());
-		listRewrite.remove(m.getMethodDec(), null);
+		AST ast = m.getMethodDec().getAST();
+		MarkerAnnotation ma = ast.newMarkerAnnotation();
+		ma.setTypeName(ast.newName("Ignore"));
+		listRewrite.insertFirst(ma, null);
 	    }
 	}
 

@@ -193,7 +193,7 @@ public class TestMerger
 	return path;
     }
 
-    public static void markAsCovered(TestStatement stmt, Map<String, List<String>> connectedComponentsMap)
+    public static void markAsCovered(TestStatement stmt, Map<String, List<String>> connectedComponentsMap, Map<String, Map<String, List<String>>> equivalentTestStmtsPerTestCase)
     {
 	if (stmt == null)
 	    return;
@@ -203,6 +203,8 @@ public class TestMerger
 	for (String st : equivalentStatements)
 	{
 	    connectedComponentsMap.remove(st);
+	    String testCase = Utils.getTestCaseNameFromTestStatement(st);
+	    equivalentTestStmtsPerTestCase.get(testCase).remove(st);
 	}
     }
 

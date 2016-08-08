@@ -27,9 +27,18 @@ public class ClassModel
     List<FieldDeclaration> fields = null;
     List<FieldDeclaration> allFields = null;
     List<Method> methods = null;
+    String name;
     
     
     public boolean isInstrumentable()
+    {
+	boolean abstrc = isAbstract();
+
+	return typeDec.getSuperclassType() == null && typeDec.superInterfaceTypes().isEmpty() && !typeDec.isInterface()
+		&& !abstrc;
+    }
+
+    public boolean isAbstract()
     {
 	boolean abstrc = false;
 	for (Object obj : typeDec.modifiers())
@@ -41,15 +50,14 @@ public class ClassModel
 		    abstrc = true;
 	    }
 	}
-
-	return typeDec.getSuperclassType() == null && typeDec.superInterfaceTypes().isEmpty() && !typeDec.isInterface()
-		&& !abstrc;
+	return abstrc;
     }
 
     public ClassModel(TypeDeclaration typeDec, CompilationUnit cu) throws IOException
     {
 	this.typeDec = typeDec;
 	this.cu = cu;
+	this.name = typeDec.resolveBinding().getQualifiedName();
     }
 
     public static List<ClassModel> getClasses(String source) throws IOException

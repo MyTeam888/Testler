@@ -1,6 +1,7 @@
 package ca.ubc.salt.model.composer;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -154,7 +155,7 @@ public class ComposerHelper
 		    ListRewrite listRewrite = rewriter.getListRewrite(clazz.getTypeDec(),
 			    TypeDeclaration.BODY_DECLARATIONS_PROPERTY);
 
-		    TestCaseComposer.removeTestCasesFromTestClass(clazz, testCasesOfClass, listRewrite);
+		    TestCaseComposer.removeTestCasesFromTestClass(clazz, testCasesOfClass, rewriter);
 
 		    if (testClassName.equals(mainClassName))
 		    {
@@ -180,6 +181,8 @@ public class ComposerHelper
 		e.printStackTrace();
 	    }
 
+	    Utils.addImports(document, Arrays.asList(new String[]{"org.junit.Ignore"}));
+	    
 	    Utils.writebackSourceCode(document,
 		    Utils.getClassFileForProjectPath(testClassName, Settings.PROJECT_MERGED_PATH));
 	    // System.out.println(document.get());

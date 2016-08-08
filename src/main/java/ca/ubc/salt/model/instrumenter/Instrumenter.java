@@ -83,13 +83,15 @@ public class Instrumenter
 		{
 		    if (clazz.isInstrumentable())
 		    {
-			classFileMapping.put(clazz.typeDec.getName().toString(), fClass.getAbsolutePath());
+			classFileMapping.put(clazz.name, fClass.getAbsolutePath());
+			
 			document = TestClassInstrumenter.instrumentClass(clazz, null, document,
 				clazz.typeDec.getName().toString());
 		    }
 		}
 	    }
-
+	    
+	    
 	    Utils.writebackSourceCode(document, Settings.getInstrumentedCodePath(classPath));
 
 	} else if (fClass.isDirectory())
@@ -102,5 +104,8 @@ public class Instrumenter
 	}
 
     }
+    
+    
+    
 
 }

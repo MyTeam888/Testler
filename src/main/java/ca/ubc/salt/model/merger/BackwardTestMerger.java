@@ -45,10 +45,9 @@ import ca.ubc.salt.model.utils.Utils;
 public class BackwardTestMerger
 {
 
-    
     public static MergingResult mergingResult;
     public static List<MergingResult> mergingResultsList = new ArrayList<MergingResult>();
-    
+
     public static void main(String[] args)
 	    throws FileNotFoundException, ClassNotFoundException, IOException, CloneNotSupportedException
     {
@@ -137,6 +136,9 @@ public class BackwardTestMerger
 	int counter = 0;
 	int limit = 0;
 
+	Map<String, Map<String, List<String>>> equivalentTestStmtsPerTestCase = getTheMapOfConnectedComponentsMap(
+		connectedComponentsMap);
+
 	for (Set<String> connectedComponent : connectedComponents)
 	{
 	    if (connectedComponent.size() < 2)
@@ -151,8 +153,6 @@ public class BackwardTestMerger
 	    counter++;
 	    if (counter < limit)
 		continue;
-
-	    
 
 	    // connectedComponent = new HashSet<String>();
 	    // connectedComponent.add("FastFourierTransformerTest.test2DData");
@@ -172,16 +172,10 @@ public class BackwardTestMerger
 		    corruptedTestCases);
 	    // System.out.println(readValues);
 
-	    if (corruptedTestCases.size() != 0)
-	    {
-		Settings.consoleLogger.error("removing corrupted Test Cases " + corruptedTestCases);
-	    }
-	    for (String corruptedTest : corruptedTestCases)
-	    {
-		connectedComponent.remove(corruptedTest);
-	    }
+	    removingCorruptedTestCases(connectedComponent, corruptedTestCases);
 	    if (connectedComponent.size() == 0)
 		continue;
+
 	    testCases.clear();
 	    testCases.addAll(connectedComponent);
 
@@ -191,18 +185,14 @@ public class BackwardTestMerger
 	    TestState root = graph.get("init.init-.xml");
 	    // System.out.println(root.printDot(true));
 
-	    Pair<TestStatement, RunningState> first = null;
 	    List<List<TestStatement>> paths = new LinkedList<List<TestStatement>>();
-
-	    Pair<Set<String>, List<List<TestStatement>>> pair = new Pair<Set<String>, List<List<TestStatement>>>(
-		    connectedComponent, paths);
-	    mergedTestCases.add(pair);
 
 	    ArrayList<String> allStates = FileUtils.getStatesForTestCase(testCases);
 
 	    Collections.sort(allStates, new NaturalOrderComparator());
 
 	    Map<String, TestStatement> allTestStatements = getAllTestStatements(allStates, graph);
+
 	    TestCaseComposer.populateStateField(allTestStatements.values());
 
 	    initSideEffectForStatements(allTestStatements, testCases, definitionPreq);
@@ -214,126 +204,347 @@ public class BackwardTestMerger
 	    String mainClassName = Utils.getTestClassWithMaxNumberOfTestCases(testClasses);
 
 	    RunningState initialState = new RunningState(connectedComponent, mainClassName);
-	    
-	    
+
 	    mergingResult = new MergingResult(mainClassName, connectedComponent);
-	    
+
 	    // do
+	    // {
+
+	    LinkedList<TestStatement> path = new LinkedList<TestStatement>();
+
+	    TestStatement rootStmt = new TestStatement(root, root, "init.xml");
+	    Triple<TestStatement, RunningState, Map<String, String>> prevFrontier = performFirstPhaseGreedyAlg(
+		    connectedComponentsMap, equivalentTestStmtsPerTestCase, definitionPreq, readValues, graph,
+		    allTestStatements, assertions, initialState, path, rootStmt);
+
+	    List<TestStatement> secondPhasePath = performSecondPhaseBackwardAlg(connectedComponentsMap,
+		    equivalentTestStmtsPerTestCase, connectedComponent, definitionPreq, readValues, allTestStatements,
+		    assertions, mainClassName, prevFrontier);
+
+	    List<TestStatement> firstPhaseMergedPath = TestMerger.returnThePath(rootStmt, path);
+	    paths.add(firstPhaseMergedPath);
+	    paths.add(secondPhasePath);
+
+	    ArrayList<TestStatement> arrMergedPath = new ArrayList<TestStatement>();
+	    arrMergedPath.addAll(firstPhaseMergedPath);
+
+	    int totalNumberOfStatements = allStates.size();
+	    // - testCases.size();
+	    int totalMerged = 0;
+	    for (List<TestStatement> mpath : paths)
+		totalMerged += mpath.size();
+
+	    if (totalMerged < totalNumberOfStatements)
 	    {
-
-		LinkedList<TestStatement> path = new LinkedList<TestStatement>();
-
-		TestStatement rootStmt = new TestStatement(root, root, "init.xml");
-		Triple<TestStatement, RunningState, Map<String, String>> frontier = new Triple<TestStatement, RunningState, Map<String, String>>(
-			rootStmt, initialState, new HashMap<String, String>());
-		Triple<TestStatement, RunningState, Map<String, String>> prevFrontier;
-		do
-		{
-		    prevFrontier = frontier;
-		    frontier = dijkstra(frontier.getFirst(), graph, frontier.getSecond(), readValues,
-			    connectedComponentsMap, allTestStatements, assertions, definitionPreq);
-		    if (frontier == null)
-			break;
-		    TestMerger.markAsCovered(frontier.getFirst(), connectedComponentsMap);
-		    assertions.remove(frontier.getFirst().getName());
-		    path.add(frontier.getFirst());
-		} while (frontier != null);
-
-		Settings.consoleLogger.error("first phase finished");
-		List<TestStatement> secondPhasePath = new LinkedList<TestStatement>();
-		if (!assertions.isEmpty())
-		{
-		    Map<String, Set<String>> assertionView = Planning.getTestCaseTestStatementStringMapping(assertions);
-		    Map<String, Map<String, TestStatement>> allStmtsView = Planning
-			    .getTestCaseTestStatementMapping(allTestStatements);
-		    RunningState runningState = prevFrontier.getSecond();
-		    for (Entry<String, Set<String>> testCaseEntry : assertionView.entrySet())
-		    {
-			String testCase = testCaseEntry.getKey();
-			Set<String> assertionsToCover = testCaseEntry.getValue();
-			for (String assertion : assertionsToCover)
-			{
-			    List<TestStatement> stmts = Planning.backward(allTestStatements.get(assertion),
-				    runningState, readValues, connectedComponentsMap, allStmtsView.get(testCase),
-				    definitionPreq);
-
-			    // populateGoalsInStatements(definitionPreq,
-			    // readValues, runningState, stmts);
-			    //
-			    // Map<String, String> batchRename = new
-			    // HashMap<String, String>();
-			    // for (TestStatement stmt : stmts)
-			    // {
-			    // TestCaseComposer.updateRunningState(stmt,
-			    // runningState, readValues, definitionPreq,
-			    // batchRename);
-			    // }
-
-			    if (stmts == null)
-			    {
-				Settings.consoleLogger.error(String.format("Couldn't satisfay %s - %s",
-					allTestStatements.get(assertion), assertion));
-				mergingResult.couldntsatisfy = true;
-				continue;
-			    }
-			    stmts = TestCaseComposer.performRenamingWithRunningState(stmts, connectedComponent,
-				    mainClassName, readValues, definitionPreq, runningState);
-
-			    secondPhasePath.addAll(stmts);
-
-			}
-		    }
-		}
-		Settings.consoleLogger.error("second phase finished");
-
-		List<TestStatement> mergedPath = TestMerger.returnThePath(rootStmt, path);
-		paths.add(mergedPath);
-		paths.add(secondPhasePath);
-		// mergedPath.addAll(secondPhasePath);
-
-		ArrayList<TestStatement> arrMergedPath = new ArrayList<TestStatement>();
-		arrMergedPath.addAll(mergedPath);
 		mergedTestcaseName = TestCaseComposer.generateTestCaseName(connectedComponent);
 		TestCaseComposer.composeTestCase(arrMergedPath, connectedComponent, mergedTestcaseName, readValues,
 			definitionPreq, secondPhasePath);
-
+	    } else
+	    {
+		counter--;
+		continue;
 	    }
+
+	    // }
 	    // while (first != null);
 
-	    int totalNumberOfStatements = allStates.size() - testCases.size() * 2;
-	    int totalMerged = 0;
-	    for (List<TestStatement> path : paths)
-		totalMerged += path.size();
 	    Settings.consoleLogger.error(String.format("Before Merging : %d, After Merging %d, saved : %d",
 		    totalNumberOfStatements, totalMerged, totalNumberOfStatements - totalMerged));
-	    // System.out.println(getSavedStmts(allTestStatements,
-	    // paths.get(0)));
+
 	    totalBeforeMerging += totalNumberOfStatements;
 	    totalAftermerging += totalMerged;
 	    numberOfMergedTests += connectedComponent.size();
-	    Settings.consoleLogger.error(
-		    String.format("Total Before merging : %d, After merging : %d, NumberOfTestsBefore : %d, After : %d",
-			    totalBeforeMerging, totalAftermerging, numberOfMergedTests, counter));
-	    formatter.format("%s,%s,%s,%d,%d,%d,%b,%b,%b\n", connectedComponent.toString().replaceAll(",", " "),
-		    mainClassName, mergedTestcaseName, totalNumberOfStatements, totalMerged,
-		    totalNumberOfStatements - totalMerged, mergingResult.fatalError, mergingResult.warning,
-		    mergingResult.couldntsatisfy);
-	    mergingResult.after = totalMerged;
-	    mergingResult.before = totalNumberOfStatements;
-	    mergingResult.mergedTestCaseName = mergedTestcaseName;
-	    mergingResultsList.add(mergingResult);
+
+	    writeStatToFileAndConsole(formatter, totalBeforeMerging, totalAftermerging, numberOfMergedTests, counter,
+		    connectedComponent, mergedTestcaseName, mainClassName, totalNumberOfStatements, totalMerged);
+
+	    updateMergingResultStruct(mergedTestcaseName, totalNumberOfStatements, totalMerged);
 	}
 
-	// TestCaseComposer.composeTestCases(mergedTestCases);
-	
+	writeMergingResultsToFile(formatter);
+    }
+
+    private static void writeStatToFileAndConsole(Formatter formatter, int totalBeforeMerging, int totalAftermerging,
+	    int numberOfMergedTests, int counter, Set<String> connectedComponent, String mergedTestcaseName,
+	    String mainClassName, int totalNumberOfStatements, int totalMerged)
+    {
+	Settings.consoleLogger.error(
+		String.format("Total Before merging : %d, After merging : %d, NumberOfTestsBefore : %d, After : %d",
+			totalBeforeMerging, totalAftermerging, numberOfMergedTests, counter));
+
+	formatter.format("%s,%s,%s,%d,%d,%d,%b,%b,%b\n", connectedComponent.toString().replaceAll(",", " "),
+		mainClassName, mergedTestcaseName, totalNumberOfStatements, totalMerged,
+		totalNumberOfStatements - totalMerged, mergingResult.fatalError, mergingResult.warning,
+		mergingResult.couldntsatisfy);
+    }
+
+    private static void writeMergingResultsToFile(Formatter formatter) throws IOException, FileNotFoundException
+    {
 	ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("mergingResult.txt"));
 	out.writeObject(mergingResultsList);
 	out.flush();
 	out.close();
-	
-	
+
 	formatter.flush();
 	formatter.close();
+    }
+
+    private static void updateMergingResultStruct(String mergedTestcaseName, int totalNumberOfStatements,
+	    int totalMerged)
+    {
+	mergingResult.after = totalMerged;
+	mergingResult.before = totalNumberOfStatements;
+	mergingResult.mergedTestCaseName = mergedTestcaseName;
+	mergingResultsList.add(mergingResult);
+    }
+
+    private static Map<String, Map<String, List<String>>> getTheMapOfConnectedComponentsMap(
+	    Map<String, List<String>> connectedComponentsMap)
+    {
+	Map<String, Map<String, List<String>>> map = new HashMap<String, Map<String, List<String>>>();
+	for (Entry<String, List<String>> entry : connectedComponentsMap.entrySet())
+	{
+	    String testCaseName = Utils.getTestCaseNameFromTestStatement(entry.getKey());
+	    Utils.addToTheMapInMap(map, testCaseName, entry.getKey(), entry.getValue());
+	}
+	return map;
+    }
+
+    private static boolean isThereUnCoveredStmts(Map<String, Map<String, List<String>>> equivalentTestStmtsPerTestCase,
+	    Set<String> testCases)
+    {
+	for (String testCase : testCases)
+	{
+	    Map<String, List<String>> mapView = equivalentTestStmtsPerTestCase.get(testCase);
+	    if (mapView != null && mapView.isEmpty() == false)
+		return true;
+	}
+	return false;
+    }
+
+    private static List<TestStatement> performSecondPhaseBackwardAlg(Map<String, List<String>> connectedComponentsMap,
+	    Map<String, Map<String, List<String>>> equivalentTestStmtsPerTestCase, Set<String> connectedComponent,
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq, Map<String, Map<String, String>> readValues,
+	    Map<String, TestStatement> allTestStatements, Set<String> assertions, String mainClassName,
+	    Triple<TestStatement, RunningState, Map<String, String>> prevFrontier) throws CloneNotSupportedException
+    {
+	List<TestStatement> secondPhasePath = new LinkedList<TestStatement>();
+	Map<String, Map<String, TestStatement>> allStmtsView = Planning
+		.getTestCaseTestStatementMapping(allTestStatements);
+	RunningState runningState = prevFrontier.getSecond();
+
+	coverAllAssertions(connectedComponentsMap, equivalentTestStmtsPerTestCase, connectedComponent, definitionPreq,
+		readValues, allTestStatements, assertions, mainClassName, secondPhasePath, allStmtsView, runningState);
+
+	coverAllProductionCallingStmts(connectedComponentsMap, equivalentTestStmtsPerTestCase, connectedComponent,
+		definitionPreq, readValues, allTestStatements, mainClassName, secondPhasePath, allStmtsView,
+		runningState);
+
+	Settings.consoleLogger.error("second phase finished");
+	return secondPhasePath;
+    }
+
+    private static void coverAllProductionCallingStmts(Map<String, List<String>> connectedComponentsMap,
+	    Map<String, Map<String, List<String>>> equivalentTestStmtsPerTestCase, Set<String> connectedComponent,
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq, Map<String, Map<String, String>> readValues,
+	    Map<String, TestStatement> allTestStatements, String mainClassName, List<TestStatement> secondPhasePath,
+	    Map<String, Map<String, TestStatement>> allStmtsView, RunningState runningState)
+	    throws CloneNotSupportedException
+    {
+	if (isThereUnCoveredStmts(equivalentTestStmtsPerTestCase, connectedComponent))
+	{
+	    for (String testCase : connectedComponent)
+	    {
+		Map<String, List<String>> uncoveredStmtsOriginal = equivalentTestStmtsPerTestCase.get(testCase);
+		if (uncoveredStmtsOriginal != null && uncoveredStmtsOriginal.isEmpty() == false)
+		{
+		    Map<String, List<String>> uncoveredStmts = Utils.cloneListInMap(uncoveredStmtsOriginal);
+		    for (Entry<String, List<String>> entry : uncoveredStmts.entrySet())
+		    {
+			String testStmt = entry.getKey();
+			if (uncoveredStmtsOriginal.containsKey(testStmt) == false)
+			    continue;
+
+			List<TestStatement> stmts = Planning.backward(allTestStatements.get(testStmt), runningState,
+				readValues, connectedComponentsMap, allStmtsView.get(testCase), definitionPreq);
+
+			if (stmts == null)
+			{
+			    Settings.consoleLogger.error(String.format("Couldn't satisfay %s - %s",
+				    allTestStatements.get(testStmt), testStmt));
+			    mergingResult.couldntsatisfy = true;
+			    continue;
+			}
+
+			for (TestStatement stmt : stmts)
+			{
+			    TestMerger.markAsCovered(stmt, connectedComponentsMap, equivalentTestStmtsPerTestCase);
+			}
+
+			stmts = TestCaseComposer.performRenamingWithRunningState(stmts, connectedComponent,
+				mainClassName, readValues, definitionPreq, runningState);
+
+			secondPhasePath.addAll(stmts);
+
+		    }
+		}
+	    }
+	}
+    }
+
+    private static void coverAllAssertions(Map<String, List<String>> connectedComponentsMap,
+	    Map<String, Map<String, List<String>>> equivalentTestStmtsPerTestCase, Set<String> connectedComponent,
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq, Map<String, Map<String, String>> readValues,
+	    Map<String, TestStatement> allTestStatements, Set<String> assertions, String mainClassName,
+	    List<TestStatement> secondPhasePath, Map<String, Map<String, TestStatement>> allStmtsView,
+	    RunningState runningState) throws CloneNotSupportedException
+    {
+	if (!assertions.isEmpty())
+	{
+	    Map<String, Set<String>> assertionView = Planning.getTestCaseTestStatementStringMapping(assertions);
+	    for (Entry<String, Set<String>> testCaseEntry : assertionView.entrySet())
+	    {
+		String testCase = testCaseEntry.getKey();
+		Set<String> assertionsToCover = testCaseEntry.getValue();
+		for (String assertion : assertionsToCover)
+		{
+		    List<TestStatement> stmts = Planning.backward(allTestStatements.get(assertion), runningState,
+			    readValues, connectedComponentsMap, allStmtsView.get(testCase), definitionPreq);
+
+		    // populateGoalsInStatements(definitionPreq,
+		    // readValues, runningState, stmts);
+		    //
+		    // Map<String, String> batchRename = new
+		    // HashMap<String, String>();
+		    // for (TestStatement stmt : stmts)
+		    // {
+		    // TestCaseComposer.updateRunningState(stmt,
+		    // runningState, readValues, definitionPreq,
+		    // batchRename);
+		    // }
+
+		    if (stmts == null)
+		    {
+			Settings.consoleLogger.error(String.format("Couldn't satisfay %s - %s",
+				allTestStatements.get(assertion), assertion));
+			mergingResult.couldntsatisfy = true;
+			continue;
+		    }
+
+		    for (TestStatement stmt : stmts)
+		    {
+			TestMerger.markAsCovered(stmt, connectedComponentsMap, equivalentTestStmtsPerTestCase);
+		    }
+
+		    stmts = TestCaseComposer.performRenamingWithRunningState(stmts, connectedComponent, mainClassName,
+			    readValues, definitionPreq, runningState);
+
+		    secondPhasePath.addAll(stmts);
+
+		}
+	    }
+	}
+    }
+    // private static List<TestStatement>
+    // performSecondPhaseBackwardAlg(Map<String, List<String>>
+    // connectedComponentsMap,
+    // Map<String, Map<String, List<String>>> equivalentTestStmtsPerTestCase,
+    // Set<String> connectedComponent,
+    // Map<String, Set<VarDefinitionPreq>> definitionPreq, Map<String,
+    // Map<String, String>> readValues,
+    // Map<String, TestStatement> allTestStatements, Set<String> assertions,
+    // String mainClassName,
+    // Triple<TestStatement, RunningState, Map<String, String>> prevFrontier)
+    // throws CloneNotSupportedException
+    // {
+    // List<TestStatement> secondPhasePath = new LinkedList<TestStatement>();
+    // if (!assertions.isEmpty())
+    // {
+    // Map<String, Set<String>> assertionView =
+    // Planning.getTestCaseTestStatementStringMapping(assertions);
+    // Map<String, Map<String, TestStatement>> allStmtsView = Planning
+    // .getTestCaseTestStatementMapping(allTestStatements);
+    // RunningState runningState = prevFrontier.getSecond();
+    // for (Entry<String, Set<String>> testCaseEntry : assertionView.entrySet())
+    // {
+    // String testCase = testCaseEntry.getKey();
+    // Set<String> assertionsToCover = testCaseEntry.getValue();
+    // for (String assertion : assertionsToCover)
+    // {
+    // List<TestStatement> stmts =
+    // Planning.backward(allTestStatements.get(assertion), runningState,
+    // readValues, connectedComponentsMap, allStmtsView.get(testCase),
+    // definitionPreq);
+    //
+    // // populateGoalsInStatements(definitionPreq,
+    // // readValues, runningState, stmts);
+    // //
+    // // Map<String, String> batchRename = new
+    // // HashMap<String, String>();
+    // // for (TestStatement stmt : stmts)
+    // // {
+    // // TestCaseComposer.updateRunningState(stmt,
+    // // runningState, readValues, definitionPreq,
+    // // batchRename);
+    // // }
+    //
+    // if (stmts == null)
+    // {
+    // Settings.consoleLogger.error(String.format("Couldn't satisfay %s - %s",
+    // allTestStatements.get(assertion), assertion));
+    // mergingResult.couldntsatisfy = true;
+    // continue;
+    // }
+    // stmts = TestCaseComposer.performRenamingWithRunningState(stmts,
+    // connectedComponent, mainClassName,
+    // readValues, definitionPreq, runningState);
+    //
+    // secondPhasePath.addAll(stmts);
+    //
+    // }
+    // }
+    // }
+    // Settings.consoleLogger.error("second phase finished");
+    // return secondPhasePath;
+    // }
+
+    private static Triple<TestStatement, RunningState, Map<String, String>> performFirstPhaseGreedyAlg(
+	    Map<String, List<String>> connectedComponentsMap,
+	    Map<String, Map<String, List<String>>> equivalentTestStmtsPerTestCase,
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq, Map<String, Map<String, String>> readValues,
+	    Map<String, TestState> graph, Map<String, TestStatement> allTestStatements, Set<String> assertions,
+	    RunningState initialState, LinkedList<TestStatement> path, TestStatement rootStmt)
+	    throws CloneNotSupportedException
+    {
+	Triple<TestStatement, RunningState, Map<String, String>> frontier = new Triple<TestStatement, RunningState, Map<String, String>>(
+		rootStmt, initialState, new HashMap<String, String>());
+	Triple<TestStatement, RunningState, Map<String, String>> prevFrontier;
+	do
+	{
+	    prevFrontier = frontier;
+	    frontier = dijkstra(frontier.getFirst(), graph, frontier.getSecond(), readValues, connectedComponentsMap,
+		    allTestStatements, assertions, definitionPreq);
+	    if (frontier == null)
+		break;
+	    TestMerger.markAsCovered(frontier.getFirst(), connectedComponentsMap, equivalentTestStmtsPerTestCase);
+	    assertions.remove(frontier.getFirst().getName());
+	    path.add(frontier.getFirst());
+	} while (frontier != null);
+
+	Settings.consoleLogger.error("first phase finished");
+	return prevFrontier;
+    }
+
+    private static void removingCorruptedTestCases(Set<String> connectedComponent, Set<String> corruptedTestCases)
+    {
+	if (corruptedTestCases.size() != 0)
+	{
+	    Settings.consoleLogger.error("removing corrupted Test Cases " + corruptedTestCases);
+	}
+	for (String corruptedTest : corruptedTestCases)
+	{
+	    connectedComponent.remove(corruptedTest);
+	}
     }
 
     private static void writeStatsToFile(List<Set<String>> connectedComponents) throws FileNotFoundException
@@ -517,7 +728,7 @@ public class BackwardTestMerger
 	    // if (stmt.equals("Array2DRowRealMatrixTest.testSetRow-1.xml"))
 	    // System.out.println();
 	    boolean isComp = true;
-	    Counter counter = new Counter();
+	    Counter<String> counter = new Counter<String>();
 	    for (Entry<String, String> entry : readVals.entrySet())
 	    {
 		String readVal = entry.getValue();
