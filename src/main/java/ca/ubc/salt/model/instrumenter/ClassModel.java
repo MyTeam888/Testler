@@ -34,9 +34,11 @@ public class ClassModel
     {
 	boolean abstrc = isAbstract();
 
+
 	return !abstrc;
 //	return typeDec.getSuperclassType() == null && typeDec.superInterfaceTypes().isEmpty() && !typeDec.isInterface()
 //		&& !abstrc;
+
     }
 
     public boolean isAbstract()

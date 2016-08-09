@@ -80,12 +80,9 @@ public class Method
 	InstrumenterVisitor visitor = new InstrumenterVisitor(rewriter, randomNumber, methodDec.getName().toString());
 	visitor.addFieldVars(this.clazz);
 	this.methodDec.accept(visitor);
-	
+
 	ASTNode loopCode = Utils.createBlockWithText("InstrumentClassGenerator.traceLoop();");
 	listRewrite.insertLast(loopCode, null);
-	
-	
-	
 
 	// apply the text edits to the compilation unit
 
@@ -153,11 +150,13 @@ public class Method
 	    listRewrite.remove((ASTNode) obj, null);
     }
 
-    public void populateReadVars(Document document, List<String> loadedClassVars, Map<String, Set<SimpleName>> readVars, Map<String, Set<VarDefinitionPreq>> definitionPreq)
+    public void populateReadVars(Document document, List<String> loadedClassVars, Map<String, Set<SimpleName>> readVars,
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq, Map<String, Statement> allASTStatements)
     {
 	ReadVariableVisitor visitor = new ReadVariableVisitor(className + "." + methodDec.getName().toString());
 	visitor.setReadVars(readVars);
 	visitor.setNeedToBeDefinedVars(definitionPreq);
+	visitor.setAllASTStatements(allASTStatements);
 	this.methodDec.accept(visitor);
 	// System.out.println(visitor.getReadVars());
     }
@@ -211,7 +210,7 @@ public class Method
     {
 	return this.className + "." + this.methodDec.getName().toString();
     }
-    
+
     public boolean isTestMethod()
     {
 
@@ -256,14 +255,12 @@ public class Method
 
     public String getClassName()
     {
-        return className;
+	return className;
     }
 
     public void setClassName(String className)
     {
-        this.className = className;
+	this.className = className;
     }
-    
-    
 
 }

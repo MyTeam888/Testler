@@ -8,6 +8,7 @@ import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AssertStatement;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.DoStatement;
 import org.eclipse.jdt.core.dom.EnhancedForStatement;
@@ -35,6 +36,7 @@ public class ReadVariableVisitor extends ASTVisitor
 
     Map<String, Set<SimpleName>> readVars;
     Map<String, Set<VarDefinitionPreq>> needToBeDefinedVars;
+    Map<String, Statement> allASTStatements;
     String methodName;
     int counter = -1;
 
@@ -48,6 +50,7 @@ public class ReadVariableVisitor extends ASTVisitor
 	// System.out.println(node.toString());
 
 	counter++;
+	allASTStatements.put(methodName+"-"+counter+".xml", exp);
 	Expression e = exp.getExpression();
 	if (e instanceof Assignment)
 	{
@@ -74,6 +77,7 @@ public class ReadVariableVisitor extends ASTVisitor
     public boolean visit(VariableDeclarationStatement node)
     {
 	counter++;
+	allASTStatements.put(methodName+"-"+counter+".xml", node);
 	return true;
     }
 
@@ -102,6 +106,7 @@ public class ReadVariableVisitor extends ASTVisitor
     public boolean visit(IfStatement node)
     {
 	counter++;
+	allASTStatements.put(methodName+"-"+counter+".xml", node);
 	getReadVars(node);
 	return false;
     }
@@ -109,6 +114,7 @@ public class ReadVariableVisitor extends ASTVisitor
     public boolean visit(WhileStatement node)
     {
 	counter++;
+	allASTStatements.put(methodName+"-"+counter+".xml", node);
 	getReadVars(node);
 	return false;
     }
@@ -116,6 +122,7 @@ public class ReadVariableVisitor extends ASTVisitor
     public boolean visit(EnhancedForStatement node)
     {
 	counter++;
+	allASTStatements.put(methodName+"-"+counter+".xml", node);
 	getReadVars(node);
 	return false;
     }
@@ -123,13 +130,22 @@ public class ReadVariableVisitor extends ASTVisitor
     public boolean visit(ForStatement node)
     {
 	counter++;
+	allASTStatements.put(methodName+"-"+counter+".xml", node);
 	getReadVars(node);
 	return false;
     }
 
+//    public boolean visit(AssertStatement node)
+//    {
+//	counter++;
+//	getReadVars(node);
+//	return false;
+//    }
+    
     public boolean visit(TryStatement node)
     {
 	counter++;
+	allASTStatements.put(methodName+"-"+counter+".xml", node);
 	getReadVars(node);
 	return false;
     }
@@ -137,6 +153,7 @@ public class ReadVariableVisitor extends ASTVisitor
     public boolean visit(SwitchStatement node)
     {
 	counter++;
+	allASTStatements.put(methodName+"-"+counter+".xml", node);
 	getReadVars(node);
 	return false;
     }
@@ -144,6 +161,7 @@ public class ReadVariableVisitor extends ASTVisitor
     public boolean visit(SwitchCase node)
     {
 	counter++;
+	allASTStatements.put(methodName+"-"+counter+".xml", node);
 	getReadVars(node);
 	return false;
     }
@@ -151,6 +169,7 @@ public class ReadVariableVisitor extends ASTVisitor
     public boolean visit(DoStatement node)
     {
 	counter++;
+	allASTStatements.put(methodName+"-"+counter+".xml", node);
 	getReadVars(node);
 	return false;
     }
@@ -174,6 +193,17 @@ public class ReadVariableVisitor extends ASTVisitor
     {
         this.needToBeDefinedVars = needToBeDefinedVars;
     }
+
+    public Map<String, Statement> getAllASTStatements()
+    {
+        return allASTStatements;
+    }
+
+    public void setAllASTStatements(Map<String, Statement> allASTStatements)
+    {
+        this.allASTStatements = allASTStatements;
+    }
+    
     
 
 }

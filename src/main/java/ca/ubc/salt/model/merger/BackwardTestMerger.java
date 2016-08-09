@@ -22,6 +22,7 @@ import java.util.PriorityQueue;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.Statement;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
@@ -45,6 +46,7 @@ import ca.ubc.salt.model.utils.Utils;
 public class BackwardTestMerger
 {
 
+    public static Set<String> testCasesToRemove;
     public static MergingResult mergingResult;
     public static List<MergingResult> mergingResultsList = new ArrayList<MergingResult>();
 
@@ -168,97 +170,136 @@ public class BackwardTestMerger
 
 	    Map<String, Set<VarDefinitionPreq>> definitionPreq = new HashMap<String, Set<VarDefinitionPreq>>();
 	    Set<String> corruptedTestCases = new HashSet<String>();
+
+	    Map<String, Statement> allASTStatements = new HashMap<String, Statement>();
 	    Map<String, Map<String, String>> readValues = getAllReadValues(testCases, definitionPreq,
-		    corruptedTestCases);
+		    corruptedTestCases, allASTStatements);
 	    // System.out.println(readValues);
 
 	    removingCorruptedTestCases(connectedComponent, corruptedTestCases);
 	    if (connectedComponent.size() == 0)
 		continue;
 
-	    testCases.clear();
-	    testCases.addAll(connectedComponent);
+	    Map<String, List<String>> connectedComponentsMapCpy = connectedComponentsMap;
+	    Map<String, Map<String, List<String>>> equivalentTestStmtsPerTestCaseCpy = equivalentTestStmtsPerTestCase;
 
-	    testCases.add("init.init");
-	    Map<String, TestState> graph = StateComparator.createGraph(testCases);
+	    connectedComponentsMap = new HashMap<String, List<String>>(connectedComponentsMapCpy);
+	    equivalentTestStmtsPerTestCase = getTheMapOfConnectedComponentsMap(connectedComponentsMapCpy);
 
-	    TestState root = graph.get("init.init-.xml");
-	    // System.out.println(root.printDot(true));
-
-	    List<List<TestStatement>> paths = new LinkedList<List<TestStatement>>();
-
-	    ArrayList<String> allStates = FileUtils.getStatesForTestCase(testCases);
-
-	    Collections.sort(allStates, new NaturalOrderComparator());
-
-	    Map<String, TestStatement> allTestStatements = getAllTestStatements(allStates, graph);
-
-	    TestCaseComposer.populateStateField(allTestStatements.values());
-
-	    initSideEffectForStatements(allTestStatements, testCases, definitionPreq);
-
-	    Set<String> assertions = getAllAssertions(allTestStatements);
-
-	    Map<String, Set<String>> testClasses = Utils.getTestClassMapFromTestCases(connectedComponent);
-
-	    String mainClassName = Utils.getTestClassWithMaxNumberOfTestCases(testClasses);
-
-	    RunningState initialState = new RunningState(connectedComponent, mainClassName);
-
-	    mergingResult = new MergingResult(mainClassName, connectedComponent);
-
-	    // do
-	    // {
-
-	    LinkedList<TestStatement> path = new LinkedList<TestStatement>();
-
-	    TestStatement rootStmt = new TestStatement(root, root, "init.xml");
-	    Triple<TestStatement, RunningState, Map<String, String>> prevFrontier = performFirstPhaseGreedyAlg(
-		    connectedComponentsMap, equivalentTestStmtsPerTestCase, definitionPreq, readValues, graph,
-		    allTestStatements, assertions, initialState, path, rootStmt);
-
-	    List<TestStatement> secondPhasePath = performSecondPhaseBackwardAlg(connectedComponentsMap,
-		    equivalentTestStmtsPerTestCase, connectedComponent, definitionPreq, readValues, allTestStatements,
-		    assertions, mainClassName, prevFrontier);
-
-	    List<TestStatement> firstPhaseMergedPath = TestMerger.returnThePath(rootStmt, path);
-	    paths.add(firstPhaseMergedPath);
-	    paths.add(secondPhasePath);
-
-	    ArrayList<TestStatement> arrMergedPath = new ArrayList<TestStatement>();
-	    arrMergedPath.addAll(firstPhaseMergedPath);
-
-	    int totalNumberOfStatements = allStates.size();
-	    // - testCases.size();
-	    int totalMerged = 0;
-	    for (List<TestStatement> mpath : paths)
-		totalMerged += mpath.size();
-
-	    if (totalMerged < totalNumberOfStatements)
+	    boolean loop = true;
+	    while (loop && connectedComponent.size() > 1)
 	    {
-		mergedTestcaseName = TestCaseComposer.generateTestCaseName(connectedComponent);
-		TestCaseComposer.composeTestCase(arrMergedPath, connectedComponent, mergedTestcaseName, readValues,
-			definitionPreq, secondPhasePath);
-	    } else
-	    {
-		counter--;
-		continue;
+		testCasesToRemove = new HashSet<String>();
+		loop = false;
+
+		testCases.clear();
+		testCases.addAll(connectedComponent);
+
+		testCases.add("init.init");
+		Map<String, TestState> graph = StateComparator.createGraph(testCases);
+
+		TestState root = graph.get("init.init-.xml");
+		// System.out.println(root.printDot(true));
+
+		List<List<TestStatement>> paths = new LinkedList<List<TestStatement>>();
+
+		ArrayList<String> allStates = FileUtils.getStatesForTestCase(testCases);
+
+		Collections.sort(allStates, new NaturalOrderComparator());
+
+		Map<String, TestStatement> allTestStatements = getAllTestStatements(allStates, graph);
+
+		populateStatementField(allASTStatements, allTestStatements);
+		// TestCaseComposer.populateStateField(allTestStatements.values());
+
+		initSideEffectForStatements(allTestStatements, testCases, definitionPreq);
+
+		Set<String> assertions = getAllAssertions(allTestStatements);
+
+		Map<String, Set<String>> testClasses = Utils.getTestClassMapFromTestCases(connectedComponent);
+
+		String mainClassName = Utils.getTestClassWithMaxNumberOfTestCases(testClasses);
+
+		RunningState initialState = new RunningState(connectedComponent, mainClassName);
+
+		mergingResult = new MergingResult(mainClassName, connectedComponent);
+
+		// do
+		// {
+
+		LinkedList<TestStatement> path = new LinkedList<TestStatement>();
+
+		TestStatement rootStmt = new TestStatement(root, root, "init.xml");
+		Triple<TestStatement, RunningState, Map<String, String>> prevFrontier = performFirstPhaseGreedyAlg(
+			connectedComponentsMap, equivalentTestStmtsPerTestCase, definitionPreq, readValues, graph,
+			allTestStatements, assertions, initialState, path, rootStmt);
+
+		List<TestStatement> secondPhasePath = performSecondPhaseBackwardAlg(connectedComponentsMap,
+			equivalentTestStmtsPerTestCase, connectedComponent, definitionPreq, readValues,
+			allTestStatements, assertions, mainClassName, prevFrontier);
+
+		if (testCasesToRemove.size() > 0)
+		{
+		    removingCorruptedTestCases(connectedComponent, testCasesToRemove);
+		    Settings.consoleLogger.error("retrying...");
+		    loop = true;
+		    connectedComponentsMap = new HashMap<String, List<String>>(connectedComponentsMapCpy);
+		    equivalentTestStmtsPerTestCase = getTheMapOfConnectedComponentsMap(connectedComponentsMapCpy);
+		    continue;
+		}
+
+		List<TestStatement> firstPhaseMergedPath = TestMerger.returnThePath(rootStmt, path);
+		paths.add(firstPhaseMergedPath);
+		paths.add(secondPhasePath);
+
+		ArrayList<TestStatement> arrMergedPath = new ArrayList<TestStatement>();
+		arrMergedPath.addAll(firstPhaseMergedPath);
+
+		int totalNumberOfStatements = allStates.size();
+		// - testCases.size();
+		int totalMerged = 0;
+		for (List<TestStatement> mpath : paths)
+		    totalMerged += mpath.size();
+
+		if (totalMerged < totalNumberOfStatements)
+		{
+		    mergedTestcaseName = TestCaseComposer.generateTestCaseName(connectedComponent);
+		    TestCaseComposer.composeTestCase(arrMergedPath, connectedComponent, mergedTestcaseName, readValues,
+			    definitionPreq, secondPhasePath);
+
+		    if (testCasesToRemove.size() > 0)
+		    {
+			removingCorruptedTestCases(connectedComponent, testCasesToRemove);
+			Settings.consoleLogger.error("retrying...");
+			loop = true;
+			equivalentTestStmtsPerTestCase = equivalentTestStmtsPerTestCaseCpy;
+			connectedComponentsMap = new HashMap<String, List<String>>(connectedComponentsMapCpy);
+			equivalentTestStmtsPerTestCase = getTheMapOfConnectedComponentsMap(connectedComponentsMapCpy);
+			continue;
+		    }
+
+		} else
+		{
+		    counter--;
+		    continue;
+		}
+
+		// }
+		// while (first != null);
+
+		Settings.consoleLogger.error(String.format("Before Merging : %d, After Merging %d, saved : %d",
+			totalNumberOfStatements, totalMerged, totalNumberOfStatements - totalMerged));
+
+		totalBeforeMerging += totalNumberOfStatements;
+		totalAftermerging += totalMerged;
+		numberOfMergedTests += connectedComponent.size();
+
+		writeStatToFileAndConsole(formatter, totalBeforeMerging, totalAftermerging, numberOfMergedTests,
+			counter, connectedComponent, mergedTestcaseName, mainClassName, totalNumberOfStatements,
+			totalMerged);
+
+		updateMergingResultStruct(mergedTestcaseName, totalNumberOfStatements, totalMerged);
 	    }
-
-	    // }
-	    // while (first != null);
-
-	    Settings.consoleLogger.error(String.format("Before Merging : %d, After Merging %d, saved : %d",
-		    totalNumberOfStatements, totalMerged, totalNumberOfStatements - totalMerged));
-
-	    totalBeforeMerging += totalNumberOfStatements;
-	    totalAftermerging += totalMerged;
-	    numberOfMergedTests += connectedComponent.size();
-
-	    writeStatToFileAndConsole(formatter, totalBeforeMerging, totalAftermerging, numberOfMergedTests, counter,
-		    connectedComponent, mergedTestcaseName, mainClassName, totalNumberOfStatements, totalMerged);
-
-	    updateMergingResultStruct(mergedTestcaseName, totalNumberOfStatements, totalMerged);
 	}
 
 	writeMergingResultsToFile(formatter);
@@ -344,6 +385,16 @@ public class BackwardTestMerger
 	return secondPhasePath;
     }
 
+    public static void populateStatementField(Map<String, Statement> allASTStatements,
+	    Map<String, TestStatement> allStatements)
+    {
+	for (Entry<String, TestStatement> entry : allStatements.entrySet())
+	{
+	    Statement stmt = allASTStatements.get(entry.getKey());
+	    entry.getValue().statement = stmt;
+	}
+    }
+
     private static void coverAllProductionCallingStmts(Map<String, List<String>> connectedComponentsMap,
 	    Map<String, Map<String, List<String>>> equivalentTestStmtsPerTestCase, Set<String> connectedComponent,
 	    Map<String, Set<VarDefinitionPreq>> definitionPreq, Map<String, Map<String, String>> readValues,
@@ -372,8 +423,9 @@ public class BackwardTestMerger
 			{
 			    Settings.consoleLogger.error(String.format("Couldn't satisfay %s - %s",
 				    allTestStatements.get(testStmt), testStmt));
+			    testCasesToRemove.add(Utils.getTestCaseNameFromTestStatement(testStmt));
 			    mergingResult.couldntsatisfy = true;
-			    continue;
+			    break;
 			}
 
 			for (TestStatement stmt : stmts)
@@ -406,7 +458,7 @@ public class BackwardTestMerger
 	    {
 		String testCase = testCaseEntry.getKey();
 		Set<String> assertionsToCover = testCaseEntry.getValue();
-		for (String assertion : assertionsToCover)
+		outer: for (String assertion : assertionsToCover)
 		{
 		    List<TestStatement> stmts = Planning.backward(allTestStatements.get(assertion), runningState,
 			    readValues, connectedComponentsMap, allStmtsView.get(testCase), definitionPreq);
@@ -428,7 +480,8 @@ public class BackwardTestMerger
 			Settings.consoleLogger.error(String.format("Couldn't satisfay %s - %s",
 				allTestStatements.get(assertion), assertion));
 			mergingResult.couldntsatisfy = true;
-			continue;
+			testCasesToRemove.add(Utils.getTestCaseNameFromTestStatement(assertion));
+			continue outer;
 		    }
 
 		    for (TestStatement stmt : stmts)
@@ -773,15 +826,19 @@ public class BackwardTestMerger
     }
 
     public static Map<String, Map<String, String>> getAllReadValues(List<String> testCases,
-	    Map<String, Set<VarDefinitionPreq>> definitionPreq, Set<String> corruptedTestCases) throws IOException
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq, Set<String> corruptedTestCases,
+	    Map<String, Statement> allASTStatements) throws IOException
     {
 	Map<String, Map<String, String>> readValues = new HashMap<String, Map<String, String>>();
 
 	for (String testCase : testCases)
 	{
+	    // if
+	    // (testCase.equals("org.apache.commons.math4.stat.regression.GLSMultipleLinearRegressionTest.testGLSEfficiency"))
+	    // System.out.println();
 	    // state1 -> <a, b, c>
-	    Map<String, Set<SimpleName>> readVars = ReadVariableDetector
-		    .populateReadVarsForTestCaseOfFile(Utils.getTestCaseFile(testCase), testCase, definitionPreq);
+	    Map<String, Set<SimpleName>> readVars = ReadVariableDetector.populateReadVarsForTestCaseOfFile(
+		    Utils.getTestCaseFile(testCase), testCase, definitionPreq, allASTStatements);
 
 	    // System.out.println(readVars);
 	    // ReadVariableDetector.accumulateReadVars(readVars);

@@ -12,6 +12,7 @@ import java.util.TreeMap;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AssertStatement;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.DoStatement;
@@ -109,6 +110,7 @@ public class InstrumenterVisitor extends ASTVisitor
 	// System.out.println(varDecs);
     }
 
+    
     public boolean visit(IfStatement node)
     {
 	addDumpCode(node, true);
@@ -157,6 +159,11 @@ public class InstrumenterVisitor extends ASTVisitor
 	return false;
     }
 
+    public boolean visit(AssertStatement node)
+  {
+	addDumpCode(node, true);
+	return false;
+  }
     public boolean visit(ExpressionStatement exp)
     {
 	Expression e = exp.getExpression();

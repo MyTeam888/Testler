@@ -972,7 +972,9 @@ public class TestCaseComposer
 	    {
 		Settings.consoleLogger.error(
 			String.format("something's wrong with %s--%s", stmt.getName(), stmt.statement.toString()));
+		BackwardTestMerger.testCasesToRemove.add(Utils.getTestCaseNameFromTestStatement(stmt.getName()));
 		BackwardTestMerger.mergingResult.fatalError = true;
+		BackwardTestMerger.testCasesToRemove.add(Utils.getTestCaseNameFromTestStatement(stmt.getName()));
 	    } else if (!varNameInState.contains(varNameInStmt))
 	    {
 		// TODO for choosing the varname do a edit distance and choose
@@ -1002,6 +1004,7 @@ public class TestCaseComposer
 		    Settings.consoleLogger.error(
 			    String.format("something's wrong with %s--%s", stmt.getName(), stmt.statement.toString()));
 		    BackwardTestMerger.mergingResult.fatalError = true;
+		    BackwardTestMerger.testCasesToRemove.add(Utils.getTestCaseNameFromTestStatement(stmt.getName()));
 		}
 	    } else
 	    {
@@ -1030,6 +1033,7 @@ public class TestCaseComposer
 		    Settings.consoleLogger.error(
 			    String.format("something's wrong with %s--%s", stmt.getName(), stmt.statement.toString()));
 		    BackwardTestMerger.mergingResult.fatalError = true;
+		    BackwardTestMerger.testCasesToRemove.add(Utils.getTestCaseNameFromTestStatement(stmt.getName()));
 		} else
 		{
 		    if (renameMap.containsKey(defPreq.getName().getIdentifier()))

@@ -36,6 +36,7 @@ import org.eclipse.text.edits.TextEdit;
 
 import ca.ubc.salt.model.instrumenter.ClassModel;
 import ca.ubc.salt.model.instrumenter.Method;
+import ca.ubc.salt.model.merger.BackwardTestMerger;
 import ca.ubc.salt.model.state.TestStatement;
 import ca.ubc.salt.model.utils.Settings;
 import ca.ubc.salt.model.utils.Utils;
@@ -122,6 +123,8 @@ public class ComposerHelper
     public static void writeBackMergedTestCases(List<TestStatement> originalStatements, Set<String> testCases,
 	    String name, Map<String, Set<String>> testClasses, String mainClassName) throws IOException
     {
+	if (BackwardTestMerger.testCasesToRemove.size() > 0)
+	    return;
 
 	// class -> testCases
 	renameMethodCalls(originalStatements, mainClassName);
