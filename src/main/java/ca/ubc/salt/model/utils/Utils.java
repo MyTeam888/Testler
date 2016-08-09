@@ -51,6 +51,20 @@ public class Utils
 	classFileMapping = getClassFileMapping();
     }
 
+    
+    public static String getNamePrecision(String className, int precision)
+    {
+	for (int i = className.length() - 1; i >= 0; i--)
+	{
+	    if (className.charAt(i) == '.')
+	    {
+		precision--;
+		if (precision == 0)
+		    return className.substring(i + 1);
+	    }
+	}
+	return "";
+    }
     public static <T> Set intersection(List<Set<T>> sets)
     {
 	Set common = new HashSet();
