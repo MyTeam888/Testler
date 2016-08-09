@@ -358,7 +358,8 @@ public class Utils
     
     public static String getTestClassNameFromTestStatement(String testStatement)
     {
-	int index = testStatement.indexOf('.');
+	String testCaseName = getTestCaseNameFromTestStatement(testStatement);
+	int index = testCaseName.lastIndexOf('.');
 	return testStatement.substring(0, index);
     }
     

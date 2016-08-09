@@ -149,7 +149,7 @@ public class ComposerHelper
 	    for (ClassModel clazz : classes)
 	    {
 
-		if (clazz.getTypeDec().getName().toString().equals(testClassName))
+		if (clazz.name.equals(testClassName))
 		{
 
 		    ListRewrite listRewrite = rewriter.getListRewrite(clazz.getTypeDec(),

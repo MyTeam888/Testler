@@ -74,10 +74,9 @@ public class TestCaseComposer
     static
     {
 	nameValuePairs = CacheBuilder.newBuilder().maximumSize(1000)
-		.build(new CacheLoader<String, Map<String, String>>()
-		{ // build
-		  // the
-		  // cacheloader
+		.build(new CacheLoader<String, Map<String, String>>() { // build
+									// the
+									// cacheloader
 
 		    @Override
 		    public Map<String, String> load(String stmt) throws Exception
@@ -163,13 +162,14 @@ public class TestCaseComposer
     }
 
     public static ASTNode rename(ASTNode stmt, Map<String, SimpleName> vars, Map<String, String> renameSet,
-	    Map<String, String> castToMap)
+	    Map<String, Pair<String, String>> castToMap)
     {
 
 	ASTNode cpyStmt = ASTNode.copySubtree(stmt.getAST(), stmt);
 	List<SimpleName> cpyVars = getSimpleNamesInTheStatement(cpyStmt, vars.values());
 	for (SimpleName var : cpyVars)
 	{
+	    boolean leftHandSide = false;
 	    String renamedVar = renameSet.get(var.getIdentifier());
 	    if (renamedVar == null && castToMap != null && castToMap.containsKey(var.getIdentifier()))
 		renamedVar = var.getIdentifier();
@@ -187,17 +187,29 @@ public class TestCaseComposer
 		{
 		    if (isLeftHandSide(parentNode, var))
 		    {
-			castToMap = null;
+			if (castToMap != null && castToMap.containsKey(var.getIdentifier()))
+			{
+			    Assignment a = (Assignment) parentNode;
+			    AST ast = a.getAST();
+			    ParenthesizedExpression pe = ast.newParenthesizedExpression();
+//			    Expression reCpy = (Expression) ASTNode.copySubtree(ast, a.getRightHandSide());
+			    Expression reCpy = a.getRightHandSide();
+			    a.setRightHandSide(ast.newParenthesizedExpression());
+			    pe.setExpression((Expression) getCastStructure(castToMap.get(var.getIdentifier()).getFirst(), var.getIdentifier(), ast,
+				    reCpy));
+			    a.setRightHandSide(pe);
+			}
+			leftHandSide = true;
 		    }
 
-		    int index = renamedVar.indexOf('.');
+		    int index = renamedVar.lastIndexOf('.');
 		    if (index == -1)
 		    {
-			if (castToMap != null && castToMap.containsKey(var.getIdentifier()))
+			if (leftHandSide == false && castToMap != null && castToMap.containsKey(var.getIdentifier()))
 			{
 			    AST ast = var.getAST();
 			    SimpleName varCpy = ast.newSimpleName(renamedVar);
-			    ASTNode replacement = getCastStructure(castToMap, var.getIdentifier(), ast, varCpy);
+			    ASTNode replacement = getCastStructure(castToMap.get(var.getIdentifier()).getSecond(), var.getIdentifier(), ast, varCpy);
 			    replaceSimpleNameWithASTNode(var, parentNode, replacement);
 			} else
 			    var.setIdentifier(renamedVar);
@@ -209,9 +221,9 @@ public class TestCaseComposer
 			AST ast = parentNode.getAST();
 
 			ASTNode replacement = ast.newQualifiedName(ast.newName(q), ast.newSimpleName(v));
-			if (castToMap != null && castToMap.containsKey(var.getIdentifier()))
+			if (leftHandSide == false && castToMap != null && castToMap.containsKey(var.getIdentifier()))
 			{
-			    replacement = getCastStructure(castToMap, var.getIdentifier(), ast, replacement);
+			    replacement = getCastStructure(castToMap.get(var.getIdentifier()).getSecond(), var.getIdentifier(), ast, replacement);
 			}
 
 			replaceSimpleNameWithASTNode(var, parentNode, replacement);
@@ -225,18 +237,14 @@ public class TestCaseComposer
 
     private static boolean isLeftHandSide(ASTNode parentNode, SimpleName sn)
     {
-	if (parentNode.getNodeType() == ASTNode.EXPRESSION_STATEMENT)
+	if (parentNode.getNodeType() == ASTNode.ASSIGNMENT)
 	{
-	    Expression exp = ((ExpressionStatement) parentNode).getExpression();
-	    if (exp instanceof Assignment)
+	    Assignment a = (Assignment) parentNode;
+	    if (a.getLeftHandSide().getNodeType() == ASTNode.SIMPLE_NAME)
 	    {
-		Assignment a = (Assignment) exp;
-		if (a.getLeftHandSide().getNodeType() == ASTNode.SIMPLE_NAME)
-		{
-		    SimpleName left = (SimpleName) a.getLeftHandSide();
-		    if (left.equals(sn))
-			return true;
-		}
+		SimpleName left = (SimpleName) a.getLeftHandSide();
+		if (left.equals(sn))
+		    return true;
 	    }
 	}
 	return false;
@@ -312,9 +320,9 @@ public class TestCaseComposer
 
     }
 
-    private static ASTNode getCastStructure(Map<String, String> castToMap, String varName, AST ast, ASTNode replacement)
+    private static ASTNode getCastStructure(String type, String varName, AST ast, ASTNode replacement)
     {
-	String type = castToMap.get(varName);
+//	String type = castToMap.get(varName).getSecond();
 	CastExpression ce = ast.newCastExpression();
 	ce.setExpression((Expression) replacement);
 
@@ -820,7 +828,7 @@ public class TestCaseComposer
 	else
 	    renameMap = statement.renameMap;
 
-	Map<String, String> castToMap = new HashMap<String, String>();
+	Map<String, Pair<String, String>> castToMap = new HashMap<String, Pair<String, String>>();
 
 	findPreqVarsRenames(statement, valueNamePairForCurrentState, renameMap, readVals, definitionPreq, batchRename,
 		castToMap);
@@ -939,7 +947,7 @@ public class TestCaseComposer
     private static void findPreqVarsRenames(TestStatement stmt, RunningState runningState,
 	    Map<String, String> renameMap, Map<String, Map<String, String>> readVals,
 	    Map<String, Set<VarDefinitionPreq>> definitionPreq, Map<String, String> batchRename,
-	    Map<String, String> castToMap)
+	    Map<String, Pair<String, String>> castToMap)
     {
 	// if
 	// (stmt.statement.toString().contains("Assert.assertTrue(mColumn3[0]"))
@@ -981,7 +989,7 @@ public class TestCaseComposer
 			    String typeInState = runningState.getType(name);
 			    if (!typeInState.equals(typeInStmt))
 			    {
-				castToMap.put(varNameInStmt, typeInStmt);
+				castToMap.put(varNameInStmt, new Pair<String, String>(typeInState, typeInStmt));
 			    }
 			}
 			chosenNames.add(name);
@@ -1004,7 +1012,7 @@ public class TestCaseComposer
 		    String typeInState = runningState.getType(varNameInStmt);
 		    if (!typeInState.equals(typeInStmt))
 		    {
-			castToMap.put(varNameInStmt, typeInStmt);
+			castToMap.put(varNameInStmt, new Pair<String, String>(typeInState, typeInStmt));
 		    }
 		}
 	    }

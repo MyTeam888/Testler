@@ -27,15 +27,16 @@ public class ClassModel
     List<FieldDeclaration> fields = null;
     List<FieldDeclaration> allFields = null;
     List<Method> methods = null;
-    String name;
+    public String name;
     
     
     public boolean isInstrumentable()
     {
 	boolean abstrc = isAbstract();
 
-	return typeDec.getSuperclassType() == null && typeDec.superInterfaceTypes().isEmpty() && !typeDec.isInterface()
-		&& !abstrc;
+	return !abstrc;
+//	return typeDec.getSuperclassType() == null && typeDec.superInterfaceTypes().isEmpty() && !typeDec.isInterface()
+//		&& !abstrc;
     }
 
     public boolean isAbstract()
@@ -123,7 +124,7 @@ public class ClassModel
 	    // for (VariableDeclarationFragment var : visitor.varDecs)
 	    // System.out.println(" " + var.getName());
 
-	    Method method = new Method(m, typeDec.getName().toString(), this);
+	    Method method = new Method(m, typeDec.resolveBinding().getQualifiedName().toString(), this);
 	    methods.add(method);
 	}
     }
