@@ -265,7 +265,7 @@ public class TestClassInstrumenter
 
     public static ASTNode generateFooterBlock(int randomNumber)
     {
-	return Utils.createBlockWithText("InstrumentClassGenerator.close()");
+	return Utils.createBlockWithText("InstrumentClassGenerator.traceLoop();");
     }
 
     public static ASTNode generateInstrumentationBlock(int randomNumber,

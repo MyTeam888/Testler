@@ -32,6 +32,7 @@ import org.eclipse.text.edits.TextEdit;
 
 import ca.ubc.salt.model.state.ReadVariableVisitor;
 import ca.ubc.salt.model.state.VarDefinitionPreq;
+import ca.ubc.salt.model.utils.Utils;
 
 public class Method
 {
@@ -79,6 +80,12 @@ public class Method
 	InstrumenterVisitor visitor = new InstrumenterVisitor(rewriter, randomNumber, methodDec.getName().toString());
 	visitor.addFieldVars(this.clazz);
 	this.methodDec.accept(visitor);
+	
+	ASTNode loopCode = Utils.createBlockWithText("InstrumentClassGenerator.traceLoop();");
+	listRewrite.insertLast(loopCode, null);
+	
+	
+	
 
 	// apply the text edits to the compilation unit
 
