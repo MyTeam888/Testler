@@ -167,6 +167,7 @@ public class TestCaseComposer
 
 	ASTNode cpyStmt = ASTNode.copySubtree(stmt.getAST(), stmt);
 	List<SimpleName> cpyVars = getSimpleNamesInTheStatement(cpyStmt, vars.values());
+	
 	for (SimpleName var : cpyVars)
 	{
 	    boolean leftHandSide = false;
@@ -232,6 +233,11 @@ public class TestCaseComposer
 	    }
 	}
 
+	if (cpyStmt instanceof VariableDeclarationStatement)
+	{
+	    VariableDeclarationStatement vds = (VariableDeclarationStatement) cpyStmt;
+	    vds.modifiers().clear();
+	}
 	return cpyStmt;
     }
 
@@ -519,7 +525,7 @@ public class TestCaseComposer
     public static List<MethodInvocation> getTestMethodInvocations(TestStatement stmt)
     {
 	TestMethodInvocationVisitor smiv = new TestMethodInvocationVisitor(
-		Utils.getTestClassNameFromTestStatement(stmt.getName()));
+		Utils.getTestCaseName(Utils.getTestClassNameFromTestStatement(stmt.getName())));
 	stmt.statement.accept(smiv);
 	return smiv.getMethodInvocations();
     }

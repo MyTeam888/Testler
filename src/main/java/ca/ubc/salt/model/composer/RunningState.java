@@ -233,7 +233,7 @@ public class RunningState
 	    {
 		String name = entry.getKey();
 		if (!testClass.equals(mainTestClass))
-		    name = testClass.toLowerCase() + "." + name;
+		    name = Utils.getTestCaseName(testClass.toLowerCase()) + "." + name;
 		this.put(name, entry.getValue(), getTypeOfValue(entry.getValue()));
 	    }
 	    done.add(testClass);

@@ -80,7 +80,7 @@ public class ComposerHelper
 	for (String clazz : classes)
 	{
 	    if (!clazz.equals(mainTestClass))
-		sb.append(String.format("%s %s = new %s();", clazz, clazz.toLowerCase(), clazz));
+		sb.append(String.format("%s %s = new %s();", clazz, Utils.getTestCaseName(clazz.toLowerCase()), clazz));
 	}
 
 	return Utils.createBlockWithText(sb.toString());
@@ -114,7 +114,7 @@ public class ComposerHelper
 		// + Utils.getTestClassNameFromTestStatement(stmt.getName());
 		// methodCall.setName(methodCall.getAST().newSimpleName(renamedVar));
 		methodCall.setExpression(methodCall.getAST()
-			.newSimpleName(Utils.getTestClassNameFromTestStatement(stmt.getName()).toLowerCase()));
+			.newSimpleName(Utils.getTestCaseName(Utils.getTestClassNameFromTestStatement(stmt.getName())).toLowerCase()));
 	    }
 	}
 	return cpyStmt;
