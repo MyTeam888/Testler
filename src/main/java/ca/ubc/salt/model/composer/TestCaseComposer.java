@@ -167,7 +167,7 @@ public class TestCaseComposer
 
 	ASTNode cpyStmt = ASTNode.copySubtree(stmt.getAST(), stmt);
 	List<SimpleName> cpyVars = getSimpleNamesInTheStatement(cpyStmt, vars.values());
-	
+
 	for (SimpleName var : cpyVars)
 	{
 	    boolean leftHandSide = false;
@@ -193,11 +193,12 @@ public class TestCaseComposer
 			    Assignment a = (Assignment) parentNode;
 			    AST ast = a.getAST();
 			    ParenthesizedExpression pe = ast.newParenthesizedExpression();
-//			    Expression reCpy = (Expression) ASTNode.copySubtree(ast, a.getRightHandSide());
+			    // Expression reCpy = (Expression)
+			    // ASTNode.copySubtree(ast, a.getRightHandSide());
 			    Expression reCpy = a.getRightHandSide();
 			    a.setRightHandSide(ast.newParenthesizedExpression());
-			    pe.setExpression((Expression) getCastStructure(castToMap.get(var.getIdentifier()).getFirst(), var.getIdentifier(), ast,
-				    reCpy));
+			    pe.setExpression((Expression) getCastStructure(
+				    castToMap.get(var.getIdentifier()).getFirst(), var.getIdentifier(), ast, reCpy));
 			    a.setRightHandSide(pe);
 			}
 			leftHandSide = true;
@@ -210,7 +211,8 @@ public class TestCaseComposer
 			{
 			    AST ast = var.getAST();
 			    SimpleName varCpy = ast.newSimpleName(renamedVar);
-			    ASTNode replacement = getCastStructure(castToMap.get(var.getIdentifier()).getSecond(), var.getIdentifier(), ast, varCpy);
+			    ASTNode replacement = getCastStructure(castToMap.get(var.getIdentifier()).getSecond(),
+				    var.getIdentifier(), ast, varCpy);
 			    replaceSimpleNameWithASTNode(var, parentNode, replacement);
 			} else
 			    var.setIdentifier(renamedVar);
@@ -224,7 +226,8 @@ public class TestCaseComposer
 			ASTNode replacement = ast.newQualifiedName(ast.newName(q), ast.newSimpleName(v));
 			if (leftHandSide == false && castToMap != null && castToMap.containsKey(var.getIdentifier()))
 			{
-			    replacement = getCastStructure(castToMap.get(var.getIdentifier()).getSecond(), var.getIdentifier(), ast, replacement);
+			    replacement = getCastStructure(castToMap.get(var.getIdentifier()).getSecond(),
+				    var.getIdentifier(), ast, replacement);
 			}
 
 			replaceSimpleNameWithASTNode(var, parentNode, replacement);
@@ -328,7 +331,7 @@ public class TestCaseComposer
 
     private static ASTNode getCastStructure(String type, String varName, AST ast, ASTNode replacement)
     {
-//	String type = castToMap.get(varName).getSecond();
+	// String type = castToMap.get(varName).getSecond();
 	CastExpression ce = ast.newCastExpression();
 	ce.setExpression((Expression) replacement);
 
@@ -724,7 +727,7 @@ public class TestCaseComposer
 		Utils.getClassFileForProjectPath(mainClassName, Settings.PROJECT_MERGED_PATH));
     }
 
-    static Document getDocumentForClassName(String testClassName) throws IOException
+    public static Document getDocumentForClassName(String testClassName) throws IOException
     {
 	String testClassPath = Utils.getClassFileForProjectPath(testClassName, Settings.PROJECT_MERGED_PATH);
 
@@ -801,7 +804,7 @@ public class TestCaseComposer
 
     }
 
-    static void removeTestCasesFromTestClass(ClassModel clazz, Set<String> testCasesOfClass, ASTRewrite rewrite)
+    public static void removeTestCasesFromTestClass(ClassModel clazz, Set<String> testCasesOfClass, ASTRewrite rewrite)
     {
 	// Settings.consoleLogger.error(String.format("removing %s from %s",
 	// testCasesOfClass, clazz.getTypeDec().getName().toString()));
@@ -819,6 +822,57 @@ public class TestCaseComposer
 		MarkerAnnotation ma = ast.newMarkerAnnotation();
 		ma.setTypeName(ast.newName("Ignore"));
 		listRewrite.insertFirst(ma, null);
+	    }
+	}
+
+    }
+    
+    public static void removeTestCasesFromTestClass(ClassModel clazz, Set<String> testCasesOfClass)
+    {
+	// Settings.consoleLogger.error(String.format("removing %s from %s",
+	// testCasesOfClass, clazz.getTypeDec().getName().toString()));
+	List<Method> methods = clazz.getMethods();
+
+	for (Method m : methods)
+	{
+	    String methodName = m.getFullMethodName();
+	    if (testCasesOfClass.contains(methodName))
+	    {
+		AST ast = m.getMethodDec().getAST();
+		MarkerAnnotation ma = ast.newMarkerAnnotation();
+		ma.setTypeName(ast.newName("Ignore"));
+		m.getMethodDec().modifiers().add(ma);
+	    }
+	}
+
+    }
+
+    public static void reAddTestCasesFromTestClass(ClassModel clazz, Set<String> testCasesOfClass, ASTRewrite rewrite)
+    {
+	// Settings.consoleLogger.error(String.format("removing %s from %s",
+	// testCasesOfClass, clazz.getTypeDec().getName().toString()));
+	List<Method> methods = clazz.getMethods();
+
+	for (Method m : methods)
+	{
+	    String methodName = m.getFullMethodName();
+	    if (testCasesOfClass.contains(methodName))
+	    {
+		ListRewrite listRewrite = rewrite.getListRewrite(m.getMethodDec(),
+			MethodDeclaration.MODIFIERS2_PROPERTY);
+		List modifs = m.getMethodDec().modifiers();
+		for (Iterator it = modifs.listIterator(); it.hasNext();)
+		{
+		    Object obj = it.next();
+		    if (obj instanceof MarkerAnnotation)
+		    {
+			MarkerAnnotation ma = (MarkerAnnotation) obj;
+			if (ma.getTypeName().toString().contains("Ignore"))
+			{
+			    listRewrite.remove(ma, null);
+			}
+		    }
+		}
 	    }
 	}
 
