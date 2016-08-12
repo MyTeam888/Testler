@@ -1,5 +1,6 @@
 package ca.ubc.salt.model.instrumenter;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -46,8 +47,26 @@ public class Method
 	this.className = className;
 	this.clazz = clazz;
     }
+    
+    public boolean isIgnored()
+    {
+	List modifs = this.getMethodDec().modifiers();
+	for (Iterator it = modifs.listIterator(); it.hasNext();)
+	{
+	    Object obj = it.next();
+	    if (obj instanceof MarkerAnnotation)
+	    {
+		MarkerAnnotation ma = (MarkerAnnotation) obj;
+		if (ma.getTypeName().toString().contains("Ignore"))
+		{
+		    return true;
+		}
+	    }
+	}
+	return false;
+    }
 
-    public void instrumentTestMethod(ASTRewrite rewriter, Document document, List<String> loadedClassVars,
+    public void instrumentTestMethod(ASTRewrite rewriter, List<String> loadedClassVars,
 	    String fileName, boolean start)
 	    throws JavaModelException, IllegalArgumentException, MalformedTreeException, BadLocationException
     {

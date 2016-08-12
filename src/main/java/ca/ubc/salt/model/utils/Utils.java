@@ -51,7 +51,6 @@ public class Utils
 	classFileMapping = getClassFileMapping();
     }
 
-    
     public static String getNamePrecision(String className, int precision)
     {
 	for (int i = className.length() - 1; i >= 0; i--)
@@ -65,6 +64,7 @@ public class Utils
 	}
 	return "";
     }
+
     public static <T> Set intersection(List<Set<T>> sets)
     {
 	Set common = new HashSet();
@@ -214,7 +214,7 @@ public class Utils
 	}
 	list.add(value);
     }
-    
+
     public static <K, V> void addAllTheSetInMap(Map<K, Set<V>> map, K key, Set<V> value)
     {
 	Set<V> list = map.get(key);
@@ -227,7 +227,7 @@ public class Utils
 	}
 	list.addAll(value);
     }
-    
+
     public static <K, V> void addAllTheListInMap(Map<K, List<V>> map, K key, List<V> value)
     {
 	List<V> list = map.get(key);
@@ -240,10 +240,7 @@ public class Utils
 	}
 	list.addAll(value);
     }
-    
-    
-    
-    
+
     public static <K, V> boolean containsInSetInMap(Map<K, Set<V>> map, K key, V value)
     {
 	Set<V> set = map.get(key);
@@ -252,7 +249,7 @@ public class Utils
 	    return false;
 	}
 	return set.contains(value);
-	}
+    }
 
     public static <K1, K2, V> void addToTheMapInMap(Map<K1, Map<K2, V>> map, K1 key1, K2 key2, V value)
     {
@@ -264,18 +261,16 @@ public class Utils
 	}
 	m.put(key2, value);
     }
-    
+
     public static <K, V> void removeFromTheSetInMap(Map<K, Set<V>> map, K key, V value)
     {
 	Set<V> list = map.get(key);
 	if (list != null)
 	{
 	    list.remove(value);
-	}
-	else
+	} else
 	    map.remove(key);
     }
-    
 
     public static String getTestCaseName(String testCase)
     {
@@ -326,7 +321,8 @@ public class Utils
 
     public static String nextOrPrevState(String state, ArrayList<String> sortedTestStatements, boolean next)
     {
-//	int index = Collections.binarySearch(sortedTestStatements, state, new NaturalOrderComparator());
+	// int index = Collections.binarySearch(sortedTestStatements, state, new
+	// NaturalOrderComparator());
 	int index = sortedTestStatements.indexOf(state);
 	if (index == -1 || (next && index == sortedTestStatements.size() - 1) || (!next && index == 0))
 	    return "";
@@ -354,15 +350,21 @@ public class Utils
 	String[] split = state.split("-");
 	return split;
     }
-    
-    
+
     public static String getTestClassNameFromTestStatement(String testStatement)
     {
-	String testCaseName = getTestCaseNameFromTestStatement(testStatement);
-	int index = testCaseName.lastIndexOf('.');
-	return testStatement.substring(0, index);
+	try
+	{
+	    String testCaseName = getTestCaseNameFromTestStatement(testStatement);
+	    int index = testCaseName.lastIndexOf('.');
+	    return testStatement.substring(0, index);
+	} catch (Exception e)
+	{
+	    Settings.consoleLogger.error("there is a state name " + testStatement);
+	    return "";
+	}
     }
-    
+
     public static Set<String> getNames(Collection<MethodInvocation> methodCalls)
     {
 	Set<String> nameSet = new HashSet<String>();
@@ -370,7 +372,7 @@ public class Utils
 	{
 	    nameSet.add(mi.getName().getIdentifier());
 	}
-	
+
 	return nameSet;
     }
 
@@ -402,35 +404,35 @@ public class Utils
 
     public static void addImports(Document document, Collection<String> imports)
     {
-        ASTParser parser = ASTParser.newParser(AST.JLS8);
-        parser.setKind(ASTParser.K_COMPILATION_UNIT);
-        Map<String, String> pOptions = JavaCore.getOptions();
-        pOptions.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_8);
-        pOptions.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_8);
-        pOptions.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_8);
-        parser.setCompilerOptions(pOptions);
-    
-        parser.setSource(document.get().toCharArray());
-        CompilationUnit cu = (CompilationUnit) parser.createAST(null);
-    
-        addImports(document, imports, cu);
-    
+	ASTParser parser = ASTParser.newParser(AST.JLS8);
+	parser.setKind(ASTParser.K_COMPILATION_UNIT);
+	Map<String, String> pOptions = JavaCore.getOptions();
+	pOptions.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_8);
+	pOptions.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_8);
+	pOptions.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_8);
+	parser.setCompilerOptions(pOptions);
+
+	parser.setSource(document.get().toCharArray());
+	CompilationUnit cu = (CompilationUnit) parser.createAST(null);
+
+	addImports(document, imports, cu);
+
     }
 
     private static void addImports(Document document, Collection<String> imports, CompilationUnit cu)
     {
 	cu.recordModifications();
-    
-        // String[] imports = new String[] { "java.io.FileWriter",
-        // "java.io.IOException", "java.io.ObjectOutputStream",
-        // "com.thoughtworks.xstream.XStream",
-        // "com.thoughtworks.xstream.io.xml.StaxDriver" };
-        for (String name : imports)
-            addImport(cu, name);
-    
-        TextEdit edits = cu.rewrite(document, null);
-    
-        try
+
+	// String[] imports = new String[] { "java.io.FileWriter",
+	// "java.io.IOException", "java.io.ObjectOutputStream",
+	// "com.thoughtworks.xstream.XStream",
+	// "com.thoughtworks.xstream.io.xml.StaxDriver" };
+	for (String name : imports)
+	    addImport(cu, name);
+
+	TextEdit edits = cu.rewrite(document, null);
+
+	try
 	{
 	    edits.apply(document);
 	} catch (MalformedTreeException | BadLocationException e)
@@ -439,7 +441,7 @@ public class Utils
 	    e.printStackTrace();
 	}
     }
-    
+
     public static void addImport(CompilationUnit cu, String name)
     {
 	AST ast = cu.getAST();
@@ -451,30 +453,29 @@ public class Utils
     // could be improved later !
     public static String getTestClassWithMaxNumberOfTestCases(Map<String, Set<String>> map)
     {
-        int max = Integer.MIN_VALUE;
-        String maxTestClass = null;
-        for (Entry<String, Set<String>> entry : map.entrySet())
-        {
-            if (max < entry.getValue().size())
-            {
-        	max = entry.getValue().size();
-        	maxTestClass = entry.getKey();
-            }
-        }
-    
-        return maxTestClass;
+	int max = Integer.MIN_VALUE;
+	String maxTestClass = null;
+	for (Entry<String, Set<String>> entry : map.entrySet())
+	{
+	    if (max < entry.getValue().size())
+	    {
+		max = entry.getValue().size();
+		maxTestClass = entry.getKey();
+	    }
+	}
+
+	return maxTestClass;
     }
 
     public static Map<String, List<String>> cloneListInMap(Map<String, List<String>> toBeClonedMap)
     {
-        Map<String, List<String>> uncoveredStmts = new TreeMap<String, List<String>>(new NaturalOrderComparator());
-        for (Entry<String, List<String>> entry : toBeClonedMap.entrySet())
-        {
-            addAllTheListInMap(uncoveredStmts, entry.getKey(), entry.getValue());
-            
-        }
-        return uncoveredStmts;
-    }
+	Map<String, List<String>> uncoveredStmts = new TreeMap<String, List<String>>(new NaturalOrderComparator());
+	for (Entry<String, List<String>> entry : toBeClonedMap.entrySet())
+	{
+	    addAllTheListInMap(uncoveredStmts, entry.getKey(), entry.getValue());
 
+	}
+	return uncoveredStmts;
+    }
 
 }

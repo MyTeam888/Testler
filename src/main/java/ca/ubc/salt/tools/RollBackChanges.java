@@ -46,7 +46,7 @@ public class RollBackChanges
 	    if (testsTobeRolledBack.contains(mr.getMergedTestCaseName()))
 		rollBackChanges(mr);
 	}
-	
+
 	System.out.println("done!");
 
     }
@@ -91,7 +91,7 @@ public class RollBackChanges
 
 	String mergedTestCaseClass = mergingResult.getMergedClassName();
 	Set<String> mergedTestCase = new HashSet<String>();
-	mergedTestCase.add(mergingResult.getMergedTestCaseName());
+	mergedTestCase.add(mergedTestCaseClass + "." + mergingResult.getMergedTestCaseName());
 
 	Document document = TestCaseComposer.getDocumentForClassName(mergedTestCaseClass);
 	String testClassPath = Utils.getClassFileForProjectPath(mergedTestCaseClass, Settings.PROJECT_MERGED_PATH);

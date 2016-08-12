@@ -15,11 +15,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.sound.midi.Instrument;
+
 import Comparator.NaturalOrderComparator;
 
 import java.util.Scanner;
 import java.util.Set;
 
+import ca.ubc.salt.model.instrumenter.Instrumenter;
 import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Settings;
 import ca.ubc.salt.model.utils.Utils;
@@ -36,7 +39,8 @@ public class ProductionCallingTestStatement
     public static List<Set<String>> getTestCasesThatShareTestStatement(int cutOff,
 	    Map<String, List<String>> uniqueTestStatements)
     {
-	Map<String, Map<String, Integer>> conGraph = getConnectivityGraph(uniqueTestStatements);
+	Map<String, Map<String, Integer>> conGraph = new HashMap<String, Map<String, Integer>>();
+	conGraph = getConnectivityGraph(uniqueTestStatements, conGraph);
 
 	System.out.println(conGraph);
 	Set<String> visited = new HashSet<String>();
@@ -55,14 +59,40 @@ public class ProductionCallingTestStatement
 
     }
 
-    public static Map<String, List<String>> convertTheSetToMap(Map<String, List<String>> uniqueTestStatements)
+    public static List<Set<String>> getTestCasesThatShareTestStatement(int cutOff,
+	    List<Map<String, List<String>>> uniqueTestStatementsSet)
+    {
+	Map<String, Map<String, Integer>> conGraph = new HashMap<String, Map<String, Integer>>();
+	for (Map<String, List<String>> uniqueTestStatements : uniqueTestStatementsSet)
+	    conGraph = getConnectivityGraph(uniqueTestStatements, conGraph);
+
+	System.out.println(conGraph);
+	Set<String> visited = new HashSet<String>();
+	List<Set<String>> connectedComponents = new LinkedList<Set<String>>();
+
+	for (Entry<String, Map<String, Integer>> entry : conGraph.entrySet())
+	{
+	    if (!visited.contains(entry.getKey()))
+	    {
+		Set<String> connectedComponent = BFS(entry.getKey(), conGraph, visited, cutOff);
+		connectedComponents.add(connectedComponent);
+	    }
+	}
+
+	return connectedComponents;
+
+    }
+
+    public static Map<String, List<String>> convertTheSetToMap(List<Map<String, List<String>>> uniqueTestStatementsSet)
     {
 	Map<String, List<String>> connectedComponentMap = new HashMap<String, List<String>>();
-	for (Entry<String, List<String>> connectedComponent : uniqueTestStatements.entrySet())
-	    for (String testState : connectedComponent.getValue())
-	    {
-		connectedComponentMap.put(testState, connectedComponent.getValue());
-	    }
+	for (Map<String, List<String>> uniqueTestStatements : uniqueTestStatementsSet)
+	    for (Entry<String, List<String>> connectedComponent : uniqueTestStatements.entrySet())
+		for (String testState : connectedComponent.getValue())
+		{
+		    Utils.addAllTheListInMap(connectedComponentMap, testState, connectedComponent.getValue());
+//		    connectedComponentMap.put(testState, connectedComponent.getValue());
+		}
 
 	return connectedComponentMap;
 
@@ -103,9 +133,8 @@ public class ProductionCallingTestStatement
     // returns the graph, edges are weighted, the map is from each node to set
     // of its neighbors
     private static Map<String, Map<String, Integer>> getConnectivityGraph(
-	    Map<String, List<String>> uniqueTestStatements)
+	    Map<String, List<String>> uniqueTestStatements, Map<String, Map<String, Integer>> conGraph)
     {
-	Map<String, Map<String, Integer>> conGraph = new HashMap<String, Map<String, Integer>>();
 
 	for (Entry<String, List<String>> entry : uniqueTestStatements.entrySet())
 	{
@@ -291,6 +320,8 @@ public class ProductionCallingTestStatement
 
 	for (File trace : traces)
 	{
+	    if (Instrumenter.parameterizedClasses.contains(Utils.getTestClassNameFromTestStatement(trace.getName())))
+		continue;
 	    String methodCalled = FileUtils.getMethodCalled(trace);
 	    if (methodCalled == null || methodCalled == "")
 		continue;
@@ -319,4 +350,52 @@ public class ProductionCallingTestStatement
 
 	return uniqueTestStatements;
     }
+
+    public static Map<String, List<String>> getUniqueTestStatementsForTestClass(String testClass)
+    {
+
+	Map<String, List<String>> uniqueTestStatements = new HashMap<String, List<String>>();
+
+	File folder = new File(Settings.tracePaths);
+
+	String[] tracesNames = folder.list();
+	ArrayList<String> tracesStrs = new ArrayList(Arrays.asList(tracesNames));
+	Collections.sort(tracesStrs, new NaturalOrderComparator());
+
+	File[] traces = folder.listFiles();
+	int counter = 1;
+
+	for (File trace : traces)
+	{
+	    if (!testClass.equals(Utils.getTestClassNameFromTestStatement(trace.getName())))
+		continue;
+	    String methodCalled = FileUtils.getMethodCalled(trace);
+	    if (methodCalled == null || methodCalled == "")
+		continue;
+	    List<String> states = uniqueTestStatements.get(methodCalled);
+	    String traceName = Utils.nextOrPrevState(trace.getName(), tracesStrs, false);
+	    String nextTraceName = Utils.nextOrPrevState(trace.getName(), tracesStrs, true);
+	    if (!traceName.equals("") && !nextTraceName.equals(""))
+	    {
+		if (states == null)
+		{
+		    states = new LinkedList<String>();
+		    states.add(traceName);
+		    uniqueTestStatements.put(methodCalled, states);
+		} else
+		    states.add(traceName);
+	    }
+
+	    counter++;
+	    if (counter % 1000 == 0)
+		Settings.consoleLogger.error(String.format("processed %d logs", counter));
+
+	}
+
+	// uniqueTestStatements.remove(null);
+	// uniqueTestStatements.remove("");
+
+	return uniqueTestStatements;
+    }
+
 }

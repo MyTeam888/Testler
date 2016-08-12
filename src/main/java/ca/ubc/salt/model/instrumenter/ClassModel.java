@@ -18,6 +18,7 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 
 import ca.ubc.salt.model.utils.FileUtils;
+import ca.ubc.salt.model.utils.Utils;
 
 public class ClassModel
 {
@@ -32,12 +33,15 @@ public class ClassModel
     
     public boolean isInstrumentable()
     {
-	boolean abstrc = isAbstract();
-
-
-	return !abstrc;
+//	boolean abstrc = isAbstract();
+//
+//
+////	return !abstrc;
 //	return typeDec.getSuperclassType() == null && typeDec.superInterfaceTypes().isEmpty() && !typeDec.isInterface()
 //		&& !abstrc;
+	if (Instrumenter.parentClassDependency.containsKey(Utils.getTestCaseName(this.name)) == false)
+	    return true;
+	return false;
 
     }
 
@@ -62,6 +66,8 @@ public class ClassModel
 	this.cu = cu;
 	this.name = typeDec.resolveBinding().getQualifiedName();
     }
+    
+    
 
     public static List<ClassModel> getClasses(String source) throws IOException
     {

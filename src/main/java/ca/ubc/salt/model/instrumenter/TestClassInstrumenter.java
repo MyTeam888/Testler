@@ -69,9 +69,11 @@ public class TestClassInstrumenter
 	    Document document = new Document(source);
 	    List<ClassModel> classes = ClassModel.getClasses(document.get(), true, testClassPath,
 		    new String[] { Settings.PROJECT_PATH }, new String[] { Settings.LIBRARY_JAVA });
-
+	    if (classes.size() == 0)
+		return;
+	    ASTRewrite rewriter= ASTRewrite.create(classes.get(0).cu.getAST());
 	    for (ClassModel clazz : classes)
-		document = instrumentClass(clazz, null, document, clazz.typeDec.getName().toString());
+		instrumentClass(clazz, null, clazz.typeDec.getName().toString(), rewriter);
 
 	    System.out.println(document.get());
 
@@ -105,45 +107,26 @@ public class TestClassInstrumenter
 	listRewrite.insertFirst(fd, null);
     }
 
-    public static Document instrumentClass(ClassModel srcClass, List<ClassModel> loadedClasses, Document document,
-	    String fileName)
+    public static void instrumentClass(ClassModel srcClass, List<ClassModel> loadedClasses,
+	    String fileName, ASTRewrite rewriter)
 	    throws IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException
     {
 
 	List<Method> methods = srcClass.getMethods();
 
-	Document newDocument = new Document(document.get());
-	ASTRewrite rewriter = ASTRewrite.create(srcClass.cu.getAST());
+//	Document newDocument = new Document(document.get());
 
+
+	for (Method method : methods)
+	{
+	    if (method.isTestMethod() && !method.isIgnored() && !Settings.blackListSet.contains(method.getFullMethodName()))
+		method.instrumentTestMethod(rewriter,null, fileName, !method.getMethodDec().isConstructor());
+	}
+	
 	if (srcClass.isAbstract() == false)
 	{
 	    addClassStringToClass(srcClass, rewriter);
 	}
-
-	for (Method method : methods)
-	{
-	    if (method.isTestMethod() && !Settings.blackListSet.contains(method.getFullMethodName()))
-		method.instrumentTestMethod(rewriter, document, null, fileName, !method.getMethodDec().isConstructor());
-	}
-	TextEdit edits = rewriter.rewriteAST(document, null);
-	edits.apply(newDocument);
-
-	// ImportRewrite importRewrite = ImportRewrite.create(, true);
-	//
-	// importRewrite.addImport("java.io.FileWriter");
-	// importRewrite.addImport("java.io.IOException");
-	// importRewrite.addImport("java.io.ObjectOutputStream");
-	// importRewrite.addImport("com.thoughtworks.xstream.XStream");
-	// importRewrite.addImport("com.thoughtworks.xstream.io.xml.StaxDriver");
-	//
-	// edits = importRewrite.rewriteImports(null);
-
-	edits.apply(newDocument);
-
-	Utils.addImports(newDocument,
-		Arrays.asList(new String[] { "instrument.InstrumentClassGenerator", "instrument.NullValueType" }));
-
-	return newDocument;
 
     }
 

@@ -14,17 +14,13 @@ import org.apache.logging.log4j.Logger;
 public class Settings
 {
 
-    
-    
-    
-    
-    
     public final static Logger consoleLogger = LogManager.getRootLogger();
     // public final static Logger fileLogger =
     // LogManager.getLogger("FileLogger");
     public static final String LIBRARY_JAVA = "/Library/Java/JavaVirtualMachines/jdk1.8.0_25.jdk/Contents/Home/jre/lib/rt.jar";
     // public static final String LIBRARY_JAVA =
     // "/Library/Java/JavaVirtualMachines/jdk1.8.0_20.jdk/Contents/Home/jre/lib/rt.jar";
+//    public static final String PROJECT_PATH = "/Users/arash/Research/repos/commons-math";
     public static final String PROJECT_PATH = "/Users/arash/Research/repos/commons-math";
     // public static final String PROJECT_PATH =
     // "/Users/arash/Documents/workspace-mars/Calculator";
@@ -165,9 +161,9 @@ public class Settings
 	    "MultidimensionalCounterTest.testPreconditions", "ValueServerTest.testEmptyReplayFile",
 	    "MultivariateSummaryStatisticsTest.testSetterIllegalState", "GammaTest.testRegularizedGammaPositiveZero",
 	    "NaturalRankingTest.testNaNsMinimalTiesMaximum", "CovarianceTest.testConstant",
-	    "TricubicInterpolatingFunctionTest.testPreconditions",
-	    "BetaDistributionTest.testMomentsSampling", "EulerStepInterpolatorTest.noReset",
-	    "KolmogorovSmirnovTestTest.testDRoundingMonteCarlo", "OpenIntToFieldTest.testPutAndGetWithExpectedSize",
+	    "TricubicInterpolatingFunctionTest.testPreconditions", "BetaDistributionTest.testMomentsSampling",
+	    "EulerStepInterpolatorTest.noReset", "KolmogorovSmirnovTestTest.testDRoundingMonteCarlo",
+	    "OpenIntToFieldTest.testPutAndGetWithExpectedSize",
 	    "UniformCrossoverTest.testCrossoverDimensionMismatchException", "SparseRealMatrixTest.testGetRowVector",
 	    "ContinuedFractionTest.testGoldenRatio",
 	    "MultivariateNormalMixtureModelDistributionTest.testPreconditionPositiveWeights",
@@ -256,6 +252,72 @@ public class Settings
 	    "HaltonSequenceGeneratorTest.testConstructor", "OpenIntToDoubleHashMapTest.testPutAbsentOnExisting",
 	    "CombinatoricsUtilsTest.test0Choose0", "DormandPrince54IntegratorTest.testSmallLastStep",
 	    "GillIntegratorTest.testSmallStep", "ClassicalRungeKuttaIntegratorTest.testMissedEndEvent",
+	    "org.apache.commons.math4.ode.events.EventFilterTest.testHistoryIncreasingForward",
+	    "org.apache.commons.math4.stat.CertifiedDataTest.testDescriptiveStatistics",
+	    "org.apache.commons.math4.linear.BlockFieldMatrixTest.testExamples",
+	    "org.apache.commons.math4.analysis.differentiation.DerivativeStructureTest.testTaylorAtan2",
+	    "org.apache.commons.math4.random.ValueServerTest.testFixedSeed",
+	    "org.apache.commons.math4.ode.events.EventFilterTest.testHistoryDecreasingBackward",
+	    "org.apache.commons.math4.linear.BlockFieldMatrixTest.testCopyFunctions",
+	    "org.apache.commons.math4.linear.SingularValueDecompositionTest.testStability1",
+	    "org.apache.commons.math4.analysis.interpolation.BicubicInterpolatorTest.testPlane",
+	    "org.apache.commons.math4.stat.descriptive.rank.PSquarePercentileTest.test20PercentileHighValues",
+	    "org.apache.commons.math4.util.OpenIntToDoubleHashMapTest.testConcurrentModification",
+	    "org.apache.commons.math4.stat.descriptive.rank.PSquarePercentileTest.test20Percentile",
+	    "org.apache.commons.math4.stat.descriptive.rank.PSquarePercentileTest.test99Percentile",
+	    "org.apache.commons.math4.random.EmpiricalDistributionTest.testNext",
+	    "org.apache.commons.math4.linear.BlockFieldMatrixTest.testSetRowVector",
+	    "org.apache.commons.math4.linear.ArrayFieldVectorTest.testOuterProduct",
+	    "org.apache.commons.math4.stat.descriptive.rank.PSquarePercentileTest.test5PercentileHighValues",
+	    "org.apache.commons.math4.linear.BlockRealMatrixTest.testOperatePremultiplyLarge",
+	    "org.apache.commons.math4.distribution.LogNormalDistributionTest.testInverseCumulativeProbabilityExtremes",
+	    "org.apache.commons.math4.linear.BlockFieldMatrixTest.testSetColumnVector",
+	    "org.apache.commons.math4.analysis.differentiation.GradientFunctionTest.test3DDistance",
+	    "org.apache.commons.math4.distribution.MultivariateNormalDistributionTest.testSampling",
+	    "org.apache.commons.math4.linear.BlockFieldMatrixTest.testGetColumnVector",
+	    "org.apache.commons.math4.linear.BlockRealMatrixTest.testCopyFunctions",
+	    "org.apache.commons.math4.util.OpenIntToDoubleHashMapTest.testPutAbsentOnExisting",
+	    "org.apache.commons.math4.util.OpenIntToDoubleHashMapTest.testRemove",
+	    "org.apache.commons.math4.stat.descriptive.rank.PSquarePercentileTest.test90Percentile",
+	    "org.apache.commons.math4.stat.descriptive.rank.PSquarePercentileTest.test5Percentile",
+	    "org.apache.commons.math4.linear.BlockFieldMatrixTest.testOperatePremultiplyLarge",
+	    "org.apache.commons.math4.distribution.MultivariateNormalMixtureModelDistributionTest.testDensities",
+	    "org.apache.commons.math4.dfp.DfpDecTest.testRound",
+	    "org.apache.commons.math4.geometry.euclidean.twod.DiskGeneratorTest.testSupport1Point",
+	    "org.apache.commons.math4.ode.events.EventFilterTest.testHistoryDecreasingForward",
+	    "org.apache.commons.math4.fitting.leastsquares.MinpackTest.testMinpackBrownAlmostLinear",
+	    "org.apache.commons.math4.linear.BlockRealMatrixTest.testOperateLarge",
+	    "org.apache.commons.math4.linear.BlockFieldMatrixTest.testOperateLarge",
+	    "org.apache.commons.math4.stat.descriptive.rank.PSquarePercentileTest.test99PercentileHighValues",
+	    "org.apache.commons.math4.geometry.euclidean.threed.PlaneTest.testTranslate",
+	    "org.apache.commons.math4.linear.BlockRealMatrixTest.testCopySubMatrix",
+	    "org.apache.commons.math4.linear.BlockFieldMatrixTest.testAdd",
+	    "org.apache.commons.math4.analysis.interpolation.BicubicInterpolatorTest.testParaboloid",
+	    "org.apache.commons.math4.util.OpenIntToDoubleHashMapTest.testContainsKey",
+	    "org.apache.commons.math4.analysis.integration.SimpsonIntegratorTest.testQuinticFunction",
+	    "org.apache.commons.math4.distribution.fitting.MultivariateNormalMixtureExpectationMaximizationTest.testFit",
+	    "org.apache.commons.math4.util.OpenIntToDoubleHashMapTest.testCopy",
+	    "org.apache.commons.math4.linear.ArrayRealVectorTest.testGetDataRef",
+	    "org.apache.commons.math4.util.OpenIntToDoubleHashMapTest.testPutAndGet",
+	    "org.apache.commons.math4.util.OpenIntToDoubleHashMapTest.testPutAndGetWithExpectedSize",
+	    "org.apache.commons.math4.ode.events.EventFilterTest.testHistoryIncreasingBackward",
+	    "org.apache.commons.math4.stat.descriptive.rank.PSquarePercentileTest.test90PercentileHighValues",
+	    "org.apache.commons.math4.ode.ContinuousOutputFieldModelTest.testRandomAccess",
+	    "org.apache.commons.math4.distribution.GammaDistributionTest.testMath753Shape8",
+	    "org.apache.commons.math4.linear.BlockRealMatrixTest.testTrace",
+	    "org.apache.commons.math4.random.EmpiricalDistributionTest.testGridTooFine",
+	    "org.apache.commons.math4.stat.descriptive.rank.PSquarePercentileTest.testAccept",
+	    "org.apache.commons.math4.util.OpenIntToDoubleHashMapTest.testRemoveAbsent",
+	    "org.apache.commons.math4.analysis.interpolation.SplineInterpolatorTest.testIllegalArguments",
+	    "org.apache.commons.math4.util.OpenIntToDoubleHashMapTest.testIterator",
+	    "org.apache.commons.math4.stat.descriptive.rank.PSquarePercentileTest.testDistribution",
+	    "org.apache.commons.math4.util.OpenIntToDoubleHashMapTest.testGetAbsent",
+	    "org.apache.commons.math4.genetics.RandomKeyTest.testEqualRepr",
+	    "org.apache.commons.math4.dfp.DfpTest.testNextAfter",
+	    "org.apache.commons.math4.util.OpenIntToDoubleHashMapTest.testRemove2",
+	    "org.apache.commons.math4.util.OpenIntToDoubleHashMapTest.testPutOnExisting",
+	    "org.apache.commons.math4.util.OpenIntToDoubleHashMapTest.testPutAndGetWith0ExpectedSize",
+	    "org.apache.commons.math4.linear.BiDiagonalTransformerTest.testMatricesValues",
 	    "ClassicalRungeKuttaIntegratorTest.testTooLargeFirstStep" };
     public static final Set<String> blackListSet = new HashSet<String>(Arrays.asList(methodBlackList));
 
@@ -268,7 +330,7 @@ public class Settings
     {
 	return oldPath.replaceFirst(PROJECT_PATH, PROJECT_INSTRUMENTED_PATH);
     }
-    
+
     public static String getTimedCodePath(String oldPath)
     {
 	return oldPath.replaceFirst(PROJECT_PATH, PROJECT_STOPWATCH_PATH);

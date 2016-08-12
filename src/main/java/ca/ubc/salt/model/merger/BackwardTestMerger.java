@@ -30,6 +30,7 @@ import com.thoughtworks.xstream.io.xml.StaxDriver;
 import Comparator.NaturalOrderComparator;
 import ca.ubc.salt.model.composer.RunningState;
 import ca.ubc.salt.model.composer.TestCaseComposer;
+import ca.ubc.salt.model.instrumenter.Instrumenter;
 import ca.ubc.salt.model.state.ProductionCallingTestStatement;
 import ca.ubc.salt.model.state.ReadVariableDetector;
 import ca.ubc.salt.model.state.StateComparator;
@@ -95,6 +96,7 @@ public class BackwardTestMerger
 	    throws IOException, FileNotFoundException, ClassNotFoundException, CloneNotSupportedException
     {
 
+	Instrumenter.loadStructs();
 	Formatter formatter = new Formatter("mergingStat.csv");
 	formatter.format(
 		"merging test,merged test class,merged test case,before,after,saved,fatal error,warning,couldn't satisfy\n");
@@ -106,12 +108,18 @@ public class BackwardTestMerger
 	if (!file.exists())
 	{
 	    long setupCost = 10;
+	    List<Map<String, List<String>>> uniqueTestStatementSet = new ArrayList<Map<String, List<String>>>();
 	    Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
+	    uniqueTestStatementSet.add(uniqueTestStatements);
+	    for (String paramClass : Instrumenter.parameterizedClasses)
+	    {
+		uniqueTestStatementSet.add( ProductionCallingTestStatement.getUniqueTestStatementsForTestClass(paramClass));
+	    }
 	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(1,
-		    uniqueTestStatements);
+		    uniqueTestStatementSet);
 	    // connectedComponents.remove(0);
 
-	    connectedComponentsMap = ProductionCallingTestStatement.convertTheSetToMap(uniqueTestStatements);
+	    connectedComponentsMap = ProductionCallingTestStatement.convertTheSetToMap(uniqueTestStatementSet);
 
 	    String components = xstream.toXML(connectedComponents);
 
