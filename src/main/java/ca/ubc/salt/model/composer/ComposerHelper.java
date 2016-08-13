@@ -120,6 +120,13 @@ public class ComposerHelper
 	return cpyStmt;
     }
 
+    
+    
+    public static List<TypeDeclaration> getAllClassDefs(ClassModel clazz)
+    {
+	return null;
+    }
+    
     public static void writeBackMergedTestCases(List<TestStatement> originalStatements, Set<String> testCases,
 	    String name, Map<String, Set<String>> testClasses, String mainClassName) throws IOException
     {

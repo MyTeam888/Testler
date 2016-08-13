@@ -33,6 +33,7 @@ import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.PrimitiveType;
 import org.eclipse.jdt.core.dom.PrimitiveType.Code;
@@ -302,6 +303,11 @@ public class TestCaseComposer
 	Block a = (Block) Utils.createBlockWithText(String.format("Object b = (%s)a;", type));
 	VariableDeclarationStatement vds = (VariableDeclarationStatement) a.statements().get(0);
 	Type tp = ((CastExpression) ((VariableDeclarationFragment) vds.fragments().get(0)).getInitializer()).getType();
+	if (tp instanceof ParameterizedType)
+	{
+	    ParameterizedType pt = (ParameterizedType) tp;
+	    pt.typeArguments().clear();
+	}
 	Type tpcpy = (Type) ASTNode.copySubtree(ast, tp);
 	return tpcpy;
 	// int counter = 0;

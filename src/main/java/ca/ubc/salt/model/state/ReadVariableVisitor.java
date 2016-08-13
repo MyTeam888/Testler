@@ -28,6 +28,7 @@ import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.dom.WhileStatement;
 
+import ca.ubc.salt.model.composer.RunningState;
 import ca.ubc.salt.model.utils.Pair;
 import ca.ubc.salt.model.utils.Utils;
 
@@ -60,8 +61,13 @@ public class ReadVariableVisitor extends ASTVisitor
 		SimpleName left = (SimpleName) a.getLeftHandSide();
 		IBinding binding = left.resolveTypeBinding();
 		if (binding != null)
+		{
+		    String type = binding.getName();
+//		    type = RunningState.addFinalLiteral(left, type);
 		    Utils.addToTheSetInMap(needToBeDefinedVars, methodName + "-" + counter + ".xml",
-			    new VarDefinitionPreq(left, binding.getName()));
+			    new VarDefinitionPreq(left, type));
+		}
+		
 		else
 		    System.out.println(exp.toString() + left.resolveBinding().toString() + ",   "
 			    + left.resolveTypeBinding().toString());
@@ -135,12 +141,13 @@ public class ReadVariableVisitor extends ASTVisitor
 	return false;
     }
 
-//    public boolean visit(AssertStatement node)
-//    {
-//	counter++;
-//	getReadVars(node);
-//	return false;
-//    }
+    public boolean visit(AssertStatement node)
+    {
+	counter++;
+	allASTStatements.put(methodName+"-"+counter+".xml", node);
+	getReadVars(node);
+	return false;
+    }
     
     public boolean visit(TryStatement node)
     {

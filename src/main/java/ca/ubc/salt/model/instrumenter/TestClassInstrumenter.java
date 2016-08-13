@@ -27,6 +27,9 @@ import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MemberValuePair;
@@ -71,10 +74,12 @@ public class TestClassInstrumenter
 		    new String[] { Settings.PROJECT_PATH }, new String[] { Settings.LIBRARY_JAVA });
 	    if (classes.size() == 0)
 		return;
-	    ASTRewrite rewriter= ASTRewrite.create(classes.get(0).cu.getAST());
+	    ASTRewrite rewriter = ASTRewrite.create(classes.get(0).cu.getAST());
 	    for (ClassModel clazz : classes)
 		instrumentClass(clazz, null, clazz.typeDec.getName().toString(), rewriter);
 
+	    TextEdit edits = rewriter.rewriteAST(document, null);
+	    edits.apply(document);
 	    System.out.println(document.get());
 
 	} else if (testClass.isDirectory())
@@ -107,22 +112,22 @@ public class TestClassInstrumenter
 	listRewrite.insertFirst(fd, null);
     }
 
-    public static void instrumentClass(ClassModel srcClass, List<ClassModel> loadedClasses,
-	    String fileName, ASTRewrite rewriter)
+    public static void instrumentClass(ClassModel srcClass, List<ClassModel> loadedClasses, String fileName,
+	    ASTRewrite rewriter)
 	    throws IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException
     {
 
 	List<Method> methods = srcClass.getMethods();
 
-//	Document newDocument = new Document(document.get());
-
+	// Document newDocument = new Document(document.get());
 
 	for (Method method : methods)
 	{
-	    if (method.isTestMethod() && !method.isIgnored() && !Settings.blackListSet.contains(method.getFullMethodName()))
-		method.instrumentTestMethod(rewriter,null, fileName, !method.getMethodDec().isConstructor());
+	    if (method.isTestMethod() && !method.isIgnored()
+		    && !Settings.blackListSet.contains(method.getFullMethodName()))
+		method.instrumentTestMethod(rewriter, null, fileName, !method.getMethodDec().isConstructor());
 	}
-	
+
 	if (srcClass.isAbstract() == false)
 	{
 	    addClassStringToClass(srcClass, rewriter);
@@ -226,7 +231,7 @@ public class TestClassInstrumenter
 	    throws IOException, IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException
     {
 	instrumentClass(
-		"/Users/arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/linear/ConjugateGradientTest.java");
+		"/Users/arash/Research/repos/commons-math/src/test/java/org/apache/commons/math4/stat/regression/GLSMultipleLinearRegressionTest.java");
 	// instrumentClass(
 	// "/Users/arash/Library/Mobile
 	// Documents/com~apple~CloudDocs/Research/Calculator/src/calc/CalculatorTest.java");
@@ -241,7 +246,7 @@ public class TestClassInstrumenter
 	sb.append(String.format(
 		"InstrumentClassGenerator.init(%s+\".%s\");InstrumentClassGenerator.initTestStatement(0);",
 		"this.thisTestClassName", methodName));
-	sb.append(getTextForInstrumentation(clazz.getVarDecsOfFields(), 1, null));
+	sb.append(getTextForInstrumentation(clazz.getVarDecsOfFields(), 1, null, clazz));
 	return Utils.createBlockWithText(sb.toString());
 
     }
@@ -253,10 +258,10 @@ public class TestClassInstrumenter
 
     public static ASTNode generateInstrumentationBlock(int randomNumber,
 	    LinkedList<VariableDeclarationFragment> varDecs, String methodName, int counter,
-	    Map<String, VariableDeclarationFragment> unassignedVars)
+	    Map<String, VariableDeclarationFragment> unassignedVars, ClassModel clazz)
     {
 
-	String text = getTextForInstrumentation(varDecs, counter, unassignedVars);
+	String text = getTextForInstrumentation(varDecs, counter, unassignedVars, clazz);
 
 	return Utils.createBlockWithText(text);
 
@@ -315,10 +320,35 @@ public class TestClassInstrumenter
     // }
 
     public static String getTextForInstrumentation(List<VariableDeclarationFragment> list, int counter,
-	    Map<String, VariableDeclarationFragment> unassignedVars)
+	    Map<String, VariableDeclarationFragment> unassignedVars, ClassModel clazz)
     {
 	StringBuilder sb = new StringBuilder();
 	sb.append(String.format("InstrumentClassGenerator.traceTestStatementExecution("));
+
+	for (FieldDeclaration fd : clazz.getStaticFields())
+	{
+	    for (Object obj : fd.fragments())
+	    {
+		VariableDeclarationFragment vdf = (VariableDeclarationFragment) obj;
+		sb.append("\"");
+		sb.append(vdf.getName());
+		sb.append("\"");
+		sb.append(',');
+
+	    }
+	}
+	for (FieldDeclaration fd : clazz.getFields())
+	{
+	    for (Object obj : fd.fragments())
+	    {
+		VariableDeclarationFragment vdf = (VariableDeclarationFragment) obj;
+		sb.append("\"");
+		sb.append(vdf.getName());
+		sb.append("\"");
+		sb.append(',');
+
+	    }
+	}
 	for (VariableDeclarationFragment var : list)
 	{
 	    sb.append("\"");
@@ -331,14 +361,29 @@ public class TestClassInstrumenter
 	sb.append(");");
 
 	sb.append("InstrumentClassGenerator.writeObjects(");
+	for (FieldDeclaration fd : clazz.getStaticFields())
+	{
+	    for (Object obj : fd.fragments())
+	    {
+		VariableDeclarationFragment vdf = (VariableDeclarationFragment) obj;
+		String varName = clazz.getTypeDec().getName() + "." + vdf.getName().getIdentifier();
+		addTextForWriteObject(unassignedVars, sb, vdf, varName);
+	    }
+	}
+	for (FieldDeclaration fd : clazz.getFields())
+	{
+	    for (Object obj : fd.fragments())
+	    {
+		VariableDeclarationFragment vdf = (VariableDeclarationFragment) obj;
+		String varName = "this." + vdf.getName().getIdentifier();
+		addTextForWriteObject(unassignedVars, sb, vdf, varName);
+	    }
+	}
+
 	for (VariableDeclarationFragment var : list)
 	{
-	    if (unassignedVars == null || !unassignedVars.containsKey(var.getName().toString()))
-		sb.append(var.getName());
-	    else
-		sb.append("new NullValueType(\"" + var.getName().resolveTypeBinding().getName() + "\", \""
-			+ var.getName().getIdentifier() + "\")");
-	    sb.append(',');
+	    String varName = var.getName().getIdentifier();
+	    addTextForWriteObject(unassignedVars, sb, var, varName);
 	}
 	if (list.size() > 0)
 	    sb.setLength(sb.length() - 1);
@@ -347,6 +392,24 @@ public class TestClassInstrumenter
 
 	String text = sb.toString();
 	return text;
+    }
+
+    private static void addTextForWriteObject(Map<String, VariableDeclarationFragment> unassignedVars, StringBuilder sb,
+	    VariableDeclarationFragment var, String varName)
+    {
+	if (unassignedVars == null || !unassignedVars.containsKey(var.getName().toString()))
+	{
+	    IBinding bind = var.resolveBinding();
+	    IVariableBinding iv = (IVariableBinding) bind;
+	    ITypeBinding typeBind = iv.getType();
+	    if (typeBind != null)
+		if (typeBind.getName().toString().contains("[][]"))
+		    sb.append("(Object[])");
+	    sb.append(varName);
+	} else
+	    sb.append("new NullValueType(\"" + var.getName().resolveTypeBinding().getName() + "\", \""
+		    + var.getName().getIdentifier() + "\")");
+	sb.append(',');
     }
 
 }

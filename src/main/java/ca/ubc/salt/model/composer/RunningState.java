@@ -11,10 +11,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.core.dom.IExtendedModifier;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 
 import java.util.Map.Entry;
 
@@ -132,8 +136,11 @@ public class RunningState
 		IVariableBinding iv = (IVariableBinding) bind;
 		ITypeBinding typeBind = iv.getType();
 		if (typeBind != null)
+		{
 		    type = typeBind.getName();
-		else
+//		    type = addFinalLiteral(sname, type);
+
+		} else
 		{
 		    Settings.consoleLogger
 			    .error("typeBinding is null for " + sname.toString() + " in " + stmt.toString());
@@ -144,6 +151,7 @@ public class RunningState
 
 	    this.put(name, value, type);
 	} else
+
 	{
 	    Set<String> names = this.getName(oldValue);
 	    if (names != null && !names.isEmpty())
@@ -153,6 +161,33 @@ public class RunningState
 	    } else
 		Settings.consoleLogger.error("Stmt changes a var's value that is not in the state");
 	}
+    }
+
+    public static String addFinalLiteral(SimpleName sname, String type)
+    {
+	ASTNode parent = sname.getParent();
+	if (parent != null)
+	{
+	    ASTNode grandParent = parent.getParent();
+	    if (grandParent != null && grandParent.getNodeType() == ASTNode.VARIABLE_DECLARATION_STATEMENT)
+	    {
+		VariableDeclarationStatement vds = (VariableDeclarationStatement) grandParent;
+		List<IExtendedModifier> mods = vds.modifiers();
+		for (IExtendedModifier imod : mods)
+		{
+		    if (imod instanceof Modifier)
+		    {
+			Modifier mod = (Modifier) imod;
+			if (mod.isFinal())
+			{
+			    type = "final " + type;
+			    break;
+			}
+		    }
+		}
+	    }
+	}
+	return type;
     }
 
     @Override

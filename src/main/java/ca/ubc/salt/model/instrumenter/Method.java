@@ -21,6 +21,7 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
+import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.TryStatement;
@@ -47,7 +48,7 @@ public class Method
 	this.className = className;
 	this.clazz = clazz;
     }
-    
+
     public boolean isIgnored()
     {
 	List modifs = this.getMethodDec().modifiers();
@@ -66,8 +67,7 @@ public class Method
 	return false;
     }
 
-    public void instrumentTestMethod(ASTRewrite rewriter, List<String> loadedClassVars,
-	    String fileName, boolean start)
+    public void instrumentTestMethod(ASTRewrite rewriter, List<String> loadedClassVars, String fileName, boolean start)
 	    throws JavaModelException, IllegalArgumentException, MalformedTreeException, BadLocationException
     {
 
@@ -96,12 +96,21 @@ public class Method
 	// listRewrite.insertLast(stmts.get(i), null);
 	// listRewrite.insertLast(footer, null);
 
-	InstrumenterVisitor visitor = new InstrumenterVisitor(rewriter, randomNumber, methodDec.getName().toString());
-	visitor.addFieldVars(this.clazz);
+	InstrumenterVisitor visitor = new InstrumenterVisitor(rewriter, randomNumber, methodDec.getName().toString(),
+		this.clazz);
+	// visitor.addFieldVars(this.clazz);
 	this.methodDec.accept(visitor);
 
 	ASTNode loopCode = Utils.createBlockWithText("InstrumentClassGenerator.traceLoop();");
-	listRewrite.insertLast(loopCode, null);
+	if (block.statements().size() > 0)
+	{
+
+	    Statement lastStmt = (Statement) block.statements().get(block.statements().size() - 1);
+	    if (lastStmt instanceof ReturnStatement)
+		listRewrite.insertBefore(loopCode, lastStmt, null);
+	    else
+		listRewrite.insertLast(loopCode, null);
+	}
 
 	// apply the text edits to the compilation unit
 

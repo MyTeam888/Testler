@@ -43,13 +43,15 @@ public class InstrumenterVisitor extends ASTVisitor
     int randomNumber;
     int counter = 2;
     String methodName;
+    ClassModel clazz;
 //    boolean addedUnInitializedVar = false;
 
-    public InstrumenterVisitor(ASTRewrite astRewrite, int randomNumber, String methodName)
+    public InstrumenterVisitor(ASTRewrite astRewrite, int randomNumber, String methodName, ClassModel clazz)
     {
 	this.astRewrite = astRewrite;
 	this.randomNumber = randomNumber;
 	this.methodName = methodName;
+	this.clazz = clazz;
     }
 
     public void addFieldVars(ClassModel clazz)
@@ -193,7 +195,7 @@ public class InstrumenterVisitor extends ASTVisitor
     private void addDumpCode(ASTNode node, boolean loop)
     {
 	ASTNode newCode = TestClassInstrumenter.generateInstrumentationBlock(randomNumber, varDecs, methodName,
-		counter++, unassignedVars);
+		counter++, unassignedVars, this.clazz);
 
 	ASTNode loopCode = Utils.createBlockWithText("InstrumentClassGenerator.traceLoop();");
 	ASTNode parent = node.getParent();

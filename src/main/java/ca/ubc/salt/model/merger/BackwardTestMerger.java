@@ -109,12 +109,12 @@ public class BackwardTestMerger
 	{
 	    long setupCost = 10;
 	    List<Map<String, List<String>>> uniqueTestStatementSet = new ArrayList<Map<String, List<String>>>();
-	    Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
-	    uniqueTestStatementSet.add(uniqueTestStatements);
 	    for (String paramClass : Instrumenter.parameterizedClasses)
 	    {
 		uniqueTestStatementSet.add( ProductionCallingTestStatement.getUniqueTestStatementsForTestClass(paramClass));
 	    }
+	    Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
+	    uniqueTestStatementSet.add(uniqueTestStatements);
 	    connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(1,
 		    uniqueTestStatementSet);
 	    // connectedComponents.remove(0);

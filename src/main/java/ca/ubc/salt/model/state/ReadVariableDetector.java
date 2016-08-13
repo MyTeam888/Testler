@@ -96,7 +96,7 @@ public class ReadVariableDetector
     public static Map<String, Set<SimpleName>> populateReadVarsForTestCaseOfFile(String path, String testcase,
 	    Map<String, Set<VarDefinitionPreq>> definitionPreq, Map<String, Statement> allASTStatements) throws IOException
     {
-	File testClass = new File(path);
+ 	File testClass = new File(path);
 	if (testClass.isFile())
 	{
 	    if (!Utils.isTestClass(testClass))
