@@ -14,6 +14,8 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.NormalAnnotation;
+import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 
@@ -31,6 +33,32 @@ public class ClassModel
     public String name;
     
     
+    public boolean isClassIsRunBy(String runWith, String runner)
+    {
+	List modifs = this.getTypeDec().modifiers();
+
+	for (Object obj : modifs)
+	{
+	    if (obj instanceof SingleMemberAnnotation)
+	    {
+		SingleMemberAnnotation mod = (SingleMemberAnnotation) obj;
+		String typeName = mod.getTypeName().getFullyQualifiedName();
+		String value = mod.getValue().toString();
+		if (typeName.contains(runWith) && value.contains(runner))
+		    return true;;
+
+	    }else if (obj instanceof NormalAnnotation)
+	    {
+		NormalAnnotation mod = (NormalAnnotation) obj;
+		String typeName = mod.getTypeName().getFullyQualifiedName();
+		String value = mod.values().toString();
+		if (typeName.contains(runWith) && value.contains(runner))
+		    return true;
+	    }
+	}
+	return false;
+    }
+    
     public boolean isInstrumentable()
     {
 //	boolean abstrc = isAbstract();
@@ -39,7 +67,7 @@ public class ClassModel
 ////	return !abstrc;
 //	return typeDec.getSuperclassType() == null && typeDec.superInterfaceTypes().isEmpty() && !typeDec.isInterface()
 //		&& !abstrc;
-	if (Instrumenter.parentClassDependency.containsKey(Utils.getTestCaseName(this.name)) == false)
+	if (Instrumenter.parentClassDependency.containsKey(Utils.getTestCaseName(this.name)) == false && !isClassIsRunBy("RunWith", "Retry"))
 	    return true;
 	return false;
 
@@ -64,7 +92,7 @@ public class ClassModel
     {
 	this.typeDec = typeDec;
 	this.cu = cu;
-	this.name = typeDec.resolveBinding().getQualifiedName();
+//	this.name = typeDec.resolveBinding().getQualifiedName();
     }
     
     

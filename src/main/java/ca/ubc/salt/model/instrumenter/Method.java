@@ -58,7 +58,7 @@ public class Method
 	    if (obj instanceof MarkerAnnotation)
 	    {
 		MarkerAnnotation ma = (MarkerAnnotation) obj;
-		if (ma.getTypeName().toString().contains("Ignore"))
+		if (ma.getTypeName().toString().contains("Ignore") || ma.getTypeName().toString().contains("Deprecated"))
 		{
 		    return true;
 		}

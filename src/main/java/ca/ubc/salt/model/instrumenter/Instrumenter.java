@@ -176,28 +176,11 @@ public class Instrumenter
 
     public static void updateStructs(ClassModel clazz)
     {
+	String runWith = "RunWith";
+	String runner = "Parameterized";
 	
-	List modifs = clazz.getTypeDec().modifiers();
-
-	for (Object obj : modifs)
-	{
-	    if (obj instanceof SingleMemberAnnotation)
-	    {
-		SingleMemberAnnotation mod = (SingleMemberAnnotation) obj;
-		String typeName = mod.getTypeName().getFullyQualifiedName();
-		String value = mod.getValue().toString();
-		if (typeName.contains("RunWith") && value.contains("Parameterized"))
-		    parameterizedClasses.add(clazz.name);
-
-	    }else if (obj instanceof NormalAnnotation)
-	    {
-		NormalAnnotation mod = (NormalAnnotation) obj;
-		String typeName = mod.getTypeName().getFullyQualifiedName();
-		String value = mod.values().toString();
-		if (typeName.contains("RunWith") && value.contains("Parameterized"))
-		    parameterizedClasses.add(clazz.name);
-	    }
-	}
+	if (clazz.isClassIsRunBy(runWith, runner))
+		parameterizedClasses.add(clazz.name);
 	Type parent = clazz.typeDec.getSuperclassType();
 	if (parent != null)
 	{
@@ -206,5 +189,7 @@ public class Instrumenter
 	    Utils.addToTheSetInMap(parentClassDependency, parentName, clazz.name);
 	}
     }
+
+    
 
 }
