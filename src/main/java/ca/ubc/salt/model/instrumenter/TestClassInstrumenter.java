@@ -401,10 +401,13 @@ public class TestClassInstrumenter
 	{
 	    IBinding bind = var.resolveBinding();
 	    IVariableBinding iv = (IVariableBinding) bind;
-	    ITypeBinding typeBind = iv.getType();
-	    if (typeBind != null)
-		if (typeBind.getName().toString().contains("[][]"))
-		    sb.append("(Object[])");
+	    if (iv != null)
+	    {
+		ITypeBinding typeBind = iv.getType();
+		if (typeBind != null)
+		    if (typeBind.getName().toString().contains("[][]"))
+			sb.append("(Object[])");
+	    }
 	    sb.append(varName);
 	} else
 	    sb.append("new NullValueType(\"" + var.getName().resolveTypeBinding().getName() + "\", \""

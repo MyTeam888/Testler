@@ -9,17 +9,21 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.eclipse.jdt.core.dom.SimpleName;
 
@@ -41,58 +45,165 @@ import ca.ubc.salt.model.utils.Counter;
 import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Pair;
 import ca.ubc.salt.model.utils.Settings;
+import ca.ubc.salt.model.utils.Triple;
 import ca.ubc.salt.model.utils.TwoPair;
 import ca.ubc.salt.model.utils.Utils;
 
 public class Planning
 {
 
-    // public static Pair<TestStatement, RunningState> forward(TestStatement
-    // root, Map<String, TestState> graph,
-    // RunningState runningState, Map<String, Map<String, String>> readValues,
-    // Map<String, List<String>> connectedComponentsMap, Map<String,
-    // TestStatement> testStatementMap,
-    // Set<String> assertions, int cutoff) throws CloneNotSupportedException
-    // {
-    //
-    // TestStatement.curStart = root;
-    // root.distFrom.put(root, (long) 0);
-    // PriorityQueue<Pair<TestStatement, RunningState>> queue = new
-    // PriorityQueue<Pair<TestStatement, RunningState>>();
-    //
-    // queue.add(new Pair<TestStatement, RunningState>(root, runningState));
-    //
-    // while (queue.size() != 0)
-    // {
-    // Pair<TestStatement, RunningState> pair = queue.poll();
-    // TestStatement parent = pair.getFirst();
-    // runningState = pair.getSecond();
-    //
-    // if (parent.distFrom.get(TestStatement.curStart) > cutoff * 1000)
-    // return null;
-    //
-    // if (connectedComponentsMap.containsKey(parent.getName()) ||
-    // assertions.contains(parent.getName()))
-    // {
-    // return new Pair<TestStatement, RunningState>(parent,
-    // runningState.clone());
-    // }
-    //
-    // TestCaseComposer.updateRunningState(parent, runningState, readValues);
-    // List<Pair<Integer, TestStatement>> comps = BackwardTestMerger
-    // .getAllCompatibleTestStatements(testStatementMap, readValues,
-    // runningState, null, null);
-    //
-    // Collections.sort(comps, Collections.reverseOrder());
-    // for (Pair<Integer, TestStatement> stmtPair : comps)
-    // {
-    // TestStatement stmt = stmtPair.getSecond();
-    // relaxChild(root, queue, parent, stmt, runningState, stmtPair.getFirst());
-    // }
-    // }
-    //
-    // return null;
-    // }
+    public static TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>> forward(
+	    TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>> frontier,
+	    Map<String, TestState> graph, Map<String, Map<String, String>> readValues,
+	    Map<String, List<String>> connectedComponentsMap, Map<String, TestStatement> testStatementMap,
+	    Set<String> assertions, Map<String, Set<VarDefinitionPreq>> definitionPreq, int cutoff, int branchNum,
+	    Set<String> testCases) throws CloneNotSupportedException
+    {
+
+	TestStatement root = frontier.getFirst();
+	root.curStart = root;
+	root.distFrom.put(root, (long) 0);
+	PriorityQueue<TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>>> queue = new PriorityQueue<TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>>>();
+
+	queue.add(frontier);
+	
+	int size = frontier.getForth().size();
+
+	boolean first = true;
+	while (queue.size() != 0)
+	{
+	    TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>> pair = queue.poll();
+	    TestStatement parent = pair.getFirst();
+	    RunningState runningState = pair.getSecond();
+	    Map<String, String> batchRename = pair.getThird();
+	    LinkedHashSet<String> path = pair.getForth();
+
+	    if (path.size() - size > cutoff)
+		return null;
+
+	    if (connectedComponentsMap.containsKey(parent.getName()) || assertions.contains(parent.getName()))
+	    {
+		Map<String, String> renameClone = new HashMap<String, String>();
+		renameClone.putAll(batchRename);
+		return new TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>>(parent,
+			runningState.clone(), renameClone, path);
+	    }
+
+	    TestCaseComposer.updateRunningState(parent, runningState, readValues, definitionPreq, batchRename);
+
+	    Map<String, TestStatement> testStatements = new TreeMap<String, TestStatement>(
+		    new NaturalOrderComparator());
+
+	    List<String> adjStates = Utils.getAdjStates(
+		    Arrays.asList(new String[] { Utils.getTestCaseNameFromTestStatement(parent.getName()) }),
+		    parent.getName(), branchNum);
+
+	    for (String adjState : adjStates)
+	    {
+		testStatements.put(adjState, testStatementMap.get(adjState));
+	    }
+	    
+	    if (first)
+	    {
+		first = false;
+		
+		for (String testCase : testCases)
+		{
+		    for (int i = 0; i < branchNum; i++)
+		    {
+			String name = testCase+"-"+i+".xml";
+			TestStatement stmt = testStatementMap.get(name);
+			if (stmt != null)
+			    testStatements.put(name, stmt);
+		    }
+		}
+		
+		
+//		List<String> testCasesList = new LinkedList<String>();
+//		testCasesList.addAll(testCases);
+//		adjStates = Utils.getAdjStates(testCasesList, parent.getName(), branchNum);
+//		for (String adjState : adjStates)
+//		{
+//		    testStatements.put(adjState, testStatementMap.get(adjState));
+//		}
+	    }
+
+	    List<Pair<Integer, TestStatement>> comps = BackwardTestMerger
+		    .getAllPairCompatibleTestStatements(testStatements, readValues, runningState, null, definitionPreq);
+
+	    Collections.sort(comps, Collections.reverseOrder());
+
+	    for (Pair<Integer, TestStatement> stmtPair : comps)
+	    {
+
+		TestStatement stmt = stmtPair.getSecond();
+		if (!path.contains(stmt.getName()))
+		    relaxChild(root, queue, parent, stmt, runningState,
+			    stmtPair.getFirst() + readValues.get(stmt.getName()).size(), batchRename, path);
+	    }
+	}
+
+	return null;
+    }
+
+    public static List<TestStatement> getAllCompatibleTestStatements(Map<String, TestStatement> allTestStatements,
+	    Map<String, Map<String, String>> readValues, RunningState runningState, Set<TestStatement> visited,
+	    Map<String, Set<VarDefinitionPreq>> definitionPreq)
+    {
+	List<TestStatement> comps = new ArrayList<TestStatement>();
+	for (TestStatement stmt : allTestStatements.values())
+	{
+	    if (visited != null && visited.contains(stmt))
+		continue;
+	    Map<String, String> readVals = readValues.get(stmt.getName());
+	    if (readVals == null)
+		continue;
+	    // if (stmt.equals("Array2DRowRealMatrixTest.testSetRow-1.xml"))
+	    // System.out.println();
+	    boolean isComp = true;
+	    Counter<String> counter = new Counter<String>();
+	    for (Entry<String, String> entry : readVals.entrySet())
+	    {
+		String readVal = entry.getValue();
+		Set<String> varsNameInState = runningState.getName(readVal);
+		if (varsNameInState == null || varsNameInState.size() == 0)
+		{
+		    isComp = false;
+		    break;
+		} else
+		{
+		    counter.increment(readVal);
+		    if (counter.get(readVal) > varsNameInState.size())
+		    {
+			isComp = false;
+			break;
+		    }
+		}
+
+	    }
+
+	    Set<VarDefinitionPreq> defPreqs = definitionPreq.get(stmt.getName());
+	    if (defPreqs != null)
+	    {
+		for (VarDefinitionPreq defPreq : defPreqs)
+		{
+		    String neededType = defPreq.getType();
+		    Set<String> varsInState = runningState.getNameForType(neededType);
+		    if (varsInState == null || varsInState.isEmpty())
+		    {
+			isComp = false;
+			break;
+		    }
+		}
+	    }
+
+	    if (isComp)
+		comps.add(stmt);
+
+	}
+
+	return comps;
+    }
 
     public static Map<String, Set<VarDefinitionPreq>> getTheVarDefMap(Set<VarDefinitionPreq> defPreq)
     {
@@ -176,7 +287,7 @@ public class Planning
     public static Map<String, Set<String>> initGoal(TestStatement goal, Map<String, Map<String, String>> readValues)
     {
 	Map<String, Set<String>> initGoals = new HashMap<String, Set<String>>();
-//	if (readValues.get(goal.getName()) != null)
+	// if (readValues.get(goal.getName()) != null)
 	for (Entry<String, String> entry : readValues.get(goal.getName()).entrySet())
 	{
 	    Utils.addToTheSetInMap(initGoals, entry.getValue(), entry.getKey());
@@ -338,19 +449,24 @@ public class Planning
 	return preqs;
     }
 
-    private static void relaxChild(TestStatement root, PriorityQueue<Pair<TestStatement, RunningState>> queue,
-	    TestStatement parent, TestStatement stmt, RunningState runningState, int bonus)
-	    throws CloneNotSupportedException
+    private static void relaxChild(TestStatement root,
+	    PriorityQueue<TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>>> queue,
+	    TestStatement parent, TestStatement stmt, RunningState runningState, int bonus,
+	    Map<String, String> batchRename, LinkedHashSet<String> path) throws CloneNotSupportedException
     {
-	long newD = parent.distFrom.get(root) + stmt.time - bonus + stmt.getSideEffects().size() * 10;
+	long newD = parent.distFrom.get(root) + stmt.time - bonus + stmt.getSideEffects().size() * 1000000
+		+ TestCaseComposer.getTestStatementNumber(stmt.getName());
 	Long childDist = stmt.distFrom.get(root);
 	stmt = stmt.clone();
 	stmt.parent.put(root, parent);
 	stmt.distFrom.put(root, newD);
 	stmt.curStart = root;
-	// queue.remove(stmt);
-	queue.add(new Pair<TestStatement, RunningState>(stmt, runningState.clone()));
-	// queue.add(child.clone());
+	Map<String, String> renameClone = new HashMap<String, String>();
+	renameClone.putAll(batchRename);
+	LinkedHashSet<String> newPath = new LinkedHashSet<String>(path);
+	newPath.add(stmt.getName());
+	queue.add(new TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>>(stmt,
+		runningState.clone(), renameClone, newPath));
     }
 
     public static Map<String, Set<TestStatement>> getTestCaseTestStatementMapping(Collection<TestStatement> stmts)

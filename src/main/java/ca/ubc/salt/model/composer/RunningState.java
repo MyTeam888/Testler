@@ -299,5 +299,10 @@ public class RunningState
     // done.add(testClass);
     // }
     // }
-
+@Override
+public String toString()
+{
+    // TODO Auto-generated method stub
+    return nameTypePairForCurrentState.toString();
+}
 }

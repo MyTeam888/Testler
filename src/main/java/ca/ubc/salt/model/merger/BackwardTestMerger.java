@@ -14,6 +14,7 @@ import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +43,7 @@ import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Pair;
 import ca.ubc.salt.model.utils.Settings;
 import ca.ubc.salt.model.utils.Triple;
+import ca.ubc.salt.model.utils.TwoPair;
 import ca.ubc.salt.model.utils.Utils;
 
 public class BackwardTestMerger
@@ -111,7 +113,8 @@ public class BackwardTestMerger
 	    List<Map<String, List<String>>> uniqueTestStatementSet = new ArrayList<Map<String, List<String>>>();
 	    for (String paramClass : Instrumenter.parameterizedClasses)
 	    {
-		uniqueTestStatementSet.add( ProductionCallingTestStatement.getUniqueTestStatementsForTestClass(paramClass));
+		uniqueTestStatementSet
+			.add(ProductionCallingTestStatement.getUniqueTestStatementsForTestClass(paramClass));
 	    }
 	    Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
 	    uniqueTestStatementSet.add(uniqueTestStatements);
@@ -164,9 +167,11 @@ public class BackwardTestMerger
 	    if (counter < limit)
 		continue;
 
-	    // connectedComponent = new HashSet<String>();
-	    // connectedComponent.add("FastFourierTransformerTest.test2DData");
-	    // connectedComponent.add("FastFourierTransformerTest.testSinFunction");
+//	    connectedComponent = new HashSet<String>();
+//	    connectedComponent.add(
+//		    "org.apache.commons.math4.util.BigRealTest.testDivide");
+//	    connectedComponent
+//		    .add("org.apache.commons.math4.util.BigRealTest.testMultiply");
 	    // connectedComponent.add("FastFourierTransformerTest.test2DDataUnitary");
 	    // connectedComponent.add("FastFourierTransformerTest.testAdHocData");
 	    // connectedComponent.add("Array2DRowRealMatrixTest.testGetColumn");
@@ -235,12 +240,12 @@ public class BackwardTestMerger
 		// do
 		// {
 
-		LinkedList<TestStatement> path = new LinkedList<TestStatement>();
+		LinkedList<TestStatement> firstPhasePath = new LinkedList<TestStatement>();
 
 		TestStatement rootStmt = new TestStatement(root, root, "init.xml");
-		Triple<TestStatement, RunningState, Map<String, String>> prevFrontier = performFirstPhaseGreedyAlg(
+		TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>> prevFrontier = performFirstPhaseGreedyAlg(
 			connectedComponentsMap, equivalentTestStmtsPerTestCase, definitionPreq, readValues, graph,
-			allTestStatements, assertions, initialState, path, rootStmt);
+			allTestStatements, assertions, initialState, firstPhasePath, rootStmt, connectedComponent);
 
 		List<TestStatement> secondPhasePath = performSecondPhaseBackwardAlg(connectedComponentsMap,
 			equivalentTestStmtsPerTestCase, connectedComponent, definitionPreq, readValues,
@@ -256,7 +261,9 @@ public class BackwardTestMerger
 		    continue;
 		}
 
-		List<TestStatement> firstPhaseMergedPath = TestMerger.returnThePath(rootStmt, path);
+		// List<TestStatement> firstPhaseMergedPath =
+		// TestMerger.returnThePath(rootStmt, firstPhasePath);
+		List<TestStatement> firstPhaseMergedPath = firstPhasePath;
 		paths.add(firstPhaseMergedPath);
 		paths.add(secondPhasePath);
 
@@ -375,7 +382,8 @@ public class BackwardTestMerger
 	    Map<String, Map<String, List<String>>> equivalentTestStmtsPerTestCase, Set<String> connectedComponent,
 	    Map<String, Set<VarDefinitionPreq>> definitionPreq, Map<String, Map<String, String>> readValues,
 	    Map<String, TestStatement> allTestStatements, Set<String> assertions, String mainClassName,
-	    Triple<TestStatement, RunningState, Map<String, String>> prevFrontier) throws CloneNotSupportedException
+	    TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>> prevFrontier)
+	    throws CloneNotSupportedException
     {
 	List<TestStatement> secondPhasePath = new LinkedList<TestStatement>();
 	Map<String, Map<String, TestStatement>> allStmtsView = Planning
@@ -569,28 +577,44 @@ public class BackwardTestMerger
     // return secondPhasePath;
     // }
 
-    private static Triple<TestStatement, RunningState, Map<String, String>> performFirstPhaseGreedyAlg(
+    private static TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>> performFirstPhaseGreedyAlg(
 	    Map<String, List<String>> connectedComponentsMap,
 	    Map<String, Map<String, List<String>>> equivalentTestStmtsPerTestCase,
 	    Map<String, Set<VarDefinitionPreq>> definitionPreq, Map<String, Map<String, String>> readValues,
 	    Map<String, TestState> graph, Map<String, TestStatement> allTestStatements, Set<String> assertions,
-	    RunningState initialState, LinkedList<TestStatement> path, TestStatement rootStmt)
-	    throws CloneNotSupportedException
+	    RunningState initialState, LinkedList<TestStatement> path, TestStatement rootStmt,
+	    Set<String> connectedComponent) throws CloneNotSupportedException
     {
-	Triple<TestStatement, RunningState, Map<String, String>> frontier = new Triple<TestStatement, RunningState, Map<String, String>>(
-		rootStmt, initialState, new HashMap<String, String>());
-	Triple<TestStatement, RunningState, Map<String, String>> prevFrontier;
+	TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>> frontier = new TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>>(
+		rootStmt, initialState, new HashMap<String, String>(), new LinkedHashSet<String>());
+	TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>> prevFrontier;
 	do
 	{
 	    prevFrontier = frontier;
-	    frontier = dijkstra(frontier.getFirst(), graph, frontier.getSecond(), readValues, connectedComponentsMap,
-		    allTestStatements, assertions, definitionPreq);
+	    // frontier = dijkstra(frontier.getFirst(), graph,
+	    // frontier.getSecond(), readValues, connectedComponentsMap,
+	    // allTestStatements, assertions, definitionPreq);
+	    frontier = Planning.forward(frontier, graph, readValues, connectedComponentsMap, allTestStatements,
+		    assertions, definitionPreq, 7, 7, connectedComponent);
+
 	    if (frontier == null)
 		break;
 	    TestMerger.markAsCovered(frontier.getFirst(), connectedComponentsMap, equivalentTestStmtsPerTestCase);
 	    assertions.remove(frontier.getFirst().getName());
-	    path.add(frontier.getFirst());
+	    // path.add(frontier.getFirst());
+//	    path = new LinkedList<TestStatement>();
+//	    for (String state : frontier.getForth())
+//	    {
+//		path.add(allTestStatements.get(state));
+//	    }
+
 	} while (frontier != null);
+
+//	path = new LinkedList<TestStatement>();
+	for (String state : prevFrontier.getForth())
+	{
+	    path.add(allTestStatements.get(state));
+	}
 
 	Settings.consoleLogger.error("first phase finished");
 	return prevFrontier;
@@ -732,7 +756,7 @@ public class BackwardTestMerger
 	    }
 
 	    TestCaseComposer.updateRunningState(parent, runningState, readValues, definitionPreq, batchRename);
-	    List<Pair<Integer, TestStatement>> comps = getAllCompatibleTestStatements(testStatementMap, readValues,
+	    List<Pair<Integer, TestStatement>> comps = getAllPairCompatibleTestStatements(testStatementMap, readValues,
 		    runningState, visited, definitionPreq);
 
 	    Collections.sort(comps, Collections.reverseOrder());
@@ -774,14 +798,14 @@ public class BackwardTestMerger
 	}
     }
 
-    public static List<Pair<Integer, TestStatement>> getAllCompatibleTestStatements(
+    public static List<Pair<Integer, TestStatement>> getAllPairCompatibleTestStatements(
 	    Map<String, TestStatement> allTestStatements, Map<String, Map<String, String>> readValues,
 	    RunningState runningState, Set<TestStatement> visited, Map<String, Set<VarDefinitionPreq>> definitionPreq)
     {
-	List<Pair<Integer, TestStatement>> comps = new LinkedList<Pair<Integer, TestStatement>>();
+	List<Pair<Integer, TestStatement>> comps = new ArrayList<Pair<Integer, TestStatement>>();
 	for (TestStatement stmt : allTestStatements.values())
 	{
-	    if (visited != null && visited.contains(stmt))
+	    if (stmt == null || (visited != null && visited.contains(stmt)))
 		continue;
 	    Map<String, String> readVals = readValues.get(stmt.getName());
 	    if (readVals == null)
@@ -845,8 +869,16 @@ public class BackwardTestMerger
 	    // (testCase.equals("org.apache.commons.math4.stat.regression.GLSMultipleLinearRegressionTest.testGLSEfficiency"))
 	    // System.out.println();
 	    // state1 -> <a, b, c>
-	    Map<String, Set<SimpleName>> readVars = ReadVariableDetector.populateReadVarsForTestCaseOfFile(
-		    Utils.getTestCaseFile(testCase), testCase, definitionPreq, allASTStatements);
+
+	    String path = Utils.getTestCaseFile(testCase);
+	    if (path == null)
+	    {
+		Settings.consoleLogger.error("path to " + testCase + " is missing");
+		corruptedTestCases.add(testCase);
+		continue;
+	    }
+	    Map<String, Set<SimpleName>> readVars = ReadVariableDetector.populateReadVarsForTestCaseOfFile(path,
+		    testCase, definitionPreq, allASTStatements);
 
 	    // System.out.println(readVars);
 	    // ReadVariableDetector.accumulateReadVars(readVars);

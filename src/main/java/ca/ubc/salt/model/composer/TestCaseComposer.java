@@ -29,6 +29,7 @@ import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
+import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
@@ -75,9 +76,10 @@ public class TestCaseComposer
     static
     {
 	nameValuePairs = CacheBuilder.newBuilder().maximumSize(1000)
-		.build(new CacheLoader<String, Map<String, String>>() { // build
-									// the
-									// cacheloader
+		.build(new CacheLoader<String, Map<String, String>>()
+		{ // build
+		  // the
+		  // cacheloader
 
 		    @Override
 		    public Map<String, String> load(String stmt) throws Exception
@@ -214,7 +216,13 @@ public class TestCaseComposer
 			    SimpleName varCpy = ast.newSimpleName(renamedVar);
 			    ASTNode replacement = getCastStructure(castToMap.get(var.getIdentifier()).getSecond(),
 				    var.getIdentifier(), ast, varCpy);
+			    try{
 			    replaceSimpleNameWithASTNode(var, parentNode, replacement);
+			    }catch(Exception e)
+			    {
+				Settings.consoleLogger.error("something wrong with " + parentNode.toString() + " , " + replacement.toString());
+				replaceSimpleNameWithASTNode(var, parentNode, ast.newSimpleName(renamedVar));
+			    }
 			} else
 			    var.setIdentifier(renamedVar);
 
@@ -270,6 +278,8 @@ public class TestCaseComposer
 		params = ((MethodInvocation) parent).arguments();
 	    if (parent instanceof ClassInstanceCreation)
 		params = ((ClassInstanceCreation) parent).arguments();
+	    if (parent instanceof InfixExpression)
+		params = ((InfixExpression) parent).extendedOperands();
 	    if (params != null)
 	    {
 		int counter = 0;
@@ -737,6 +747,10 @@ public class TestCaseComposer
     {
 	String testClassPath = Utils.getClassFileForProjectPath(testClassName, Settings.PROJECT_MERGED_PATH);
 
+	File file = new File(testClassPath);
+	if (!file.exists())
+	    Utils.copyProject(Settings.PROJECT_PATH, Settings.PROJECT_MERGED_PATH);
+
 	String source = FileUtils.readFileToString(testClassPath);
 	Document document = new Document(source);
 	return document;
@@ -832,7 +846,7 @@ public class TestCaseComposer
 	}
 
     }
-    
+
     public static void removeTestCasesFromTestClass(ClassModel clazz, Set<String> testCasesOfClass)
     {
 	// Settings.consoleLogger.error(String.format("removing %s from %s",

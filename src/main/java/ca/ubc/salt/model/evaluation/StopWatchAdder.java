@@ -38,7 +38,6 @@ public class StopWatchAdder
 	{
 	    if (Utils.isTestClass(fClass))
 	    {
-
 		Settings.consoleLogger.error(classPath);
 		String source = FileUtils.readFileToString(fClass);
 		Document document = new Document(source);

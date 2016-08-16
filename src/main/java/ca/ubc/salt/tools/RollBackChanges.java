@@ -43,7 +43,7 @@ public class RollBackChanges
 
 	for (MergingResult mr : mergingResults)
 	{
-	    if (testsTobeRolledBack.contains(mr.getMergedTestCaseName()))
+	    if (testsTobeRolledBack.contains(mr.getMergedClassName() + "." + mr.getMergedTestCaseName()))
 		rollBackChanges(mr);
 	}
 
@@ -105,7 +105,9 @@ public class RollBackChanges
 
 	    if (clazz.name.equals(mergedTestCaseClass))
 	    {
-		TestCaseComposer.removeTestCasesFromTestClass(clazz, mergedTestCase, rewriter);
+		TestCaseComposer.reAddTestCasesFromTestClass(clazz, mergedTestCase, rewriter);
+		// TestCaseComposer.removeTestCasesFromTestClass(clazz,
+		// mergedTestCase, rewriter);
 	    }
 	}
 

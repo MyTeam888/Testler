@@ -274,6 +274,8 @@ public class Utils
 
     public static String getTestCaseName(String testCase)
     {
+	if (testCase == null)
+	    return "";
 	int index = testCase.lastIndexOf('.');
 	return testCase.substring(index + 1);
     }
@@ -317,6 +319,26 @@ public class Utils
 	    e.printStackTrace();
 	    return "";
 	}
+    }
+    
+    
+    public static List<String> getAdjStates(List<String> testCases, String state, int n)
+    {
+
+	List<String> adjState = new ArrayList<String>();
+	ArrayList<String> sortedTestStates;
+	try
+	{
+	    sortedTestStates = FileUtils.sortedAllStates.get(testCases);
+	    int index = sortedTestStates.indexOf(state);
+	    for (int i = Math.max(0, index - n); i < Math.min(sortedTestStates.size(), index + n); i++)
+		adjState.add(sortedTestStates.get(i));
+	} catch (ExecutionException e)
+	{
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
+	return adjState;
     }
 
     public static String nextOrPrevState(String state, ArrayList<String> sortedTestStatements, boolean next)

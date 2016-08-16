@@ -92,7 +92,7 @@ public class ClassModel
     {
 	this.typeDec = typeDec;
 	this.cu = cu;
-//	this.name = typeDec.resolveBinding().getQualifiedName();
+	this.name = typeDec.resolveBinding().getQualifiedName();
     }
     
     

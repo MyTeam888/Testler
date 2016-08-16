@@ -19,6 +19,7 @@ import org.eclipse.jdt.core.dom.EnumConstantDeclaration;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IExtendedModifier;
 import org.eclipse.jdt.core.dom.Initializer;
+import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
@@ -52,9 +53,9 @@ public class ComposerHelper
 	{
 	    List<IExtendedModifier> mods = bd.modifiers();
 	    ListRewrite listRewrite = null;
-	    
-		listRewrite = rewriter.getListRewrite(bd, bd.getModifiersProperty());
-	    
+
+	    listRewrite = rewriter.getListRewrite(bd, bd.getModifiersProperty());
+
 	    for (Iterator<IExtendedModifier> iterator = mods.iterator(); iterator.hasNext();)
 	    {
 		IExtendedModifier obj = iterator.next();
@@ -76,11 +77,19 @@ public class ComposerHelper
 
     public static ASTNode getDeclarationHeader(Set<String> classes, String mainTestClass)
     {
+
 	StringBuilder sb = new StringBuilder();
 	for (String clazz : classes)
 	{
 	    if (!clazz.equals(mainTestClass))
+	    {
+		String setup = hasSetup(clazz);
+		if (setup!=null)
+		{
+		    sb.append(String.format("%s.%s();", Utils.getTestCaseName(clazz).toLowerCase(), setup));
+		}
 		sb.append(String.format("%s %s = new %s();", clazz, Utils.getTestCaseName(clazz.toLowerCase()), clazz));
+	    }
 	}
 
 	return Utils.createBlockWithText(sb.toString());
@@ -113,20 +122,68 @@ public class ComposerHelper
 		// "_"
 		// + Utils.getTestClassNameFromTestStatement(stmt.getName());
 		// methodCall.setName(methodCall.getAST().newSimpleName(renamedVar));
-		methodCall.setExpression(methodCall.getAST()
-			.newSimpleName(Utils.getTestCaseName(Utils.getTestClassNameFromTestStatement(stmt.getName())).toLowerCase()));
+		methodCall.setExpression(methodCall.getAST().newSimpleName(
+			Utils.getTestCaseName(Utils.getTestClassNameFromTestStatement(stmt.getName())).toLowerCase()));
 	    }
 	}
 	return cpyStmt;
     }
 
-    
-    
     public static List<TypeDeclaration> getAllClassDefs(ClassModel clazz)
     {
 	return null;
     }
-    
+
+    public static String hasSetup(String className)
+    {
+	Document document;
+	try
+	{
+	    document = TestCaseComposer.getDocumentForClassName(className);
+	    String testClassPath = Utils.getClassFileForProjectPath(className, Settings.PROJECT_MERGED_PATH);
+	    List<ClassModel> classes;
+	    classes = ClassModel.getClasses(document.get(), true, testClassPath, new String[] { Settings.PROJECT_PATH },
+		    new String[] { Settings.LIBRARY_JAVA });
+	    for (ClassModel clazz : classes)
+	    {
+
+		if (clazz.name.equals(className))
+		{
+		    return hasSetup(clazz);
+		}
+	    }
+	} catch (IOException e)
+	{
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
+
+	return null;
+    }
+
+    public static String hasSetup(ClassModel clazz)
+    {
+	List<Method> methods = clazz.getMethods();
+	for (Method m : methods)
+	{
+	    List modifs = m.getMethodDec().modifiers();
+	    for (Iterator it = modifs.listIterator(); it.hasNext();)
+	    {
+		Object obj = it.next();
+		if (obj instanceof MarkerAnnotation)
+		{
+		    MarkerAnnotation ma = (MarkerAnnotation) obj;
+		    if (ma.getTypeName().toString().contains("Before"))
+		    {
+			return m.getMethodDec().getName().getIdentifier();
+		    }
+		}
+	    }
+	}
+
+	return null;
+    }
+
     public static void writeBackMergedTestCases(List<TestStatement> originalStatements, Set<String> testCases,
 	    String name, Map<String, Set<String>> testClasses, String mainClassName) throws IOException
     {
@@ -165,7 +222,8 @@ public class ComposerHelper
 		    ListRewrite listRewrite = rewriter.getListRewrite(clazz.getTypeDec(),
 			    TypeDeclaration.BODY_DECLARATIONS_PROPERTY);
 
-		    TestCaseComposer.removeTestCasesFromTestClass(clazz, testCasesOfClass, rewriter);
+		    // TestCaseComposer.removeTestCasesFromTestClass(clazz,
+		    // testCasesOfClass, rewriter);
 
 		    if (testClassName.equals(mainClassName))
 		    {
@@ -191,8 +249,8 @@ public class ComposerHelper
 		e.printStackTrace();
 	    }
 
-	    Utils.addImports(document, Arrays.asList(new String[]{"org.junit.Ignore"}));
-	    
+	    Utils.addImports(document, Arrays.asList(new String[] { "org.junit.Ignore" }));
+
 	    Utils.writebackSourceCode(document,
 		    Utils.getClassFileForProjectPath(testClassName, Settings.PROJECT_MERGED_PATH));
 	    // System.out.println(document.get());
