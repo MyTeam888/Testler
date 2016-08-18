@@ -31,15 +31,22 @@ import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
 
 import Comparator.NaturalOrderComparator;
+import ca.ubc.salt.model.composer.TestCaseComposer;
+import ca.ubc.salt.model.instrumenter.ClassModel;
+import ca.ubc.salt.model.instrumenter.Instrumenter;
 import ca.ubc.salt.model.instrumenter.TestClassInstrumenter;
 
 public class Utils
@@ -49,6 +56,76 @@ public class Utils
     static
     {
 	classFileMapping = getClassFileMapping();
+    }
+
+    public static LoadingCache<String, ClassModel> classes;
+    static
+    {
+	classes = CacheBuilder.newBuilder().maximumSize(100).build(new CacheLoader<String, ClassModel>()
+	{ // build
+	  // the
+	  // cacheloader
+
+	    @Override
+	    public ClassModel load(String className) throws Exception
+	    {
+		// make the expensive call
+		return getTheModelForTheClass(className);
+	    }
+	});
+    }
+
+    public static List<ClassModel> getAllClasses(List<String> classesNames)
+    {
+	List<ClassModel> classesModel = new LinkedList<ClassModel>();
+	for (String testClassName : classesNames)
+	{
+	    try
+	    {
+		ClassModel theClass;
+		theClass = Utils.getTheModelForTheClass(testClassName);
+		if (theClass != null)
+		    classesModel.add(theClass);
+	    } catch (Exception e)
+	    {
+		e.printStackTrace();
+	    }
+	}
+
+	return classesModel;
+    }
+
+    private static ClassModel getTheModelForTheClass(String testClassName)
+    {
+	try
+	{
+	    String testClassPath = null;
+	    if (testClassName.indexOf('.') == -1)
+	    {
+		testClassName = Utils.getTestCaseName(testClassName);
+		testClassPath = Instrumenter.classFileMappingShortName.get(testClassName);
+	    } else
+		testClassPath = Utils.classFileMapping.get(testClassName);
+	    String source = FileUtils.readFileToString(testClassPath);
+	    Document document = new Document(source);
+	    List<ClassModel> classes = ClassModel.getClasses(document.get(), true, testClassPath,
+		    new String[] { Settings.PROJECT_PATH }, new String[] { Settings.LIBRARY_JAVA });
+
+	    ASTRewrite rewriter = ASTRewrite.create(classes.get(0).getCu().getAST());
+
+	    for (ClassModel clazz : classes)
+	    {
+
+		if (clazz.name.contains(testClassName))
+		{
+		    return clazz;
+		}
+	    }
+	} catch (IOException e)
+	{
+	    e.printStackTrace();
+	}
+	return null;
     }
 
     public static String getNamePrecision(String className, int precision)
@@ -82,7 +159,7 @@ public class Utils
 
     public static boolean isTestClass(File classFile)
     {
-	if (classFile.getAbsolutePath().contains("/test/"))
+	if (classFile.getAbsolutePath().contains("src/test/"))
 	    return true;
 	else
 	    return false;
@@ -168,6 +245,19 @@ public class Utils
 	    Settings.consoleLogger.error("class file mapping is missing !! did you run the instrumenter first ?");
 	}
 	return null;
+    }
+
+    public static Map<String, String> getClassFileMappingShortName()
+    {
+	try
+	{
+	    XStream xstream = new XStream(new StaxDriver());
+	    return (Map<String, String>) xstream.fromXML(new File(Settings.shortClassFileMappingPath));
+	} catch (Exception e)
+	{
+	    Settings.consoleLogger.error("class file mapping is missing !! did you run the instrumenter first ?");
+	}
+	return new HashMap<String, String>();
     }
 
     public static String getClassFile(String className)
@@ -320,8 +410,7 @@ public class Utils
 	    return "";
 	}
     }
-    
-    
+
     public static List<String> getAdjStates(List<String> testCases, String state, int n)
     {
 
@@ -441,6 +530,23 @@ public class Utils
 
     }
 
+    public static void addImports(Document document, Map<String, ImportDeclaration> imports)
+    {
+	ASTParser parser = ASTParser.newParser(AST.JLS8);
+	parser.setKind(ASTParser.K_COMPILATION_UNIT);
+	Map<String, String> pOptions = JavaCore.getOptions();
+	pOptions.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_8);
+	pOptions.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_8);
+	pOptions.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_8);
+	parser.setCompilerOptions(pOptions);
+
+	parser.setSource(document.get().toCharArray());
+	CompilationUnit cu = (CompilationUnit) parser.createAST(null);
+
+	addImports(document, imports, cu);
+
+    }
+
     private static void addImports(Document document, Collection<String> imports, CompilationUnit cu)
     {
 	cu.recordModifications();
@@ -464,12 +570,90 @@ public class Utils
 	}
     }
 
+    private static void addImports(Document document, Map<String, ImportDeclaration> imports, CompilationUnit cu)
+    {
+	cu.recordModifications();
+
+	// String[] imports = new String[] { "java.io.FileWriter",
+	// "java.io.IOException", "java.io.ObjectOutputStream",
+	// "com.thoughtworks.xstream.XStream",
+	// "com.thoughtworks.xstream.io.xml.StaxDriver" };
+	for (Entry<String, ImportDeclaration> entry : imports.entrySet())
+	    addImport(cu, entry.getKey(), entry.getValue());
+
+	TextEdit edits = cu.rewrite(document, null);
+
+	try
+	{
+	    edits.apply(document);
+	} catch (MalformedTreeException | BadLocationException e)
+	{
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
+    }
+
     public static void addImport(CompilationUnit cu, String name)
     {
 	AST ast = cu.getAST();
 	ImportDeclaration imp = ast.newImportDeclaration();
-	imp.setName(ast.newName(name));
-	cu.imports().add(imp);
+	String[] split = name.split(" ");
+	if (split.length == 2 && split[0].equals("static"))
+	{
+	    imp.setName(ast.newName(split[1]));
+	    imp.setStatic(true);
+	    name = split[1];
+	} else
+	{
+	    imp.setName(ast.newName(name));
+	    imp.setStatic(false);
+	}
+	boolean isNew = true;
+	for (Object obj : cu.imports())
+	{
+	    ImportDeclaration imdec = (ImportDeclaration) obj;
+	    if (imdec.getName().getFullyQualifiedName().equals(name))
+	    {
+		isNew = false;
+		break;
+	    }
+	}
+	if (isNew)
+	    cu.imports().add(imp);
+    }
+
+    public static void addImport(CompilationUnit cu, String name, ImportDeclaration imp)
+    {
+	AST ast = cu.getAST();
+	if (imp == null)
+	{
+	    imp = ast.newImportDeclaration();
+	    String[] split = name.split(" ");
+	    if (split.length == 2 && split[0].equals("static"))
+	    {
+		imp.setName(ast.newName(split[1]));
+		imp.setStatic(true);
+		name = split[1];
+	    } else
+	    {
+		imp.setName(ast.newName(name));
+		imp.setStatic(false);
+	    }
+	}
+	else
+	    imp = (ImportDeclaration) ASTNode.copySubtree(ast, imp);
+	boolean isNew = true;
+	for (Object obj : cu.imports())
+	{
+	    ImportDeclaration imdec = (ImportDeclaration) obj;
+	    if (imdec.getName().getFullyQualifiedName().equals(name))
+	    {
+		isNew = false;
+		break;
+	    }
+	}
+	if (isNew)
+	    cu.imports().add(imp);
     }
 
     // could be improved later !
@@ -498,6 +682,26 @@ public class Utils
 
 	}
 	return uncoveredStmts;
+    }
+
+    public static List<String> getAllParents(String child)
+    {
+	List<String> parents = new ArrayList<String>();
+	String parent = Instrumenter.childClassDependency.get(child);
+	while (parent != null)
+	{
+	    try
+	    {
+		parents.add(parent);
+		child = parent;
+		parent = Instrumenter.childClassDependency.get(child);
+	    } catch (Exception e)
+	    {
+		e.printStackTrace();
+	    }
+
+	}
+	return parents;
     }
 
 }

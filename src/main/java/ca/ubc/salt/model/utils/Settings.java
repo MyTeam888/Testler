@@ -20,8 +20,10 @@ public class Settings
     public static final String LIBRARY_JAVA = "/Library/Java/JavaVirtualMachines/jdk1.8.0_25.jdk/Contents/Home/jre/lib/rt.jar";
     // public static final String LIBRARY_JAVA =
     // "/Library/Java/JavaVirtualMachines/jdk1.8.0_20.jdk/Contents/Home/jre/lib/rt.jar";
-//    public static final String PROJECT_PATH = "/Users/arash/Research/repos/commons-math";
-    public static final String PROJECT_PATH = "/Users/arash/Research/repos/commons-math";
+//    public static final String PROJECT_PATH = "/Users/arash/Research/lang/commons-lang";
+    public static final String PROJECT_PATH = "/Users/arash/Research/assertJ/assertj-core";
+//    public static final String PROJECT_PATH = "/Users/arash/Research/checkstyle/checkstyle";
+//    public static final String PROJECT_PATH = "/Users/arash/Research/assertJ/assertj-core";
     // public static final String PROJECT_PATH =
     // "/Users/arash/Documents/workspace-mars/Calculator";
     public static final String PROJECT_INSTRUMENTED_PATH = PROJECT_PATH + "-instrumented";
@@ -29,6 +31,7 @@ public class Settings
     public static final String PROJECT_STOPWATCH_PATH = PROJECT_PATH + "-stopwatched";
     public final static String tracePaths = PROJECT_INSTRUMENTED_PATH + "/traces";
     public final static String classFileMappingPath = "classFileMapping.txt";
+    public final static String shortClassFileMappingPath = "shortClassFileMapping.txt";
 
     public final static String[] methodBlackList = new String[] { "AdamsBashforthIntegratorTest.backward",
 	    "AdamsNordsieckTransformerTest.testTransformExact", "AkimaSplineInterpolatorTest.testInterpolateCubic",

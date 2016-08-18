@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -18,6 +19,7 @@ import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.EnumConstantDeclaration;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IExtendedModifier;
+import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.Initializer;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -139,20 +141,16 @@ public class ComposerHelper
 	Document document;
 	try
 	{
-	    document = TestCaseComposer.getDocumentForClassName(className);
-	    String testClassPath = Utils.getClassFileForProjectPath(className, Settings.PROJECT_MERGED_PATH);
-	    List<ClassModel> classes;
-	    classes = ClassModel.getClasses(document.get(), true, testClassPath, new String[] { Settings.PROJECT_PATH },
-		    new String[] { Settings.LIBRARY_JAVA });
-	    for (ClassModel clazz : classes)
+	    ClassModel clazz = Utils.classes.get(className);
+	    
+	    List<ClassModel> parents = clazz.getAllSuperModelsAndThis();
+	    for (ClassModel parent : parents)
 	    {
-
-		if (clazz.name.equals(className))
-		{
-		    return hasSetup(clazz);
-		}
+		String setup = hasSetup(parent);
+		    if(setup != null)
+			return setup;
 	    }
-	} catch (IOException e)
+	} catch (ExecutionException e)
 	{
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();
@@ -197,7 +195,7 @@ public class ComposerHelper
 
 	addClassHeaderInstantiation(testClasses, mainClassName, path);
 
-	Set<String> imports = new HashSet<String>();
+	Map<String, ImportDeclaration> imports = new HashMap<String, ImportDeclaration>();
 
 	while (!testClasses.isEmpty())
 	{
@@ -222,8 +220,8 @@ public class ComposerHelper
 		    ListRewrite listRewrite = rewriter.getListRewrite(clazz.getTypeDec(),
 			    TypeDeclaration.BODY_DECLARATIONS_PROPERTY);
 
-		    // TestCaseComposer.removeTestCasesFromTestClass(clazz,
-		    // testCasesOfClass, rewriter);
+//		     TestCaseComposer.removeTestCasesFromTestClass(clazz,
+//		     testCasesOfClass, rewriter);
 
 		    if (testClassName.equals(mainClassName))
 		    {

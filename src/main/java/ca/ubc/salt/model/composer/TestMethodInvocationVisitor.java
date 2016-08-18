@@ -2,6 +2,7 @@ package ca.ubc.salt.model.composer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.IBinding;
@@ -18,8 +19,8 @@ public class TestMethodInvocationVisitor extends ASTVisitor
     
     List<MethodInvocation> methodInvocations = new ArrayList<MethodInvocation>();
     
-    String className;
-    public TestMethodInvocationVisitor(String className)
+    Set<String> className;
+    public TestMethodInvocationVisitor(Set<String> className)
     {
 	// TODO Auto-generated constructor stub
 	this.className = className;
@@ -35,7 +36,7 @@ public class TestMethodInvocationVisitor extends ASTVisitor
 	
 	ITypeBinding classBinding  = nodeBinding.getDeclaringClass();
 	String classNameForTheNode = classBinding.getName();
-	if (className.equals(classNameForTheNode))
+	if (className.contains(classNameForTheNode))
 	{
 	    methodInvocations.add(node);
 	}

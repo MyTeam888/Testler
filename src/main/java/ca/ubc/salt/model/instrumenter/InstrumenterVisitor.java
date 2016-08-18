@@ -43,10 +43,10 @@ public class InstrumenterVisitor extends ASTVisitor
     int randomNumber;
     int counter = 2;
     String methodName;
-    ClassModel clazz;
+    List<ClassModel> clazz;
 //    boolean addedUnInitializedVar = false;
 
-    public InstrumenterVisitor(ASTRewrite astRewrite, int randomNumber, String methodName, ClassModel clazz)
+    public InstrumenterVisitor(ASTRewrite astRewrite, int randomNumber, String methodName, List<ClassModel> clazz)
     {
 	this.astRewrite = astRewrite;
 	this.randomNumber = randomNumber;

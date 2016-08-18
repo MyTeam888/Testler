@@ -31,8 +31,16 @@ public class ClassModel
     List<FieldDeclaration> allFields = null;
     List<Method> methods = null;
     public String name;
-    
-    
+
+    public List<ClassModel> getAllSuperModelsAndThis()
+    {
+	List<String> parents = Utils.getAllParents(name);
+
+	List<ClassModel> parentModels = Utils.getAllClasses(parents);
+	parentModels.add(0, this);
+	return parentModels;
+    }
+
     public boolean isClassIsRunBy(String runWith, String runner)
     {
 	List modifs = this.getTypeDec().modifiers();
@@ -45,9 +53,10 @@ public class ClassModel
 		String typeName = mod.getTypeName().getFullyQualifiedName();
 		String value = mod.getValue().toString();
 		if (typeName.contains(runWith) && value.contains(runner))
-		    return true;;
+		    return true;
+		;
 
-	    }else if (obj instanceof NormalAnnotation)
+	    } else if (obj instanceof NormalAnnotation)
 	    {
 		NormalAnnotation mod = (NormalAnnotation) obj;
 		String typeName = mod.getTypeName().getFullyQualifiedName();
@@ -58,16 +67,18 @@ public class ClassModel
 	}
 	return false;
     }
-    
+
     public boolean isInstrumentable()
     {
-//	boolean abstrc = isAbstract();
-//
-//
-////	return !abstrc;
-//	return typeDec.getSuperclassType() == null && typeDec.superInterfaceTypes().isEmpty() && !typeDec.isInterface()
-//		&& !abstrc;
-	if (Instrumenter.parentClassDependency.containsKey(Utils.getTestCaseName(this.name)) == false && !isClassIsRunBy("RunWith", "Retry"))
+	// boolean abstrc = isAbstract();
+	//
+	//
+	//// return !abstrc;
+	// return typeDec.getSuperclassType() == null &&
+	// typeDec.superInterfaceTypes().isEmpty() && !typeDec.isInterface()
+	// && !abstrc;
+	if (Instrumenter.parentClassDependency.containsKey(Utils.getTestCaseName(this.name)) == false
+		&& !isClassIsRunBy("RunWith", "Retry"))
 	    return true;
 	return false;
 
@@ -94,8 +105,6 @@ public class ClassModel
 	this.cu = cu;
 	this.name = typeDec.resolveBinding().getQualifiedName();
     }
-    
-    
 
     public static List<ClassModel> getClasses(String source) throws IOException
     {
@@ -264,7 +273,6 @@ public class ClassModel
 	return vars;
     }
 
-    
     public List<FieldDeclaration> getAllFields()
     {
 	if (this.allFields == null)
@@ -272,9 +280,9 @@ public class ClassModel
 	    this.allFields = new LinkedList<FieldDeclaration>();
 	    this.allFields.addAll(this.getFields());
 	    this.allFields.addAll(this.getStaticFields());
-	    
+
 	}
-	
+
 	return this.allFields;
     }
 }

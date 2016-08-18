@@ -216,11 +216,13 @@ public class TestCaseComposer
 			    SimpleName varCpy = ast.newSimpleName(renamedVar);
 			    ASTNode replacement = getCastStructure(castToMap.get(var.getIdentifier()).getSecond(),
 				    var.getIdentifier(), ast, varCpy);
-			    try{
-			    replaceSimpleNameWithASTNode(var, parentNode, replacement);
-			    }catch(Exception e)
+			    try
 			    {
-				Settings.consoleLogger.error("something wrong with " + parentNode.toString() + " , " + replacement.toString());
+				replaceSimpleNameWithASTNode(var, parentNode, replacement);
+			    } catch (Exception e)
+			    {
+				Settings.consoleLogger.error("something wrong with " + parentNode.toString() + " , "
+					+ replacement.toString());
 				replaceSimpleNameWithASTNode(var, parentNode, ast.newSimpleName(renamedVar));
 			    }
 			} else
@@ -317,6 +319,8 @@ public class TestCaseComposer
 	{
 	    ParameterizedType pt = (ParameterizedType) tp;
 	    pt.typeArguments().clear();
+	    tp = pt.getType();
+
 	}
 	Type tpcpy = (Type) ASTNode.copySubtree(ast, tp);
 	return tpcpy;
@@ -543,8 +547,13 @@ public class TestCaseComposer
 
     public static List<MethodInvocation> getTestMethodInvocations(TestStatement stmt)
     {
-	TestMethodInvocationVisitor smiv = new TestMethodInvocationVisitor(
-		Utils.getTestCaseName(Utils.getTestClassNameFromTestStatement(stmt.getName())));
+
+	Set<String> classes = new HashSet<String>();
+	classes.add(Utils.getTestCaseName(Utils.getTestClassNameFromTestStatement(stmt.getName())));
+	List<String> parents = Utils.getAllParents(Utils.getTestClassNameFromTestStatement(stmt.getName()));
+	for (String parent : parents)
+	    classes.add(parent);
+	TestMethodInvocationVisitor smiv = new TestMethodInvocationVisitor(classes);
 	stmt.statement.accept(smiv);
 	return smiv.getMethodInvocations();
     }
@@ -607,7 +616,7 @@ public class TestCaseComposer
 	List<ASTNode> path = getPathFromStatements(originalStatements);
 	addFieldDecsToPath(fieldDecs, path);
 
-	Set<String> imports = new HashSet<String>();
+	Map<String, ImportDeclaration> imports = new HashMap<String, ImportDeclaration>();
 
 	Set<Method> nonTestMethods = new HashSet<Method>();
 
@@ -677,16 +686,21 @@ public class TestCaseComposer
 	addImportsAndNonTestMethodsToMainClass(nonTestMethods, mainClassName, imports);
     }
 
-    static void getAllImports(Set<String> imports, ClassModel clazz)
+    static void getAllImports(Map<String, ImportDeclaration> imports, ClassModel clazz)
     {
 	ITypeBinding bind = clazz.getTypeDec().resolveBinding();
-	imports.add(bind.getQualifiedName());
+	imports.put(bind.getQualifiedName(), null);
 	for (Object obj : clazz.getCu().imports())
 	{
 	    if (obj instanceof ImportDeclaration)
 	    {
 		ImportDeclaration imDec = (ImportDeclaration) obj;
-		imports.add(imDec.getName().getFullyQualifiedName());
+		if (imDec.isStatic())
+		    imports.put(
+			    "static " + imDec.getName().getFullyQualifiedName(),
+			    imDec);
+		else
+		    imports.put(imDec.getName().getFullyQualifiedName(), imDec);
 	    }
 	}
     }
@@ -733,7 +747,7 @@ public class TestCaseComposer
     }
 
     public static void addImportsAndNonTestMethodsToMainClass(Set<Method> nonTestMethods, String mainClassName,
-	    Set<String> imports) throws IOException
+	    Map<String, ImportDeclaration> imports) throws IOException
     {
 	Document document = getDocumentForClassName(mainClassName);
 	if (nonTestMethods != null)

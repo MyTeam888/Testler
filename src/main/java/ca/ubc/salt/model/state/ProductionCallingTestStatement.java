@@ -66,7 +66,7 @@ public class ProductionCallingTestStatement
 	for (Map<String, List<String>> uniqueTestStatements : uniqueTestStatementsSet)
 	    conGraph = getConnectivityGraph(uniqueTestStatements, conGraph);
 
-	System.out.println(conGraph);
+//	System.out.println(conGraph);
 	Set<String> visited = new HashSet<String>();
 	List<Set<String>> connectedComponents = new LinkedList<Set<String>>();
 

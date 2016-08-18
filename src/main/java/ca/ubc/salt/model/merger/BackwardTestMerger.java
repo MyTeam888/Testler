@@ -169,9 +169,9 @@ public class BackwardTestMerger
 
 //	    connectedComponent = new HashSet<String>();
 //	    connectedComponent.add(
-//		    "org.apache.commons.math4.util.BigRealTest.testDivide");
+//		    "org.apache.commons.collections4.collection.TransformedCollectionTest.testTransformedCollection_decorateTransform");
 //	    connectedComponent
-//		    .add("org.apache.commons.math4.util.BigRealTest.testMultiply");
+//		    .add("org.apache.commons.collections4.collection.TransformedCollectionTest.testTransformedCollection");
 	    // connectedComponent.add("FastFourierTransformerTest.test2DDataUnitary");
 	    // connectedComponent.add("FastFourierTransformerTest.testAdHocData");
 	    // connectedComponent.add("Array2DRowRealMatrixTest.testGetColumn");

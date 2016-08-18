@@ -238,7 +238,7 @@ public class TestClassInstrumenter
 	// instrumentClass(Settings.TEST_CLASS);
     }
 
-    public static ASTNode generateInstrumentationHeader(ClassModel clazz, int randomNumber, String fileName,
+    public static ASTNode generateInstrumentationHeader(List<ClassModel> clazz, int randomNumber, String fileName,
 	    String methodName)
     {
 
@@ -246,7 +246,7 @@ public class TestClassInstrumenter
 	sb.append(String.format(
 		"InstrumentClassGenerator.init(%s+\".%s\");InstrumentClassGenerator.initTestStatement(0);",
 		"this.thisTestClassName", methodName));
-	sb.append(getTextForInstrumentation(clazz.getVarDecsOfFields(), 1, null, clazz));
+	sb.append(getTextForInstrumentation(new LinkedList<VariableDeclarationFragment>(), 1, null, clazz));
 	return Utils.createBlockWithText(sb.toString());
 
     }
@@ -258,7 +258,7 @@ public class TestClassInstrumenter
 
     public static ASTNode generateInstrumentationBlock(int randomNumber,
 	    LinkedList<VariableDeclarationFragment> varDecs, String methodName, int counter,
-	    Map<String, VariableDeclarationFragment> unassignedVars, ClassModel clazz)
+	    Map<String, VariableDeclarationFragment> unassignedVars, List<ClassModel> clazz)
     {
 
 	String text = getTextForInstrumentation(varDecs, counter, unassignedVars, clazz);
@@ -320,33 +320,38 @@ public class TestClassInstrumenter
     // }
 
     public static String getTextForInstrumentation(List<VariableDeclarationFragment> list, int counter,
-	    Map<String, VariableDeclarationFragment> unassignedVars, ClassModel clazz)
+	    Map<String, VariableDeclarationFragment> unassignedVars, List<ClassModel> clazzes)
     {
 	StringBuilder sb = new StringBuilder();
 	sb.append(String.format("InstrumentClassGenerator.traceTestStatementExecution("));
-
-	for (FieldDeclaration fd : clazz.getStaticFields())
+	boolean remove = false;
+//	if (clazzes.size() > 1)
+//	    System.out.println();
+	for (ClassModel clazz : clazzes)
 	{
-	    for (Object obj : fd.fragments())
+	    for (FieldDeclaration fd : clazz.getStaticFields())
 	    {
-		VariableDeclarationFragment vdf = (VariableDeclarationFragment) obj;
-		sb.append("\"");
-		sb.append(vdf.getName());
-		sb.append("\"");
-		sb.append(',');
-
+		for (Object obj : fd.fragments())
+		{
+		    VariableDeclarationFragment vdf = (VariableDeclarationFragment) obj;
+		    sb.append("\"");
+		    sb.append(vdf.getName());
+		    sb.append("\"");
+		    sb.append(',');
+		    remove = true;
+		}
 	    }
-	}
-	for (FieldDeclaration fd : clazz.getFields())
-	{
-	    for (Object obj : fd.fragments())
+	    for (FieldDeclaration fd : clazz.getFields())
 	    {
-		VariableDeclarationFragment vdf = (VariableDeclarationFragment) obj;
-		sb.append("\"");
-		sb.append(vdf.getName());
-		sb.append("\"");
-		sb.append(',');
-
+		for (Object obj : fd.fragments())
+		{
+		    VariableDeclarationFragment vdf = (VariableDeclarationFragment) obj;
+		    sb.append("\"");
+		    sb.append(vdf.getName());
+		    sb.append("\"");
+		    sb.append(',');
+		    remove = true;
+		}
 	    }
 	}
 	for (VariableDeclarationFragment var : list)
@@ -355,28 +360,35 @@ public class TestClassInstrumenter
 	    sb.append(var.getName());
 	    sb.append("\"");
 	    sb.append(',');
+	    remove = true;
 	}
-	if (list.size() > 0)
+	if (remove)
 	    sb.setLength(sb.length() - 1);
 	sb.append(");");
 
+	remove = false;
 	sb.append("InstrumentClassGenerator.writeObjects(");
-	for (FieldDeclaration fd : clazz.getStaticFields())
+	for (ClassModel clazz : clazzes)
 	{
-	    for (Object obj : fd.fragments())
+	    for (FieldDeclaration fd : clazz.getStaticFields())
 	    {
-		VariableDeclarationFragment vdf = (VariableDeclarationFragment) obj;
-		String varName = clazz.getTypeDec().getName() + "." + vdf.getName().getIdentifier();
-		addTextForWriteObject(unassignedVars, sb, vdf, varName);
+		for (Object obj : fd.fragments())
+		{
+		    VariableDeclarationFragment vdf = (VariableDeclarationFragment) obj;
+		    String varName = clazz.getTypeDec().getName() + "." + vdf.getName().getIdentifier();
+		    addTextForWriteObject(unassignedVars, sb, vdf, varName);
+		    remove = true;
+		}
 	    }
-	}
-	for (FieldDeclaration fd : clazz.getFields())
-	{
-	    for (Object obj : fd.fragments())
+	    for (FieldDeclaration fd : clazz.getFields())
 	    {
-		VariableDeclarationFragment vdf = (VariableDeclarationFragment) obj;
-		String varName = "this." + vdf.getName().getIdentifier();
-		addTextForWriteObject(unassignedVars, sb, vdf, varName);
+		for (Object obj : fd.fragments())
+		{
+		    VariableDeclarationFragment vdf = (VariableDeclarationFragment) obj;
+		    String varName = "this." + vdf.getName().getIdentifier();
+		    addTextForWriteObject(unassignedVars, sb, vdf, varName);
+		    remove = true;
+		}
 	    }
 	}
 
@@ -384,8 +396,9 @@ public class TestClassInstrumenter
 	{
 	    String varName = var.getName().getIdentifier();
 	    addTextForWriteObject(unassignedVars, sb, var, varName);
+	    remove = true;
 	}
-	if (list.size() > 0)
+	if (remove)
 	    sb.setLength(sb.length() - 1);
 	sb.append(");");
 	sb.append(String.format("InstrumentClassGenerator.initTestStatement(%d);", counter));

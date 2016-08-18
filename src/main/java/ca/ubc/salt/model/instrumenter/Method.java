@@ -58,7 +58,8 @@ public class Method
 	    if (obj instanceof MarkerAnnotation)
 	    {
 		MarkerAnnotation ma = (MarkerAnnotation) obj;
-		if (ma.getTypeName().toString().contains("Ignore") || ma.getTypeName().toString().contains("Deprecated"))
+		if (ma.getTypeName().toString().contains("Ignore")
+			|| ma.getTypeName().toString().contains("Deprecated"))
 		{
 		    return true;
 		}
@@ -79,7 +80,9 @@ public class Method
 	    return;
 	ListRewrite listRewrite = rewriter.getListRewrite(block, Block.STATEMENTS_PROPERTY);
 
-	Block header = (Block) TestClassInstrumenter.generateInstrumentationHeader(this.clazz, randomNumber, fileName,
+	List<ClassModel> parentModels = this.clazz.getAllSuperModelsAndThis();
+
+	Block header = (Block) TestClassInstrumenter.generateInstrumentationHeader(parentModels, randomNumber, fileName,
 		methodDec.getName().toString());
 	List<Statement> stmts = header.statements();
 	if (start)
@@ -97,7 +100,7 @@ public class Method
 	// listRewrite.insertLast(footer, null);
 
 	InstrumenterVisitor visitor = new InstrumenterVisitor(rewriter, randomNumber, methodDec.getName().toString(),
-		this.clazz);
+		parentModels);
 	// visitor.addFieldVars(this.clazz);
 	this.methodDec.accept(visitor);
 
@@ -225,7 +228,7 @@ public class Method
 		    na.setTypeName(name);
 		    MemberValuePair pair = ast.newMemberValuePair();
 		    pair.setName(ast.newSimpleName("timeout"));
-		    pair.setValue(ast.newNumberLiteral("600000"));
+		    pair.setValue(ast.newNumberLiteral("30000"));
 		    na.values().add(pair);
 		    listRewrite.insertFirst(na, null);
 		}
@@ -241,10 +244,6 @@ public class Method
 
     public boolean isTestMethod()
     {
-
-	// if
-	// (method.methodDec.getName().toString().toLowerCase().contains("test"))
-	// return true;
 
 	List<NormalAnnotation> modifs = this.methodDec.modifiers();
 	AST ast = this.methodDec.getAST();
@@ -277,6 +276,12 @@ public class Method
 		}
 	    }
 	}
+
+	// if
+	// (this.methodDec.getName().toString().toLowerCase().startsWith("test")
+	// && (this.methodDec.parameters() == null ||
+	// this.methodDec.parameters().size() == 0))
+	// return true;
 
 	return false;
     }

@@ -67,10 +67,8 @@ public class ReadVariableVisitor extends ASTVisitor
 		    Utils.addToTheSetInMap(needToBeDefinedVars, methodName + "-" + counter + ".xml",
 			    new VarDefinitionPreq(left, type));
 		}
-		
 		else
-		    System.out.println(exp.toString() + left.resolveBinding().toString() + ",   "
-			    + left.resolveTypeBinding().toString());
+		    System.out.println(exp.toString() + left);
 	    }
 	    getReadVars(a.getRightHandSide());
 //	    getReadVars(a);
