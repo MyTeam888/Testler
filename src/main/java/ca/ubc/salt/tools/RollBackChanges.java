@@ -36,14 +36,17 @@ public class RollBackChanges
 
 	Scanner sc = new Scanner(System.in);
 
-	Set<String> testsTobeRolledBack = new HashSet<String>();
+	Set<String> testsToKeep = new HashSet<String>();
 
 	while (sc.hasNextLine())
-	    testsTobeRolledBack.add(sc.nextLine());
+	    testsToKeep.add(sc.nextLine());
 
+	System.out.println("starting");
 	for (MergingResult mr : mergingResults)
 	{
-	    if (testsTobeRolledBack.contains(mr.getMergedClassName() + "." + mr.getMergedTestCaseName()))
+	    if (testsToKeep.contains(mr.getMergedClassName() + "." + mr.getMergedTestCaseName()))
+		applyChanges(mr);
+	    else
 		rollBackChanges(mr);
 	}
 
@@ -72,7 +75,7 @@ public class RollBackChanges
 
 		if (clazz.name.equals(testClassName))
 		{
-		    TestCaseComposer.reAddTestCasesFromTestClass(clazz, testCasesOfClass, rewriter);
+		    TestCaseComposer.reAddTestCasesFromTestClass(clazz, testCasesOfClass, rewriter, false);
 		}
 	    }
 
@@ -105,9 +108,9 @@ public class RollBackChanges
 
 	    if (clazz.name.equals(mergedTestCaseClass))
 	    {
-		TestCaseComposer.reAddTestCasesFromTestClass(clazz, mergedTestCase, rewriter);
-		// TestCaseComposer.removeTestCasesFromTestClass(clazz,
-		// mergedTestCase, rewriter);
+		TestCaseComposer.reAddTestCasesFromTestClass(clazz, mergedTestCase, rewriter, false);
+		TestCaseComposer.removeTestCasesFromTestClass(clazz,
+		mergedTestCase, rewriter);
 	    }
 	}
 
@@ -123,6 +126,80 @@ public class RollBackChanges
 	Utils.writebackSourceCode(document,
 		Utils.getClassFileForProjectPath(mergedTestCaseClass, Settings.PROJECT_MERGED_PATH));
 
+    }
+    public static void applyChanges(MergingResult mergingResult) throws IOException
+    {
+	Map<String, Set<String>> testClasses = Utils.getTestClassMapFromTestCases(mergingResult.getMergedTestCases());
+	
+	for (String testClassName : testClasses.keySet())
+	{
+	    
+	    Document document = TestCaseComposer.getDocumentForClassName(testClassName);
+	    String testClassPath = Utils.getClassFileForProjectPath(testClassName, Settings.PROJECT_MERGED_PATH);
+	    List<ClassModel> classes = ClassModel.getClasses(document.get(), true, testClassPath,
+		    new String[] { Settings.PROJECT_PATH }, new String[] { Settings.LIBRARY_JAVA });
+	    
+	    Set<String> testCasesOfClass = testClasses.get(testClassName);
+	    
+	    ASTRewrite rewriter = ASTRewrite.create(classes.get(0).getCu().getAST());
+	    
+	    for (ClassModel clazz : classes)
+	    {
+		
+		if (clazz.name.equals(testClassName))
+		{
+		    TestCaseComposer.reAddTestCasesFromTestClass(clazz, testCasesOfClass, rewriter, false);
+		    TestCaseComposer.removeTestCasesFromTestClass(clazz, testCasesOfClass, rewriter);
+		}
+	    }
+	    
+	    TextEdit edits = rewriter.rewriteAST(document, null);
+	    try
+	    {
+		edits.apply(document);
+	    } catch (MalformedTreeException | BadLocationException e)
+	    {
+		e.printStackTrace();
+	    }
+	    
+	    Utils.writebackSourceCode(document,
+		    Utils.getClassFileForProjectPath(testClassName, Settings.PROJECT_MERGED_PATH));
+	}
+	
+	String mergedTestCaseClass = mergingResult.getMergedClassName();
+	Set<String> mergedTestCase = new HashSet<String>();
+	mergedTestCase.add(mergedTestCaseClass + "." + mergingResult.getMergedTestCaseName());
+	
+	Document document = TestCaseComposer.getDocumentForClassName(mergedTestCaseClass);
+	String testClassPath = Utils.getClassFileForProjectPath(mergedTestCaseClass, Settings.PROJECT_MERGED_PATH);
+	List<ClassModel> classes = ClassModel.getClasses(document.get(), true, testClassPath,
+		new String[] { Settings.PROJECT_PATH }, new String[] { Settings.LIBRARY_JAVA });
+	
+	ASTRewrite rewriter = ASTRewrite.create(classes.get(0).getCu().getAST());
+	
+	for (ClassModel clazz : classes)
+	{
+	    
+	    if (clazz.name.equals(mergedTestCaseClass))
+	    {
+		TestCaseComposer.reAddTestCasesFromTestClass(clazz, mergedTestCase, rewriter, true);
+		// TestCaseComposer.removeTestCasesFromTestClass(clazz,
+		// mergedTestCase, rewriter);
+	    }
+	}
+	
+	TextEdit edits = rewriter.rewriteAST(document, null);
+	try
+	{
+	    edits.apply(document);
+	} catch (MalformedTreeException | BadLocationException e)
+	{
+	    e.printStackTrace();
+	}
+	
+	Utils.writebackSourceCode(document,
+		Utils.getClassFileForProjectPath(mergedTestCaseClass, Settings.PROJECT_MERGED_PATH));
+	
     }
 
 }

@@ -174,27 +174,27 @@ public class ProductionCallingTestStatement
 
     public static void main(String[] args) throws FileNotFoundException
     {
-	File f = new File(Settings.PROJECT_INSTRUMENTED_PATH + "/time");
+//	File f = new File(Settings.PROJECT_INSTRUMENTED_PATH + "/time");
+//
+//	File[] files = f.listFiles();
+//
+//	long sum = 0;
+//	for (File file : files)
+//	{
+//	    try
+//	    {
+//		Scanner sc = new Scanner(file);
+//		long l = sc.nextLong();
+//		sum += l;
+//		sc.close();
+//	    } catch (Exception e)
+//	    {
+//
+//	    }
+//	}
+//	System.out.println(sum);
 
-	File[] files = f.listFiles();
-
-	long sum = 0;
-	for (File file : files)
-	{
-	    try
-	    {
-		Scanner sc = new Scanner(file);
-		long l = sc.nextLong();
-		sum += l;
-		sc.close();
-	    } catch (Exception e)
-	    {
-
-	    }
-	}
-	System.out.println(sum);
-
-	// writeStatToFile();
+	 writeStatToFile();
     }
 
     private static Map<String, Set<String>> splitMethodCalls(Map<String, List<String>> uniqueTestStatements)
@@ -224,7 +224,7 @@ public class ProductionCallingTestStatement
     {
 	Map<String, Set<String>> uniqueTestStatements = splitMethodCalls(getUniqueTestStatements());
 
-	Formatter fw = new Formatter("expnmethod2.csv");
+	Formatter fw = new Formatter("expnmethod-collections.csv");
 
 	for (Entry<String, Set<String>> entry : uniqueTestStatements.entrySet())
 	{

@@ -5,6 +5,7 @@ import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.SimpleName;
 
@@ -44,7 +45,7 @@ public class StatementReadVariableVisitor extends ASTVisitor
 	if (!node.isDeclaration())
 	{
 	    final IBinding nodeBinding = node.resolveBinding();
-	    if (nodeBinding instanceof IVariableBinding)
+	    if (nodeBinding == null || nodeBinding instanceof IVariableBinding)
 	    {
 		IVariableBinding ivb = (IVariableBinding) nodeBinding;
 		readVars.add(node);

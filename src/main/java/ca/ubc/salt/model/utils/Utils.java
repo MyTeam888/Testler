@@ -494,7 +494,13 @@ public class Utils
 	{
 	    IBinding nodeBinding = var.resolveBinding();
 	    IVariableBinding ivb = (IVariableBinding) nodeBinding;
-	    varNames.add(ivb.getName());
+	    if (ivb != null)
+		varNames.add(ivb.getName());
+	    else
+	    {
+//		Settings.consoleLogger.error("binding is null for " + var);
+		varNames.add(var.getIdentifier());
+	    }
 	}
 	return varNames;
     }
@@ -639,8 +645,7 @@ public class Utils
 		imp.setName(ast.newName(name));
 		imp.setStatic(false);
 	    }
-	}
-	else
+	} else
 	    imp = (ImportDeclaration) ASTNode.copySubtree(ast, imp);
 	boolean isNew = true;
 	for (Object obj : cu.imports())
@@ -684,6 +689,19 @@ public class Utils
 	return uncoveredStmts;
     }
 
+    public static List<String> getAllParentsPaths(String child)
+    {
+	List<String> parentNames = getAllParents(child);
+	List<String> paths = new ArrayList<String>();
+	for (String parent : parentNames)
+	{
+	    String path = Instrumenter.classFileMappingShortName.get(parent);
+	    if (path != null)
+		paths.add(path);
+	}
+	return paths;
+    }
+
     public static List<String> getAllParents(String child)
     {
 	List<String> parents = new ArrayList<String>();
@@ -702,6 +720,15 @@ public class Utils
 
 	}
 	return parents;
+    }
+
+    public static String getUnitName (String path)
+    {
+        String projectPath = Settings.PROJECT_PATH;
+        int index = projectPath.lastIndexOf('/');
+        projectPath = projectPath.substring(0, index);
+        String reminder = path.replace(projectPath, "");
+        return reminder;
     }
 
 }

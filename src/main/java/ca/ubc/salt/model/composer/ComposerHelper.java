@@ -41,11 +41,54 @@ import ca.ubc.salt.model.instrumenter.ClassModel;
 import ca.ubc.salt.model.instrumenter.Method;
 import ca.ubc.salt.model.merger.BackwardTestMerger;
 import ca.ubc.salt.model.state.TestStatement;
+import ca.ubc.salt.model.utils.FileUtils;
 import ca.ubc.salt.model.utils.Settings;
 import ca.ubc.salt.model.utils.Utils;
 
 public class ComposerHelper
 {
+
+    public static void makeParentChainPublic(ClassModel clazz)
+    {
+	List<String> paths = Utils.getAllParentsPaths(clazz.name);
+	for (String path : paths)
+	{
+	    path = path.replace(Settings.PROJECT_PATH, Settings.PROJECT_MERGED_PATH);
+	    String source;
+	    List<ClassModel> classes;
+	    try
+	    {
+		source = FileUtils.readFileToString(path);
+
+		Document document = new Document(source);
+		classes = ClassModel.getClasses(document.get(), true, Utils.getUnitName(path),
+			new String[] { Settings.PROJECT_PATH },
+			new String[] { Settings.LIBRARY_JAVA, Settings.PROJECT_PATH + "/target" });
+
+		ASTRewrite rewriter = ASTRewrite.create(classes.get(0).getCu().getAST());
+
+		for (ClassModel pclazz : classes)
+		{
+		    makeEverythingPublic(pclazz, rewriter);
+		}
+
+		TextEdit edits = rewriter.rewriteAST(document, null);
+		try
+		{
+		    edits.apply(document);
+		} catch (MalformedTreeException | BadLocationException e)
+		{
+		    e.printStackTrace();
+		}
+
+		Utils.writebackSourceCode(document, path);
+	    } catch (IOException e)
+	    {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	    }
+	}
+    }
 
     public static void makeEverythingPublic(ClassModel clazz, ASTRewrite rewriter)
     {
@@ -86,7 +129,7 @@ public class ComposerHelper
 	    if (!clazz.equals(mainTestClass))
 	    {
 		String setup = hasSetup(clazz);
-		if (setup!=null)
+		if (setup != null)
 		{
 		    sb.append(String.format("%s.%s();", Utils.getTestCaseName(clazz).toLowerCase(), setup));
 		}
@@ -142,13 +185,13 @@ public class ComposerHelper
 	try
 	{
 	    ClassModel clazz = Utils.classes.get(className);
-	    
+
 	    List<ClassModel> parents = clazz.getAllSuperModelsAndThis();
 	    for (ClassModel parent : parents)
 	    {
 		String setup = hasSetup(parent);
-		    if(setup != null)
-			return setup;
+		if (setup != null)
+		    return setup;
 	    }
 	} catch (ExecutionException e)
 	{
@@ -220,8 +263,8 @@ public class ComposerHelper
 		    ListRewrite listRewrite = rewriter.getListRewrite(clazz.getTypeDec(),
 			    TypeDeclaration.BODY_DECLARATIONS_PROPERTY);
 
-//		     TestCaseComposer.removeTestCasesFromTestClass(clazz,
-//		     testCasesOfClass, rewriter);
+		    // TestCaseComposer.removeTestCasesFromTestClass(clazz,
+		    // testCasesOfClass, rewriter);
 
 		    if (testClassName.equals(mainClassName))
 		    {
@@ -230,11 +273,14 @@ public class ComposerHelper
 			TestCaseComposer.addMergedTestCase(path, name, clazz, listRewrite);
 			// System.out.println(getMergedMethod(path, name,
 			// clazz.getTypeDec().getAST()).toString());
+
 		    } else
 		    {
 			TestCaseComposer.getAllImports(imports, clazz);
 			makeEverythingPublic(clazz, rewriter);
+
 		    }
+		    makeParentChainPublic(clazz);
 
 		}
 	    }

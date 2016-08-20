@@ -68,7 +68,9 @@ public class ReadVariableVisitor extends ASTVisitor
 			    new VarDefinitionPreq(left, type));
 		}
 		else
-		    System.out.println(exp.toString() + left);
+		{
+//		    System.out.println("binding is null for " exp.toString() + left);
+		}
 	    }
 	    getReadVars(a.getRightHandSide());
 //	    getReadVars(a);

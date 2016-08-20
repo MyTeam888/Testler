@@ -17,7 +17,7 @@ public class StatementVariableVisitor extends ASTVisitor
     public boolean visit(SimpleName node)
     {
 	final IBinding nodeBinding = node.resolveBinding();
-	if (nodeBinding instanceof IVariableBinding)
+	if (nodeBinding == null || nodeBinding instanceof IVariableBinding)
 	{
 	    IVariableBinding ivb = (IVariableBinding) nodeBinding;
 	    vars.put(node.getIdentifier(), node);

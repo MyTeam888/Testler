@@ -210,7 +210,9 @@ public class TestCaseComposer
 		    int index = renamedVar.lastIndexOf('.');
 		    if (index == -1)
 		    {
-			if (leftHandSide == false && castToMap != null && castToMap.containsKey(var.getIdentifier()))
+			Pair<String, String> pair = castToMap.get(var.getIdentifier());
+			if (leftHandSide == false && castToMap != null && pair != null && pair.getSecond() != null
+				&& !pair.getSecond().equals(""))
 			{
 			    AST ast = var.getAST();
 			    SimpleName varCpy = ast.newSimpleName(renamedVar);
@@ -235,7 +237,9 @@ public class TestCaseComposer
 			AST ast = parentNode.getAST();
 
 			ASTNode replacement = ast.newQualifiedName(ast.newName(q), ast.newSimpleName(v));
-			if (leftHandSide == false && castToMap != null && castToMap.containsKey(var.getIdentifier()))
+			Pair<String, String> pair = castToMap.get(var.getIdentifier());
+			if (leftHandSide == false && castToMap != null && pair != null && pair.getSecond() != null
+				&& !pair.getSecond().equals(""))
 			{
 			    replacement = getCastStructure(castToMap.get(var.getIdentifier()).getSecond(),
 				    var.getIdentifier(), ast, replacement);
@@ -696,9 +700,7 @@ public class TestCaseComposer
 	    {
 		ImportDeclaration imDec = (ImportDeclaration) obj;
 		if (imDec.isStatic())
-		    imports.put(
-			    "static " + imDec.getName().getFullyQualifiedName(),
-			    imDec);
+		    imports.put("static " + imDec.getName().getFullyQualifiedName(), imDec);
 		else
 		    imports.put(imDec.getName().getFullyQualifiedName(), imDec);
 	    }
@@ -881,7 +883,7 @@ public class TestCaseComposer
 
     }
 
-    public static void reAddTestCasesFromTestClass(ClassModel clazz, Set<String> testCasesOfClass, ASTRewrite rewrite)
+    public static void reAddTestCasesFromTestClass(ClassModel clazz, Set<String> testCasesOfClass, ASTRewrite rewrite, boolean flag)
     {
 	// Settings.consoleLogger.error(String.format("removing %s from %s",
 	// testCasesOfClass, clazz.getTypeDec().getName().toString()));
@@ -895,6 +897,8 @@ public class TestCaseComposer
 		ListRewrite listRewrite = rewrite.getListRewrite(m.getMethodDec(),
 			MethodDeclaration.MODIFIERS2_PROPERTY);
 		List modifs = m.getMethodDec().modifiers();
+		if (flag && m.getMethodDec().toString().contains("return;"))
+		    System.out.println(m.getFullMethodName());
 		for (Iterator it = modifs.listIterator(); it.hasNext();)
 		{
 		    Object obj = it.next();

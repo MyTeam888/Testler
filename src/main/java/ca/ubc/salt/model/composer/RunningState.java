@@ -134,16 +134,17 @@ public class RunningState
 		// ITypeBinding typeBind = sname.resolveTypeBinding();
 		IBinding bind = sname.resolveBinding();
 		IVariableBinding iv = (IVariableBinding) bind;
-		ITypeBinding typeBind = iv.getType();
+
+		ITypeBinding typeBind = (iv != null ? iv.getType() : null);
 		if (typeBind != null)
 		{
 		    type = typeBind.getName();
-//		    type = addFinalLiteral(sname, type);
+		    // type = addFinalLiteral(sname, type);
 
 		} else
 		{
-		    Settings.consoleLogger
-			    .error("typeBinding is null for " + sname.toString() + " in " + stmt.toString());
+//		    Settings.consoleLogger
+//			    .error("typeBinding is null for " + sname.toString() + " in " + stmt.toString());
 		}
 	    }
 	    if (renamedName != null)
@@ -274,6 +275,7 @@ public class RunningState
 	    done.add(testClass);
 	}
     }
+
     // public RunningState(Collection<String> testCases, String mainTestClass)
     // {
     // nameValuePairForCurrentState = new HashMap<String, String>();
@@ -299,10 +301,10 @@ public class RunningState
     // done.add(testClass);
     // }
     // }
-@Override
-public String toString()
-{
-    // TODO Auto-generated method stub
-    return nameTypePairForCurrentState.toString();
-}
+    @Override
+    public String toString()
+    {
+	// TODO Auto-generated method stub
+	return nameTypePairForCurrentState.toString();
+    }
 }

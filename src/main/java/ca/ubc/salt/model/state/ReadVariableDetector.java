@@ -93,6 +93,18 @@ public class ReadVariableDetector
 
     }
 
+    public static String[] getSources(String path, String testCase)
+    {
+	String className = Utils.getTestClassNameFromTestCase(testCase);
+	List<String> parentPaths = Utils.getAllParentsPaths(className);
+	String[] arr = new String[parentPaths.size()+1];
+	arr[0] = path;
+	for (int i = 1; i < arr.length; i++)
+	{
+	    arr[i] = parentPaths.get(i - 1);
+	}
+	return arr;
+    }
     public static Map<String, Set<SimpleName>> populateReadVarsForTestCaseOfFile(String path, String testcase,
 	    Map<String, Set<VarDefinitionPreq>> definitionPreq, Map<String, Statement> allASTStatements) throws IOException
     {
@@ -104,8 +116,8 @@ public class ReadVariableDetector
 
 	    String source = FileUtils.readFileToString(testClass);
 	    Document document = new Document(source);
-	    List<ClassModel> classes = ClassModel.getClasses(document.get(), true, path,
-		    new String[] { Settings.PROJECT_PATH }, new String[] { Settings.LIBRARY_JAVA });
+	    List<ClassModel> classes = ClassModel.getClasses(document.get(), true, Utils.getUnitName(path),
+		    new String[] {Settings.PROJECT_PATH}, new String[] { Settings.LIBRARY_JAVA, Settings.PROJECT_PATH + "/target" });
 
 	    Map<String, Set<SimpleName>> readVars = new HashMap<String, Set<SimpleName>>();
 
@@ -151,7 +163,10 @@ public class ReadVariableDetector
 	for (Method m : methods)
 	{
 	    if (m.getMethodDec().getName().toString().equals(Utils.getTestCaseName(testcase)))
+		{
 		m.populateReadVars(document, loadedClasses, readVars, definitionPreq, allASTStatements);
+		break;
+		}
 	}
 
     }

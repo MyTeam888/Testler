@@ -136,7 +136,7 @@ public class ClassModel
 	    // };
 	    // String[] classpath = {"C:\\Program
 	    // Files\\Java\\jre1.8.0_25\\lib\\rt.jar"};
-	    parser.setEnvironment(classPath, sources, new String[] { "UTF-8" }, true);
+	    parser.setEnvironment(classPath, sources, null, true);
 	}
 	parser.setSource(source.toCharArray());
 	CompilationUnit cu = (CompilationUnit) parser.createAST(null);

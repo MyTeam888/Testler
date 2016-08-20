@@ -232,12 +232,12 @@ public class TestStatement extends TestModelNode
 	// ITypeBinding typeBind = sname.resolveTypeBinding();
 	IBinding bind = sim.resolveBinding();
 	IVariableBinding iv = (IVariableBinding) bind;
-	ITypeBinding typeBind = iv.getType();
+	ITypeBinding typeBind = (iv != null ? iv.getType() : null);
 	if (typeBind != null)
 	    return typeBind.getName();
 	else
 	{
-	    Settings.consoleLogger.error("typeBinding is null for " + sim.toString() + " in " + this.toString());
+//	    Settings.consoleLogger.error("typeBinding is null for " + sim.toString() + " in " + this.toString());
 	}
 
 	return "";

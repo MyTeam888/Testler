@@ -169,14 +169,13 @@ public class BackwardTestMerger
 
 //	    connectedComponent = new HashSet<String>();
 //	    connectedComponent.add(
-//		    "org.apache.commons.collections4.collection.TransformedCollectionTest.testTransformedCollection_decorateTransform");
-//	    connectedComponent
-//		    .add("org.apache.commons.collections4.collection.TransformedCollectionTest.testTransformedCollection");
-	    // connectedComponent.add("FastFourierTransformerTest.test2DDataUnitary");
-	    // connectedComponent.add("FastFourierTransformerTest.testAdHocData");
-	    // connectedComponent.add("Array2DRowRealMatrixTest.testGetColumn");
-	    // connectedComponent.add("ComplexTest.testExp");
-	    // connectedComponent.add("ComplexTest.testScalarAdd");
+//		    "org.assertj.core.util.Maps_newConcurrentHashMap_Test.should_return_new_ConcurrentHashMap");
+//	    connectedComponent.add(
+//		    "org.assertj.core.util.Maps_newConcurrentHashMap_Test.should_return_new_ConcurrentHashMap_should_return_empty_mutable_ConcurrentHashMap");
+//	     connectedComponent.add("FastFourierTransformerTest.testAdHocData");
+//	     connectedComponent.add("Array2DRowRealMatrixTest.testGetColumn");
+//	     connectedComponent.add("ComplexTest.testExp");
+//	     connectedComponent.add("ComplexTest.testScalarAdd");
 
 	    List<String> testCases = new LinkedList<String>();
 	    testCases.addAll(connectedComponent);
@@ -602,15 +601,15 @@ public class BackwardTestMerger
 	    TestMerger.markAsCovered(frontier.getFirst(), connectedComponentsMap, equivalentTestStmtsPerTestCase);
 	    assertions.remove(frontier.getFirst().getName());
 	    // path.add(frontier.getFirst());
-//	    path = new LinkedList<TestStatement>();
-//	    for (String state : frontier.getForth())
-//	    {
-//		path.add(allTestStatements.get(state));
-//	    }
+	     path = new LinkedList<TestStatement>();
+	     for (String state : frontier.getForth())
+	     {
+	     path.add(allTestStatements.get(state));
+	     }
 
 	} while (frontier != null);
 
-//	path = new LinkedList<TestStatement>();
+	// path = new LinkedList<TestStatement>();
 	for (String state : prevFrontier.getForth())
 	{
 	    path.add(allTestStatements.get(state));
