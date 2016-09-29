@@ -1,5 +1,5 @@
-# TestModel
-This tool creates a test model from existing test suites for various test refactoring purposes
+# TestModler
+This tool creates a test suite model from existing test suites for various test refactoring purposes
 
 In order to create the test model first you need to instrument the project.
 
@@ -12,4 +12,4 @@ In order to create the test model first you need to instrument the project.
 
 **Merging Usecase**
 
-To merge test cases you can call `java ca.ubc.salt.model.merger.TestMerger` it gives list of paths for merged testcases
+To merge test cases you can call `java ca.ubc.salt.model.merger.TestMerger`, it builds a test suite model and uses the test model to identify partly redundant test cases, it then tries to reorganize these test cases in a way that removes the redundancy and repeated production method calls. It writes the reorganized test suite back to the disk. Path for the reorganized test suite can be set in `Settings`.
