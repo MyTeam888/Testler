@@ -1,0 +1,2 @@
+merging test,merged test class,merged test case,before,after,saved,fatal error,warning,couldn't satisfy
+[org.apache.commons.math3.complex.ComplexTest.testAdd  org.apache.commons.math3.complex.ComplexTest.testConstructorNaN  org.apache.commons.math3.complex.ComplexTest.testAbs  org.apache.commons.math3.complex.ComplexTest.testConstructor],org.apache.commons.math3.complex.ComplexTest,testAdd_testConstructorNaN_testAbs_testConstructor,25,0,25,false,false,false

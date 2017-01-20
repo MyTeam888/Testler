@@ -3,6 +3,7 @@ package ca.ubc.salt.model.instrumenter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -111,50 +112,45 @@ public class ClassModel
 	return getClasses(source, false, null, null, null);
     }
 
-    public static List<ClassModel> getClasses(String source, boolean binding, String unitName, String[] sources,
-	    String[] classPath) throws IOException
-    {
-	ASTParser parser = ASTParser.newParser(AST.JLS8);
-	if (binding)
-	    parser.setResolveBindings(true);
-	parser.setKind(ASTParser.K_COMPILATION_UNIT);
+    public static List<ClassModel> getClasses(
+    		String source, boolean binding, String unitName, String[] sources, String[] classPath) throws IOException {
+	
+    	ASTParser parser = ASTParser.newParser(AST.JLS8);
+	
+    	if (binding)
+    		parser.setResolveBindings(true);
+	
+    	parser.setKind(ASTParser.K_COMPILATION_UNIT);
 
-	if (binding)
-	    parser.setBindingsRecovery(true);
-	Map pOptions = JavaCore.getOptions();
-	pOptions.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_8);
-	pOptions.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_8);
-	pOptions.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_8);
-	parser.setCompilerOptions(pOptions);
+    	if (binding)
+    		parser.setBindingsRecovery(true);
+    	
+    	Hashtable<String, String> pOptions = JavaCore.getOptions();
+    	pOptions.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_8);
+    	pOptions.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_8);
+    	pOptions.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_8);
+    	parser.setCompilerOptions(pOptions);
 
-	if (binding)
-	{
-	    // String unitName = "FractionTest.java";
+    	if (binding) {
 	    parser.setUnitName(unitName);
-
-	    // String[] sources = { "C:\\Users\\pc\\workspace\\asttester\\src"
-	    // };
-	    // String[] classpath = {"C:\\Program
-	    // Files\\Java\\jre1.8.0_25\\lib\\rt.jar"};
 	    parser.setEnvironment(classPath, sources, null, true);
-	}
-	parser.setSource(source.toCharArray());
-	CompilationUnit cu = (CompilationUnit) parser.createAST(null);
+    	}
+	
+    	parser.setSource(source.toCharArray());
+    	CompilationUnit cu = (CompilationUnit) parser.createAST(null);
 
-	List typeDeclarationList = cu.types();
+    	List typeDeclarationList = cu.types();
 
-	List<ClassModel> classes = new ArrayList<ClassModel>();
+    	List<ClassModel> classes = new ArrayList<ClassModel>();
 
-	for (Object type : typeDeclarationList)
-	{
-	    // TODO What about other types
-	    if (type instanceof TypeDeclaration)
-	    {
-		classes.add(new ClassModel((TypeDeclaration) type, cu));
-	    }
-	}
+    	for (Object type : typeDeclarationList) {
+    		// TODO: What about other types
+    		if (type instanceof TypeDeclaration) {
+    			classes.add(new ClassModel((TypeDeclaration) type, cu));
+    		}
+    	}
 
-	return classes;
+    	return classes;
     }
 
     private void initMethods()

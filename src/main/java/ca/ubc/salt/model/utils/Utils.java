@@ -1,14 +1,11 @@
 package ca.ubc.salt.model.utils;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -21,6 +18,11 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 
+import org.apache.maven.model.Dependency;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
+import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -44,10 +46,8 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
 
 import Comparator.NaturalOrderComparator;
-import ca.ubc.salt.model.composer.TestCaseComposer;
 import ca.ubc.salt.model.instrumenter.ClassModel;
 import ca.ubc.salt.model.instrumenter.Instrumenter;
-import ca.ubc.salt.model.instrumenter.TestClassInstrumenter;
 
 public class Utils
 {
@@ -157,28 +157,96 @@ public class Utils
 	return common;
     }
 
-    public static boolean isTestClass(File classFile)
-    {
-	if (classFile.getAbsolutePath().contains("src/test/"))
-	    return true;
-	else
-	    return false;
+    /**
+     * checks whether the file is a test
+     * (just by looking at the filesystem path)
+     * @param classFile
+     * @return
+     */
+    public static boolean isTestClass(File classFile) {
+    	if (classFile.getAbsolutePath().contains("src/test/"))
+    		return true;
+    	else
+    		return false;
     }
 
-    public static void copyProject(String from, String to)
-    {
+    /**
+     * creates a separate copy of the project for the instrumentation phase
+     * @param from
+     * @param to
+     */
+    public static void copyProject(String from, String to) {
 
-	// String[] cmdRM = new String[]{"rm", "-r",
-	// Settings.PROJECT_INSTRUMENTED_PATH};
-	String[] cmdCP = new String[] { "cp", "-r", from, to };
-	try
-	{
-	    System.out.println(runCommand(cmdCP, "/"));
-	} catch (IOException | InterruptedException e)
-	{
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
-	}
+    	// copies the project
+    	String[] cmdCP = new String[] { "cp", "-r", from, to };
+    	try {
+    		System.out.println(runCommand(cmdCP, "/"));
+    	} catch (IOException | InterruptedException e) {
+    		e.printStackTrace();
+    	}
+    	
+    	String traces = System.getProperty("user.dir") + "/InstrumentationHelper/traces";
+    	String instrument = System.getProperty("user.dir") + "/InstrumentationHelper/instrument";
+    	
+    	// adds the traces directory
+    	cmdCP = new String[] { "cp", "-r", traces, to };
+    	try {
+			System.out.println(runCommand(cmdCP, "/"));
+		} catch (IOException | InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
+    	// adds the instrument directory
+    	String todeep = to.concat("/src/main/java");
+    	cmdCP = new String[] { "cp", "-r", instrument, todeep };
+    	try {
+			System.out.println(runCommand(cmdCP, "/"));
+		} catch (IOException | InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
+    	// Programmatically modifies the pom file to add the Xstream library dependency
+    	
+    	// Reading pom
+    	MavenXpp3Reader reader = new MavenXpp3Reader();
+    	Model model = null;
+		try {
+			model = reader.read(new FileReader(new File(to, "/pom.xml")));
+		} catch (IOException | XmlPullParserException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
+    	// Editing pom
+    	Dependency xstream = new Dependency();
+    	xstream.setGroupId("com.thoughtworks.xstream");
+    	xstream.setArtifactId("xstream");
+    	xstream.setVersion("1.4.8");
+    	
+    	boolean present = false;
+    	
+    	for (int i = 0; i < model.getDependencies().size(); i++) {
+    		Dependency d = (Dependency) model.getDependencies().get(i);
+			if(d.getArtifactId().equals(xstream.getArtifactId())){
+				present = true;
+				break;
+			}
+		}
+
+    	if(!present) {
+    		model.addDependency(xstream);
+    	}
+    	
+    	// Writing pom
+    	MavenXpp3Writer writer = new MavenXpp3Writer();
+    	try {
+			writer.write(new FileWriter(new File(to, "/pom.xml")), model);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
     public static ASTNode createBlockWithText(String str)
@@ -247,17 +315,14 @@ public class Utils
 	return null;
     }
 
-    public static Map<String, String> getClassFileMappingShortName()
-    {
-	try
-	{
-	    XStream xstream = new XStream(new StaxDriver());
-	    return (Map<String, String>) xstream.fromXML(new File(Settings.shortClassFileMappingPath));
-	} catch (Exception e)
-	{
-	    Settings.consoleLogger.error("class file mapping is missing !! did you run the instrumenter first ?");
-	}
-	return new HashMap<String, String>();
+    public static Map<String, String> getClassFileMappingShortName() {
+    	try {
+    		XStream xstream = new XStream(new StaxDriver());
+    		return (Map<String, String>) xstream.fromXML(new File(Settings.shortClassFileMappingPath));
+    	} catch (Exception e) {
+    		Settings.consoleLogger.error("Class file mapping is missing !! did you run the instrumenter first ?");
+    	}
+    	return new HashMap<String, String>();
     }
 
     public static String getClassFile(String className)
