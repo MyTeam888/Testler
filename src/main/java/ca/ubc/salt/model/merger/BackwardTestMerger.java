@@ -173,9 +173,9 @@ public class BackwardTestMerger
 //	    connectedComponent.add(
 //		    "org.assertj.core.util.Maps_newConcurrentHashMap_Test.should_return_new_ConcurrentHashMap_should_return_empty_mutable_ConcurrentHashMap");
 //	     connectedComponent.add("FastFourierTransformerTest.testAdHocData");
-//	     connectedComponent.add("Array2DRowRealMatrixTest.testGetColumn");
-//	     connectedComponent.add("ComplexTest.testExp");
-//	     connectedComponent.add("ComplexTest.testScalarAdd");
+//	     connectedComponent.add("org.apache.commons.math4.complex.ComplexTest.testNthRoot_cornercase_thirdRoot_realPartZero");
+//	     connectedComponent.add("org.apache.commons.math4.complex.ComplexTest.testDivideReal");
+//	     connectedComponent.add("org.apache.commons.math4.complex.ComplexTest.testDivideImaginary");
 
 	    List<String> testCases = new LinkedList<String>();
 	    testCases.addAll(connectedComponent);
@@ -269,8 +269,7 @@ public class BackwardTestMerger
 		ArrayList<TestStatement> arrMergedPath = new ArrayList<TestStatement>();
 		arrMergedPath.addAll(firstPhaseMergedPath);
 
-		int totalNumberOfStatements = allStates.size();
-		// - testCases.size();
+		int totalNumberOfStatements = allStates.size() - testCases.size() * 2  + 1;
 		int totalMerged = 0;
 		for (List<TestStatement> mpath : paths)
 		    totalMerged += mpath.size();
@@ -600,12 +599,12 @@ public class BackwardTestMerger
 		break;
 	    TestMerger.markAsCovered(frontier.getFirst(), connectedComponentsMap, equivalentTestStmtsPerTestCase);
 	    assertions.remove(frontier.getFirst().getName());
-	    // path.add(frontier.getFirst());
-	     path = new LinkedList<TestStatement>();
-	     for (String state : frontier.getForth())
-	     {
-	     path.add(allTestStatements.get(state));
-	     }
+//	     path.add(frontier.getFirst());
+//	     path = new LinkedList<TestStatement>();
+//	     for (String state : frontier.getForth())
+//	     {
+//	     path.add(allTestStatements.get(state));
+//	     }
 
 	} while (frontier != null);
 
