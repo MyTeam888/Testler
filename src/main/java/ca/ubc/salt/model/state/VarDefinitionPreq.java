@@ -41,4 +41,15 @@ public class VarDefinitionPreq
         return this.type + " " + this.name;
     }
     
+    @Override
+    public boolean equals(Object obj) {
+    	// TODO Auto-generated method stub
+    	
+    	if (obj instanceof VarDefinitionPreq) {
+    		VarDefinitionPreq vdp = (VarDefinitionPreq) obj;
+    		return vdp.getName().equals(this.name) && vdp.getType().equals(this.type);
+    	}
+    	return false;
+    }
+    
 }

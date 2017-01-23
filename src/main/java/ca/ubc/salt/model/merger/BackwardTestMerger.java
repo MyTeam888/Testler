@@ -167,15 +167,17 @@ public class BackwardTestMerger
 	    if (counter < limit)
 		continue;
 
-//	    connectedComponent = new HashSet<String>();
+	    connectedComponent = new HashSet<String>();
 //	    connectedComponent.add(
 //		    "org.assertj.core.util.Maps_newConcurrentHashMap_Test.should_return_new_ConcurrentHashMap");
 //	    connectedComponent.add(
 //		    "org.assertj.core.util.Maps_newConcurrentHashMap_Test.should_return_new_ConcurrentHashMap_should_return_empty_mutable_ConcurrentHashMap");
 //	     connectedComponent.add("FastFourierTransformerTest.testAdHocData");
 //	     connectedComponent.add("org.apache.commons.math4.complex.ComplexTest.testNthRoot_cornercase_thirdRoot_realPartZero");
-//	     connectedComponent.add("org.apache.commons.math4.complex.ComplexTest.testDivideReal");
-//	     connectedComponent.add("org.apache.commons.math4.complex.ComplexTest.testDivideImaginary");
+//	    connectedComponent.add("org.apache.commons.math4.geometry.euclidean.threed.FieldVector3DTest.testSubtract");
+//	     connectedComponent.add("org.apache.commons.math4.geometry.euclidean.threed.FieldVector3DTest.testAdd");
+	     connectedComponent.add("org.apache.commons.math4.stat.descriptive.rank.PSquarePercentileTest.testCopyConsistencyWithInitialMostElements");
+	     connectedComponent.add("org.apache.commons.math4.stat.descriptive.rank.PSquarePercentileTest.testCopyConsistencyWithInitialFirstFewElements");
 
 	    List<String> testCases = new LinkedList<String>();
 	    testCases.addAll(connectedComponent);
@@ -835,6 +837,7 @@ public class BackwardTestMerger
 	    Set<VarDefinitionPreq> defPreqs = definitionPreq.get(stmt.getName());
 	    if (defPreqs != null)
 	    {
+	    Counter<String> counterDef = new Counter<String>();
 		for (VarDefinitionPreq defPreq : defPreqs)
 		{
 		    String neededType = defPreq.getType();
@@ -843,6 +846,13 @@ public class BackwardTestMerger
 		    {
 			isComp = false;
 			break;
+		    } else {
+		    	counter.increment(neededType);
+			    if (counter.get(neededType) > varsInState.size())
+			    {
+				isComp = false;
+				break;
+			    }
 		    }
 		}
 	    }

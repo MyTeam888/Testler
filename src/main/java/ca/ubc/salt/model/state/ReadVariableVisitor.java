@@ -104,6 +104,9 @@ public class ReadVariableVisitor extends ASTVisitor
 	    return;
 	}
 	StatementReadVariableVisitor srvv = new StatementReadVariableVisitor();
+	srvv.setNeedToBeDefinedVars(needToBeDefinedVars);
+	srvv.setMethodName(this.methodName);
+	srvv.setCounter(this.counter);
 	node.accept(srvv);
 	Utils.addAllTheSetInMap(readVars, methodName + "-" + counter + ".xml", srvv.readVars);
 
