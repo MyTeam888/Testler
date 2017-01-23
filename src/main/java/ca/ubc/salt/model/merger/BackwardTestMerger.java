@@ -52,19 +52,21 @@ public class BackwardTestMerger {
 	public static MergingResult mergingResult;
 	public static List<MergingResult> mergingResultsList = new ArrayList<MergingResult>();
 
-	public static void main(String[] args)
-			throws FileNotFoundException, ClassNotFoundException, IOException, CloneNotSupportedException {
+	public static void main(String[] args) throws FileNotFoundException, ClassNotFoundException, IOException, CloneNotSupportedException {
+		
 		merge2();
 
 	}
 
 	public static Map<String, TestStatement> getAllTestStatements(ArrayList<String> allStmtStr,
 			Map<String, TestState> graph) {
+		
 		Map<String, TestStatement> allStmts = new HashMap<String, TestStatement>();
 		for (String stmt : allStmtStr) {
 			TestStatement ts = getTestStatementFromStr(allStmtStr, graph, stmt);
-			if (ts != null)
+			if (ts != null) {
 				allStmts.put(stmt, ts);
+			}
 		}
 
 		return allStmts;
@@ -72,9 +74,12 @@ public class BackwardTestMerger {
 
 	private static TestStatement getTestStatementFromStr(ArrayList<String> allStmtStr, Map<String, TestState> graph,
 			String stmt) {
+		
 		String nextState = Utils.nextOrPrevState(stmt, allStmtStr, true);
-		if (nextState.equals(""))
+		if (nextState.equals("")) {
 			nextState = "init.init-.xml";
+		}
+		
 		TestState end = graph.get(nextState);
 		TestStatement ts = end.getParents().get(stmt);
 		return ts;
@@ -82,6 +87,7 @@ public class BackwardTestMerger {
 
 	public static void initSideEffectForStatements(Map<String, TestStatement> testStatements, List<String> testCases,
 			Map<String, Set<VarDefinitionPreq>> defPreq) {
+		
 		for (Entry<String, TestStatement> entry : testStatements.entrySet()) {
 			entry.getValue().initSideEffects(testCases, defPreq.get(entry.getKey()));
 		}
@@ -90,23 +96,34 @@ public class BackwardTestMerger {
 	private static void merge2()
 			throws IOException, FileNotFoundException, ClassNotFoundException, CloneNotSupportedException {
 
+		// TODO: eventually delete the files before the merge
+		
 		Instrumenter.loadStructs();
 		Formatter formatter = new Formatter("mergingStat.csv");
 		formatter.format(
 				"merging test,merged test class,merged test case,before,after,saved,fatal error,warning,couldn't satisfy\n");
 		XStream xstream = new XStream(new StaxDriver());
 
-		File file = new File("components.txt");
+		File file = new File("components.xml");
 		List<Set<String>> connectedComponents = null;
 		Map<String, List<String>> connectedComponentsMap = null;
+		
 		if (!file.exists()) {
+			
 			long setupCost = 10;
 			List<Map<String, List<String>>> uniqueTestStatementSet = new ArrayList<Map<String, List<String>>>();
+			
 			for (String paramClass : Instrumenter.parameterizedClasses) {
 				uniqueTestStatementSet
 						.add(ProductionCallingTestStatement.getUniqueTestStatementsForTestClass(paramClass));
 			}
+			
+			// links each production method call to the traces from which it is called
 			Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
+			
+			System.out.println(uniqueTestStatements.keySet());
+			System.out.println(uniqueTestStatements.values());
+			
 			uniqueTestStatementSet.add(uniqueTestStatements);
 			connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(1,
 					uniqueTestStatementSet);
@@ -116,17 +133,17 @@ public class BackwardTestMerger {
 
 			String components = xstream.toXML(connectedComponents);
 
-			FileWriter fw = new FileWriter("components.txt");
+			FileWriter fw = new FileWriter("components.xml");
 			fw.write(components);
 			fw.close();
 
-			ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("unique.txt"));
+			ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("unique.xml"));
 			out.writeObject(connectedComponentsMap);
 			out.close();
 
 		} else {
-			connectedComponents = (List<Set<String>>) xstream.fromXML(new File("components.txt"));
-			ObjectInputStream in = new ObjectInputStream(new FileInputStream("unique.txt"));
+			connectedComponents = (List<Set<String>>) xstream.fromXML(new File("components.xml"));
+			ObjectInputStream in = new ObjectInputStream(new FileInputStream("unique.xml"));
 			connectedComponentsMap = (Map<String, List<String>>) in.readObject();
 			in.close();
 		}
@@ -142,6 +159,8 @@ public class BackwardTestMerger {
 				connectedComponentsMap);
 
 		for (Set<String> connectedComponent : connectedComponents) {
+			
+			// if clusters are singleton, do nothing
 			if (connectedComponent.size() < 2)
 				continue;
 
@@ -152,8 +171,9 @@ public class BackwardTestMerger {
 
 			String mergedTestcaseName;
 			counter++;
-			if (counter < limit)
+			if (counter < limit) {
 				continue;
+			}
 
 			// connectedComponent = new HashSet<String>();
 			// connectedComponent.add(
@@ -222,9 +242,6 @@ public class BackwardTestMerger {
 				RunningState initialState = new RunningState(connectedComponent, mainClassName);
 
 				mergingResult = new MergingResult(mainClassName, connectedComponent);
-
-				// do
-				// {
 
 				LinkedList<TestStatement> firstPhasePath = new LinkedList<TestStatement>();
 

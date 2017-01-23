@@ -1,15 +1,1 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<map>
-   <entry>
-      <string>TestUtils</string>
-      <string>/Users/astocco/Desktop/commons-math-small/src/test/java/org/apache/commons/math3/TestUtils.java</string>
-   </entry>
-   <entry>
-      <string>RealFunctionValidation</string>
-      <string>/Users/astocco/Desktop/commons-math-small/src/test/maxima/special/RealFunctionValidation/RealFunctionValidation.java</string>
-   </entry>
-   <entry>
-      <string>ComplexTest</string>
-      <string>/Users/astocco/Desktop/commons-math-small/src/test/java/org/apache/commons/math3/complex/ComplexTest.java</string>
-   </entry>
-</map>
+<?xml version="1.0" ?><map><entry><string>TestUtils</string><string>/Users/astocco/Desktop/commons-math-small/src/test/java/org/apache/commons/math3/TestUtils.java</string></entry><entry><string>RealFunctionValidation</string><string>/Users/astocco/Desktop/commons-math-small/src/test/maxima/special/RealFunctionValidation/RealFunctionValidation.java</string></entry><entry><string>ComplexTest</string><string>/Users/astocco/Desktop/commons-math-small/src/test/java/org/apache/commons/math3/complex/ComplexTest.java</string></entry></map>

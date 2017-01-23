@@ -159,11 +159,7 @@ public class Instrumenter {
 			e.printStackTrace();
 		}
 	}
-
-
-
 	
-
 	public static void instrumentClass(String classPath)
 			throws IOException, IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException {
 		
