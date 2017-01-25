@@ -57,11 +57,9 @@ public class Utils {
 	}
 
 	public static LoadingCache<String, ClassModel> classes;
-	static {
-		classes = CacheBuilder.newBuilder().maximumSize(100).build(new CacheLoader<String, ClassModel>() { // build
-																											// the
-																											// cacheloader
 
+	static {
+		classes = CacheBuilder.newBuilder().maximumSize(100).build(new CacheLoader<String, ClassModel>() {
 			@Override
 			public ClassModel load(String className) throws Exception {
 				// make the expensive call
@@ -148,6 +146,48 @@ public class Utils {
 			return true;
 		else
 			return false;
+	}
+
+	/**
+	 * remove files that can cause problems to merging phase
+	 */
+	public static void cleanProjectBeforeMerging() {
+		
+		String fileToDelete = System.getProperty("user.dir") + "/components.xml";
+		
+		String[] cmdRM = new String[] { "rm", fileToDelete };
+		try {
+			System.out.println(runCommand(cmdRM, "/"));
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		fileToDelete = System.getProperty("user.dir") + "/unique.xml";
+		
+		cmdRM = new String[] { "rm", fileToDelete };
+		try {
+			System.out.println(runCommand(cmdRM, "/"));
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		fileToDelete = System.getProperty("user.dir") + "/mergingStat.csv";
+		
+		cmdRM = new String[] { "rm", fileToDelete };
+		try {
+			System.out.println(runCommand(cmdRM, "/"));
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		fileToDelete = System.getProperty("user.dir") + "/stat.csv";
+		
+		cmdRM = new String[] { "rm", fileToDelete };
+		try {
+			System.out.println(runCommand(cmdRM, "/"));
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**

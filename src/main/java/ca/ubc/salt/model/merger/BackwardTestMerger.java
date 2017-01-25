@@ -97,6 +97,7 @@ public class BackwardTestMerger {
 			throws IOException, FileNotFoundException, ClassNotFoundException, CloneNotSupportedException {
 
 		// TODO: eventually delete the files before the merge
+		Utils.cleanProjectBeforeMerging();
 		
 		Instrumenter.loadStructs();
 		Formatter formatter = new Formatter("mergingStat.csv");
@@ -121,8 +122,8 @@ public class BackwardTestMerger {
 			// links each production method call to the traces from which it is called
 			Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
 			
-			System.out.println(uniqueTestStatements.keySet());
-			System.out.println(uniqueTestStatements.values());
+//			System.out.println(uniqueTestStatements.keySet());
+//			System.out.println(uniqueTestStatements.values());
 			
 			uniqueTestStatementSet.add(uniqueTestStatements);
 			connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(1,
@@ -298,9 +299,6 @@ public class BackwardTestMerger {
 					continue;
 				}
 
-				// }
-				// while (first != null);
-
 				Settings.consoleLogger.error(String.format("Before Merging : %d, After Merging %d, saved : %d",
 						totalNumberOfStatements, totalMerged, totalNumberOfStatements - totalMerged));
 
@@ -322,8 +320,9 @@ public class BackwardTestMerger {
 	private static void writeStatToFileAndConsole(Formatter formatter, int totalBeforeMerging, int totalAftermerging,
 			int numberOfMergedTests, int counter, Set<String> connectedComponent, String mergedTestcaseName,
 			String mainClassName, int totalNumberOfStatements, int totalMerged) {
+		
 		Settings.consoleLogger.error(
-				String.format("Total Before merging : %d, After merging : %d, NumberOfTestsBefore : %d, After : %d",
+				String.format("Total Before merging : %d, After merging : %d, Number Of Merged Tests : %d, After : %d",
 						totalBeforeMerging, totalAftermerging, numberOfMergedTests, counter));
 
 		formatter.format("%s,%s,%s,%d,%d,%d,%b,%b,%b\n", connectedComponent.toString().replaceAll(",", " "),
