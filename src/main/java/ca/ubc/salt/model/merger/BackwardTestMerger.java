@@ -54,8 +54,13 @@ public class BackwardTestMerger {
 
 	public static void main(String[] args) throws FileNotFoundException, ClassNotFoundException, IOException, CloneNotSupportedException {
 		
+		long startTime = System.currentTimeMillis();
+		
 		merge2();
 
+		long stopTime = System.currentTimeMillis();
+	    long elapsedTime = stopTime - startTime;
+	    System.out.println("Merging time: " + elapsedTime);
 	}
 
 	public static Map<String, TestStatement> getAllTestStatements(ArrayList<String> allStmtStr,
@@ -209,6 +214,7 @@ public class BackwardTestMerger {
 
 			boolean loop = true;
 			while (loop && connectedComponent.size() > 1) {
+				
 				testCasesToRemove = new HashSet<String>();
 				loop = false;
 
