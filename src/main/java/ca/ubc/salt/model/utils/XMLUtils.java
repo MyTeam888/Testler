@@ -40,11 +40,6 @@ public class XMLUtils
 	}
     }
 
-    // public static void main(String[] args) throws SAXException, IOException
-    // {
-    //
-    // getVarIndex(FileUtils.getVars("testSubtract-39.xml"), "");
-    // }
     public static List<String> getVars(String varXML)
     {
 	List<String> vars = new LinkedList<String>();

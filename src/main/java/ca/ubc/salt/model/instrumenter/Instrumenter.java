@@ -187,7 +187,6 @@ public class Instrumenter {
 						ProductionClassInstrumenter.instrumentClass(clazz, null, document, rewriter);
 					}
 					
-
 					Document newDocument = new Document(document.get());
 					TextEdit edits = rewriter.rewriteAST(document, null);
 					edits.apply(newDocument);
@@ -215,17 +214,6 @@ public class Instrumenter {
 
 				Utils.addImports(document, Arrays
 						.asList(new String[] { "instrument.InstrumentClassGenerator", "instrument.NullValueType" }));
-
-				// ImportRewrite importRewrite = ImportRewrite.create(, true);
-				//
-				// importRewrite.addImport("java.io.FileWriter");
-				// importRewrite.addImport("java.io.IOException");
-				// importRewrite.addImport("java.io.ObjectOutputStream");
-				// importRewrite.addImport("com.thoughtworks.xstream.XStream");
-				// importRewrite.addImport("com.thoughtworks.xstream.io.xml.StaxDriver");
-				//
-				// edits = importRewrite.rewriteImports(null);
-
 			}
 
 			Utils.writebackSourceCode(document, Settings.getInstrumentedCodePath(classPath));
@@ -244,8 +232,9 @@ public class Instrumenter {
 		String runner = "Parameterized";
 
 		// checks if the class uses @RunWith of @Parameters constructs
-		if (clazz.isClassIsRunBy(runWith, runner))
+		if (clazz.isClassIsRunBy(runWith, runner)){
 			parameterizedClasses.add(clazz.name);
+		}
 		
 		// for each superclass, save the list of its subclasses
 		Type parent = clazz.typeDec.getSuperclassType();
