@@ -18,7 +18,7 @@ public class Settings
 //    public static final String PROJECT_PATH = "/Users/tsigalko18/Desktop/commons-math3-3.6.1-src";
 //    public static final String PROJECT_PATH = "/Users/astocco/Desktop/commons-math-small";
 //    public static final String PROJECT_PATH = "/Users/astocco/Desktop/jfreechart";
-    public static final String PROJECT_PATH = "/Users/astocco/Desktop/commons-io-2.5-src";
+    public static final String PROJECT_PATH = "/Users/tsigalko18/Desktop/commons-lang3-3.5-src";
 
     // public static final String PROJECT_PATH =
     // "/Users/arash/Documents/workspace-mars/Calculator";
