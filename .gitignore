@@ -18,3 +18,5 @@ unique.xml
 /classFileMapping.xml
 /parameterizedClasses-commons-math-small.txt
 /parentClassDependency-commons-math-small.txt
+/components.xml
+/mergingStat.csv
