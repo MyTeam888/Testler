@@ -334,8 +334,8 @@ public class Utils {
 			return (Map<String, String>) xstream.fromXML(new File(Settings.classFileMappingPath));
 		} catch (Exception e) {
 			Settings.consoleLogger.error("class file mapping is missing !! did you run the instrumenter first ?");
+			return new HashMap<String, String>();
 		}
-		return null;
 	}
 
 	public static Map<String, String> getClassFileMappingShortName() {
@@ -344,8 +344,9 @@ public class Utils {
 			return (Map<String, String>) xstream.fromXML(new File(Settings.shortClassFileMappingPath));
 		} catch (Exception e) {
 			Settings.consoleLogger.error("Class file mapping is missing !! did you run the instrumenter first ?");
+			return new HashMap<String, String>();
 		}
-		return new HashMap<String, String>();
+		
 	}
 
 	public static String getClassFile(String className) {

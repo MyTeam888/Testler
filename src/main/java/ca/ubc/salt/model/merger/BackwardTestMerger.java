@@ -102,7 +102,7 @@ public class BackwardTestMerger {
 		Utils.cleanProjectBeforeMerging();
 
 		Instrumenter.loadStructs();
-		Formatter formatter = new Formatter("mergingStat.csv");
+		Formatter formatter = new Formatter(Settings.SUBJECT + "-mergingStat.csv");
 		formatter.format(
 				"merging test,merged test class,merged test case,before,after,saved,fatal error,warning,couldn't satisfy\n");
 		XStream xstream = new XStream(new StaxDriver());
@@ -127,17 +127,17 @@ public class BackwardTestMerger {
 
 			String components = xstream.toXML(connectedComponents);
 
-			FileWriter fw = new FileWriter("components.xml");
+			FileWriter fw = new FileWriter(Settings.SUBJECT + "-components.xml");
 			fw.write(components);
 			fw.close();
 
-			ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("unique.xml"));
+			ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(Settings.SUBJECT + "-unique.xml"));
 			out.writeObject(connectedComponentsMap);
 			out.close();
 
 		} else {
-			connectedComponents = (List<Set<String>>) xstream.fromXML(new File("components.xml"));
-			ObjectInputStream in = new ObjectInputStream(new FileInputStream("unique.xml"));
+			connectedComponents = (List<Set<String>>) xstream.fromXML(new File(Settings.SUBJECT + "-components.xml"));
+			ObjectInputStream in = new ObjectInputStream(new FileInputStream(Settings.SUBJECT + "-unique.xml"));
 			connectedComponentsMap = (Map<String, List<String>>) in.readObject();
 			in.close();
 		}
@@ -306,14 +306,18 @@ public class BackwardTestMerger {
 			String mainClassName, int totalNumberOfStatements, int totalMerged) {
 
 		Settings.consoleLogger.error(String.format(
-				"Total Before merging : %d, After merging : %d, NumberOfTestsBefore : %d, NumberOfTestsAfter : %d",
-				totalBeforeMerging, totalAftermerging, numberOfMergedTests, counter));
-
+				"NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Test statements reduction percentage: %d",
+				numberOfMergedTests, counter, (numberOfMergedTests - counter) * 100 / numberOfMergedTests));
+		
 		Settings.consoleLogger.error(
-				String.format("Test statements reduction percentage: " + "%d" + ", Test reduction percentage: " + "%d",
-						(totalBeforeMerging - totalAftermerging) * 100 / totalBeforeMerging,
-						(numberOfMergedTests - counter) * 100 / numberOfMergedTests));
+				String.format("Statements Before merging : %d, Statements After merging : %d, Reduced Statements: %d",
+						totalBeforeMerging, totalAftermerging, totalBeforeMerging-totalAftermerging));
 
+//		Settings.consoleLogger.error(String.format(
+//				"Total Before merging : %d, After merging : %d, NumberOfTestsBefore : %d, NumberOfTestsAfter : %d",
+//				totalBeforeMerging, totalAftermerging, numberOfMergedTests, counter));
+		
+		
 		formatter.format("%s,%s,%s,%d,%d,%d,%b,%b,%b\n", connectedComponent.toString().replaceAll(",", " "),
 				mainClassName, mergedTestcaseName, totalNumberOfStatements, totalMerged,
 				totalNumberOfStatements - totalMerged, mergingResult.fatalError, mergingResult.warning,
@@ -321,7 +325,7 @@ public class BackwardTestMerger {
 	}
 
 	private static void writeMergingResultsToFile(Formatter formatter) throws IOException, FileNotFoundException {
-		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("mergingResult.xml"));
+		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(Settings.SUBJECT + "-mergingResult.xml"));
 		out.writeObject(mergingResultsList);
 		out.flush();
 		out.close();
@@ -593,7 +597,7 @@ public class BackwardTestMerger {
 	}
 
 	private static void writeStatsToFile(List<Set<String>> connectedComponents) throws FileNotFoundException {
-		Formatter fr = new Formatter("stat.csv");
+		Formatter fr = new Formatter(Settings.SUBJECT + "-stat.csv");
 		for (Set<String> connectedComponent : connectedComponents) {
 			fr.format("%d,%s\n", connectedComponent.size(), connectedComponent.toString());
 		}
