@@ -101,6 +101,7 @@ public class ProductionCallingTestStatement {
 			Map<String, Integer> children = conGraph.get(parent);
 			for (Entry<String, Integer> child : children.entrySet()) {
 				if (!visited.contains(child.getKey())) {
+//					System.out.println("child.getValue(): " + child.getValue());
 					if (child.getValue() >= cutOff) {
 						visited.add(child.getKey());
 						queue.addLast(child.getKey());
@@ -133,7 +134,6 @@ public class ProductionCallingTestStatement {
 					Integer num = adjSet.get(testCase2);
 					adjSet.put(testCase2, num == null ? 1 : num + 1);
 				}
-
 			}
 		}
 
@@ -194,7 +194,7 @@ public class ProductionCallingTestStatement {
 	private static void writeStatToFile() throws FileNotFoundException {
 		Map<String, Set<String>> uniqueTestStatements = splitMethodCalls(getUniqueTestStatements());
 
-		Formatter fw = new Formatter("expnmethod-collections.csv");
+		Formatter fw = new Formatter("expnmethod.csv");
 
 		for (Entry<String, Set<String>> entry : uniqueTestStatements.entrySet()) {
 			// System.out.println(entry.getKey()+","+entry.getValue().size());
@@ -306,9 +306,6 @@ public class ProductionCallingTestStatement {
 
 		}
 
-		// uniqueTestStatements.remove(null);
-		// uniqueTestStatements.remove("");
-
 		return uniqueTestStatements;
 	}
 
@@ -348,9 +345,6 @@ public class ProductionCallingTestStatement {
 				Settings.consoleLogger.error(String.format("processed %d logs", counter));
 
 		}
-
-		// uniqueTestStatements.remove(null);
-		// uniqueTestStatements.remove("");
 
 		return uniqueTestStatements;
 	}

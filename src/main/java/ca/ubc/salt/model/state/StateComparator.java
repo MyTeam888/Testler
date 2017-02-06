@@ -20,31 +20,9 @@ public class StateComparator {
 
 	static HashMap<Integer, List<String>> xmlHashes;
 
-	/*
-	 * public static void main(String[] args) throws FileNotFoundException {
-	 * long time = System.nanoTime(); Map<String, TestState> graph =
-	 * createGraph(); TestState root = graph.get("init.xml");
-	 * System.out.println(root.printDot(false));
-	 * 
-	 * Settings.consoleLogger.info(String.format("took %d milliseconds",
-	 * (System.nanoTime() - time) / 1000000)); }
-	 * 
-	 * public static Map<String, TestState> createGraph() throws
-	 * FileNotFoundException { xmlHashes = createHashes();
-	 * 
-	 * Map<String, TestState> testStateOfState = new HashMap<String,
-	 * TestState>(); List<TestState> testStates = new LinkedList<TestState>();
-	 * 
-	 * for (Entry<Integer, List<String>> entry : xmlHashes.entrySet()) {
-	 * compareStates(entry.getKey(), testStateOfState, testStates); }
-	 * 
-	 * populateGraph(testStateOfState, testStates);
-	 * 
-	 * return testStateOfState; }
-	 */
-
 	public static Map<String, TestState> createGraph(List<String> testCases) throws FileNotFoundException {
 		Collections.sort(testCases);
+		
 		xmlHashes = createHashes(testCases);
 
 		Map<String, TestState> testStateOfState = new HashMap<String, TestState>();
@@ -76,14 +54,6 @@ public class StateComparator {
 					nextStateTS.getParents().put(state, stmt);
 
 				}
-
-				// String prevState = Utils.nextOrPrevState(state,
-				// sortedTestStates, false);
-				// if (testStateMap.containsKey(prevState))
-				// {
-				// ts.getParents().put(state, new
-				// TestStatement(testStateMap.get(prevState), ts, prevState));
-				// }
 			}
 		}
 
@@ -166,6 +136,7 @@ public class StateComparator {
 	}
 
 	private static int hash(File file) throws FileNotFoundException {
+		
 		String xml = FileUtils.getState(file);
 		int hash = xml.hashCode();
 

@@ -29,7 +29,6 @@ public class InstrumentClassGenerator {
 	public static void init(String methodName) {
 		InstrumentClassGenerator.methodName = methodName;
 		callStack.clear();
-
 	}
 
 	public static void traceMethodCallEntry(String methodName, Object... input) {
@@ -68,10 +67,10 @@ public class InstrumentClassGenerator {
 
 		fileName = String.format("traces/%s-%d.xml", methodName, lineNumber);
 
-		if (new File(fileName).exists()) {
-			exists = true;
-			return;
-		}
+//		if (new File(fileName).exists()) {
+//			exists = true;
+//			return;
+//		}
 		exists = false;
 		try {
 			if (fw != null)
@@ -86,8 +85,8 @@ public class InstrumentClassGenerator {
 
 	public static void traceTestStatementExecution(String... vars) {
 		callStack.clear();
-		if (exists)
-			return;
+//		if (exists)
+//			return;
 		try {
 			fw.append("<vars>");
 			for (String var : vars) {
@@ -102,8 +101,8 @@ public class InstrumentClassGenerator {
 	}
 
 	public static void writeObjects(Object... input) {
-		if (exists)
-			return;
+//		if (exists)
+//			return;
 		try {
 			out = xstream.createObjectOutputStream(fw);
 			for (Object obj : input) {

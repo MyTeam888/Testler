@@ -157,7 +157,9 @@ public class Utils {
 		
 		String[] cmdRM = new String[] { "rm", fileToDelete };
 		try {
-			System.out.println(runCommand(cmdRM, "/"));
+			if(new File(fileToDelete).exists()){
+				System.out.println(runCommand(cmdRM, "/"));
+			}
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -166,7 +168,9 @@ public class Utils {
 		
 		cmdRM = new String[] { "rm", fileToDelete };
 		try {
-			System.out.println(runCommand(cmdRM, "/"));
+			if(new File(fileToDelete).exists()){
+				System.out.println(runCommand(cmdRM, "/"));
+			}
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -175,7 +179,9 @@ public class Utils {
 		
 		cmdRM = new String[] { "rm", fileToDelete };
 		try {
-			System.out.println(runCommand(cmdRM, "/"));
+			if(new File(fileToDelete).exists()){
+				System.out.println(runCommand(cmdRM, "/"));
+			}
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -184,7 +190,9 @@ public class Utils {
 		
 		cmdRM = new String[] { "rm", fileToDelete };
 		try {
-			System.out.println(runCommand(cmdRM, "/"));
+			if(new File(fileToDelete).exists()){
+				System.out.println(runCommand(cmdRM, "/"));
+			}
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}

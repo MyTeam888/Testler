@@ -36,10 +36,12 @@ import ca.ubc.salt.model.utils.Utils;
 @RunWith(value = Parameterized.class)
 public class Instrumenter {
 
-	private static final String PARENT_CLASS_DEPENDENCY_FILE = String.format("parentClassDependency-%s.txt",
+	private static final String PARENT_CLASS_DEPENDENCY_FILE = 
+			String.format("parentClassDependency-%s.txt",
 			Settings.PROJECT_PATH.substring(Settings.PROJECT_PATH.lastIndexOf('/') + 1));
 	
-	private static final String PARAMETERIZED_CLASSES_FILE = String.format("parameterizedClasses-%s.txt",
+	private static final String PARAMETERIZED_CLASSES_FILE = 
+			String.format("parameterizedClasses-%s.txt",
 			Settings.PROJECT_PATH.substring(Settings.PROJECT_PATH.lastIndexOf('/') + 1));
 	
 	public static HashMap<String, String> classFileMapping = new HashMap<String, String>();
@@ -48,17 +50,15 @@ public class Instrumenter {
 	public static HashMap<String, String> childClassDependency = new HashMap<String, String>();
 	public static Set<String> parameterizedClasses = new HashSet<String>();
 
-	
-	
 	public static void main(String[] args) {
+		
+		long startTime = System.currentTimeMillis();
 		
 		// for each test, creates an entry in a map
 		classFileMappingShortName = Utils.getClassFileMappingShortName();
 		
 		// copies the project in a separate folder for instrumentation
 		Utils.copyProject(Settings.PROJECT_PATH, Settings.PROJECT_INSTRUMENTED_PATH);
-		
-//		System.exit(1);
 
 		try {
 			// for each class, creates a class model (heavy)
@@ -94,6 +94,10 @@ public class Instrumenter {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		long stopTime = System.currentTimeMillis();
+	    long elapsedTime = stopTime - startTime;
+	    System.out.println("Instrumentation time: " + elapsedTime/1000);
 	}
 	
 	public static void initClassFileMapping(String classPath)
@@ -176,7 +180,6 @@ public class Instrumenter {
 				if (!fClass.getAbsolutePath().contains("src/main"))
 					return;
 				
-//				Settings.consoleLogger.error(String.format("prod : %s", classPath));
 				Settings.consoleLogger.error(String.format("production class: %s", fClass.getName()));
 				
 				if (classes.size() > 0) {
