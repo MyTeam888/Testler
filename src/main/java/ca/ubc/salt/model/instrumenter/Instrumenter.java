@@ -37,11 +37,11 @@ import ca.ubc.salt.model.utils.Utils;
 public class Instrumenter {
 
 	private static final String PARENT_CLASS_DEPENDENCY_FILE = 
-			String.format("parentClassDependency-%s.txt",
+			String.format(Settings.SUBJECT + "-parentClassDependency-%s.txt",
 			Settings.PROJECT_PATH.substring(Settings.PROJECT_PATH.lastIndexOf('/') + 1));
 	
 	private static final String PARAMETERIZED_CLASSES_FILE = 
-			String.format("parameterizedClasses-%s.txt",
+			String.format(Settings.SUBJECT + "-parameterizedClasses-%s.txt",
 			Settings.PROJECT_PATH.substring(Settings.PROJECT_PATH.lastIndexOf('/') + 1));
 	
 	public static HashMap<String, String> classFileMapping = new HashMap<String, String>();
