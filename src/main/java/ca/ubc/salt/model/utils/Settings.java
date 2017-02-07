@@ -16,8 +16,11 @@ public class Settings {
 //	public static final String FILESYSTEM_PATH = "/Users/tsigalko18/Desktop/";
 	public static final String FILESYSTEM_PATH = "/Users/astocco/Desktop/";
 	
-//	public static final String SUBJECT = "assertj-core";
-	public static final String SUBJECT = "math-simple-small2";
+//	public static final String SUBJECT = "math-simple-small2";
+//	public static final String SUBJECT = "math-simple-complete";
+	
+	public static final String SUBJECT = "assertj-core";
+
 
 	public static final String PROJECT_PATH = FILESYSTEM_PATH + SUBJECT;
 	

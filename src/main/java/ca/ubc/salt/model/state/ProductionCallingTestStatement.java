@@ -200,10 +200,12 @@ public class ProductionCallingTestStatement {
 			}
 			
 		}
-		fw.format("%s,%s,%d\n", "", "Total Redundant", totalRedudant);
 		System.out.println("Redundant Statements: " + totalRedudant);
 		System.out.println("Redundant Unique Statements: " + totalRedudantUnique);
 		System.out.println("Redundant Statements to be reduced: " + (totalRedudant-totalRedudantUnique));
+		fw.format("%s,%s,%d\n", "", "Common", totalRedudant);
+		fw.format("%s,%s,%d\n", "", "Unique", (totalRedudantUnique));
+		fw.format("%s,%s,%d\n", "", "To be reduced", (totalRedudant-totalRedudantUnique));
 		fw.close();
 		// System.out.println(uniqueTestStatements.size());
 	} 

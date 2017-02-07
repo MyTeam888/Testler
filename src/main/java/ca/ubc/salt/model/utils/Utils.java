@@ -153,7 +153,7 @@ public class Utils {
 	 */
 	public static void cleanProjectBeforeMerging() {
 		
-		String fileToDelete = System.getProperty("user.dir") + "/components.xml";
+		String fileToDelete = System.getProperty("user.dir") + Settings.SUBJECT + "-components.xml";
 		
 		String[] cmdRM = new String[] { "rm", fileToDelete };
 		try {
@@ -164,7 +164,7 @@ public class Utils {
 			e.printStackTrace();
 		}
 		
-		fileToDelete = System.getProperty("user.dir") + "/unique.xml";
+		fileToDelete = System.getProperty("user.dir") + Settings.SUBJECT + "-unique.xml";
 		
 		cmdRM = new String[] { "rm", fileToDelete };
 		try {
@@ -175,7 +175,7 @@ public class Utils {
 			e.printStackTrace();
 		}
 		
-		fileToDelete = System.getProperty("user.dir") + "/mergingStat.csv";
+		fileToDelete = System.getProperty("user.dir") + Settings.SUBJECT + "-mergingStat.csv";
 		
 		cmdRM = new String[] { "rm", fileToDelete };
 		try {
@@ -186,7 +186,7 @@ public class Utils {
 			e.printStackTrace();
 		}
 		
-		fileToDelete = System.getProperty("user.dir") + "/stat.csv";
+		fileToDelete = System.getProperty("user.dir") + Settings.SUBJECT + "-stat.csv";
 		
 		cmdRM = new String[] { "rm", fileToDelete };
 		try {
@@ -253,7 +253,7 @@ public class Utils {
 		Dependency xstream = new Dependency();
 		xstream.setGroupId("com.thoughtworks.xstream");
 		xstream.setArtifactId("xstream");
-		xstream.setVersion("1.4.8");
+		xstream.setVersion("1.4.9");
 
 		boolean present = false;
 
@@ -333,7 +333,7 @@ public class Utils {
 			XStream xstream = new XStream(new StaxDriver());
 			return (Map<String, String>) xstream.fromXML(new File(Settings.classFileMappingPath));
 		} catch (Exception e) {
-			Settings.consoleLogger.error("class file mapping is missing !! did you run the instrumenter first ?");
+			Settings.consoleLogger.error("Class file mapping is missing. Creating a new one");
 			return new HashMap<String, String>();
 		}
 	}
@@ -343,7 +343,7 @@ public class Utils {
 			XStream xstream = new XStream(new StaxDriver());
 			return (Map<String, String>) xstream.fromXML(new File(Settings.shortClassFileMappingPath));
 		} catch (Exception e) {
-			Settings.consoleLogger.error("Class file mapping is missing !! did you run the instrumenter first ?");
+			Settings.consoleLogger.error("Class file short mapping is missing. Creating a new one");
 			return new HashMap<String, String>();
 		}
 		

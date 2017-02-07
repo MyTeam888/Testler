@@ -107,7 +107,7 @@ public class BackwardTestMerger {
 				"merging test,merged test class,merged test case,before,after,saved,fatal error,warning,couldn't satisfy\n");
 		XStream xstream = new XStream(new StaxDriver());
 
-		File file = new File("components.xml");
+		File file = new File(Settings.SUBJECT + "-components.xml");
 		List<Set<String>> connectedComponents = null;
 		Map<String, List<String>> connectedComponentsMap = null;
 		if (!file.exists()) {
@@ -154,10 +154,10 @@ public class BackwardTestMerger {
 
 		for (Set<String> connectedComponent : connectedComponents) {
 
-			if (connectedComponent.size() > 100){
-				Settings.consoleLogger.error("skipped a cluster of " + connectedComponent.size()); 
-				continue;
-			}
+//			if (connectedComponent.size() > 100){
+//				Settings.consoleLogger.error("skipped a cluster of " + connectedComponent.size()); 
+//				continue;
+//			}
 			
 			if (connectedComponent.size() < 2)
 				continue;
@@ -306,7 +306,7 @@ public class BackwardTestMerger {
 			String mainClassName, int totalNumberOfStatements, int totalMerged) {
 
 		Settings.consoleLogger.error(String.format(
-				"NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Test statements reduction percentage: %d",
+				"NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Test reduction percentage: %d",
 				numberOfMergedTests, counter, (numberOfMergedTests - counter) * 100 / numberOfMergedTests));
 		
 		Settings.consoleLogger.error(
@@ -449,17 +449,7 @@ public class BackwardTestMerger {
 					List<TestStatement> stmts = Planning.backward(allTestStatements.get(assertion), runningState,
 							readValues, connectedComponentsMap, allStmtsView.get(testCase), definitionPreq);
 
-					// populateGoalsInStatements(definitionPreq,
-					// readValues, runningState, stmts);
-					//
-					// Map<String, String> batchRename = new
-					// HashMap<String, String>();
-					// for (TestStatement stmt : stmts)
-					// {
-					// TestCaseComposer.updateRunningState(stmt,
-					// runningState, readValues, definitionPreq,
-					// batchRename);
-					// }
+			
 
 					if (stmts == null) {
 						Settings.consoleLogger.error(String.format("Couldn't satisfay %s - %s",
@@ -483,69 +473,6 @@ public class BackwardTestMerger {
 		}
 	}
 
-	// private static List<TestStatement>
-	// performSecondPhaseBackwardAlg(Map<String, List<String>>
-	// connectedComponentsMap,
-	// Map<String, Map<String, List<String>>> equivalentTestStmtsPerTestCase,
-	// Set<String> connectedComponent,
-	// Map<String, Set<VarDefinitionPreq>> definitionPreq, Map<String,
-	// Map<String, String>> readValues,
-	// Map<String, TestStatement> allTestStatements, Set<String> assertions,
-	// String mainClassName,
-	// Triple<TestStatement, RunningState, Map<String, String>> prevFrontier)
-	// throws CloneNotSupportedException
-	// {
-	// List<TestStatement> secondPhasePath = new LinkedList<TestStatement>();
-	// if (!assertions.isEmpty())
-	// {
-	// Map<String, Set<String>> assertionView =
-	// Planning.getTestCaseTestStatementStringMapping(assertions);
-	// Map<String, Map<String, TestStatement>> allStmtsView = Planning
-	// .getTestCaseTestStatementMapping(allTestStatements);
-	// RunningState runningState = prevFrontier.getSecond();
-	// for (Entry<String, Set<String>> testCaseEntry : assertionView.entrySet())
-	// {
-	// String testCase = testCaseEntry.getKey();
-	// Set<String> assertionsToCover = testCaseEntry.getValue();
-	// for (String assertion : assertionsToCover)
-	// {
-	// List<TestStatement> stmts =
-	// Planning.backward(allTestStatements.get(assertion), runningState,
-	// readValues, connectedComponentsMap, allStmtsView.get(testCase),
-	// definitionPreq);
-	//
-	// // populateGoalsInStatements(definitionPreq,
-	// // readValues, runningState, stmts);
-	// //
-	// // Map<String, String> batchRename = new
-	// // HashMap<String, String>();
-	// // for (TestStatement stmt : stmts)
-	// // {
-	// // TestCaseComposer.updateRunningState(stmt,
-	// // runningState, readValues, definitionPreq,
-	// // batchRename);
-	// // }
-	//
-	// if (stmts == null)
-	// {
-	// Settings.consoleLogger.error(String.format("Couldn't satisfay %s - %s",
-	// allTestStatements.get(assertion), assertion));
-	// mergingResult.couldntsatisfy = true;
-	// continue;
-	// }
-	// stmts = TestCaseComposer.performRenamingWithRunningState(stmts,
-	// connectedComponent, mainClassName,
-	// readValues, definitionPreq, runningState);
-	//
-	// secondPhasePath.addAll(stmts);
-	//
-	// }
-	// }
-	// }
-	// Settings.consoleLogger.error("second phase finished");
-	// return secondPhasePath;
-	// }
-
 	private static TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>> performFirstPhaseGreedyAlg(
 			Map<String, List<String>> connectedComponentsMap,
 			Map<String, Map<String, List<String>>> equivalentTestStmtsPerTestCase,
@@ -557,14 +484,20 @@ public class BackwardTestMerger {
 		TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>> frontier = new TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>>(
 				rootStmt, initialState, new HashMap<String, String>(), new LinkedHashSet<String>());
 		TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>> prevFrontier;
+		
 		do {
 			prevFrontier = frontier;
 			// frontier = dijkstra(frontier.getFirst(), graph,
 			// frontier.getSecond(), readValues, connectedComponentsMap,
 			// allTestStatements, assertions, definitionPreq);
-			frontier = Planning.forward(frontier, graph, readValues, connectedComponentsMap, allTestStatements,
-					assertions, definitionPreq, 7, 7, connectedComponent);
+			
+//			frontier = Planning.forward(frontier, graph, readValues, connectedComponentsMap, allTestStatements,
+//					assertions, definitionPreq, 7, 7, connectedComponent);
 
+			frontier = Planning.forward(frontier, graph, readValues, connectedComponentsMap, allTestStatements,
+					assertions, definitionPreq, 1, 1, connectedComponent);
+
+			
 			if (frontier == null)
 				break;
 			TestMerger.markAsCovered(frontier.getFirst(), connectedComponentsMap, equivalentTestStmtsPerTestCase);

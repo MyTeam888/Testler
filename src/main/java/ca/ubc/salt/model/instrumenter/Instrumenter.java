@@ -36,14 +36,12 @@ import ca.ubc.salt.model.utils.Utils;
 @RunWith(value = Parameterized.class)
 public class Instrumenter {
 
-	private static final String PARENT_CLASS_DEPENDENCY_FILE = 
-			String.format(Settings.SUBJECT + "-parentClassDependency-%s.txt",
-			Settings.PROJECT_PATH.substring(Settings.PROJECT_PATH.lastIndexOf('/') + 1));
-	
-	private static final String PARAMETERIZED_CLASSES_FILE = 
-			String.format(Settings.SUBJECT + "-parameterizedClasses-%s.txt",
-			Settings.PROJECT_PATH.substring(Settings.PROJECT_PATH.lastIndexOf('/') + 1));
-	
+	private static final String PARENT_CLASS_DEPENDENCY_FILE = String
+			.format(Settings.SUBJECT + "-parentClassDependency.txt");
+
+	private static final String PARAMETERIZED_CLASSES_FILE = String
+			.format(Settings.SUBJECT + "-parameterizedClasses.txt");
+
 	public static HashMap<String, String> classFileMapping = new HashMap<String, String>();
 	public static Map<String, String> classFileMappingShortName = new HashMap<String, String>();
 	public static HashMap<String, Set<String>> parentClassDependency = new HashMap<String, Set<String>>();
@@ -51,22 +49,22 @@ public class Instrumenter {
 	public static Set<String> parameterizedClasses = new HashSet<String>();
 
 	public static void main(String[] args) {
-		
+
 		long startTime = System.currentTimeMillis();
-		
+
 		// for each test, creates an entry in a map
 		classFileMappingShortName = Utils.getClassFileMappingShortName();
-		
+
 		// copies the project in a separate folder for instrumentation
 		Utils.copyProject(Settings.PROJECT_PATH, Settings.PROJECT_INSTRUMENTED_PATH);
 
 		try {
 			// for each class, creates a class model (heavy)
 			initClassFileMapping(Settings.PROJECT_PATH + "/src");
-			
+
 			// for each subclass, retrieve the superclass (parent)
 			initChildClassDependency();
-			
+
 			XStream xstream = new XStream(new StaxDriver());
 			FileWriter fw = new FileWriter(Settings.classFileMappingPath);
 			fw.write(xstream.toXML(classFileMapping));
@@ -94,17 +92,17 @@ public class Instrumenter {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		long stopTime = System.currentTimeMillis();
-	    long elapsedTime = stopTime - startTime;
-	    System.out.println("Instrumentation time: " + elapsedTime/1000);
+		long elapsedTime = stopTime - startTime;
+		System.out.println("Instrumentation time: " + elapsedTime / 1000);
 	}
-	
+
 	public static void initClassFileMapping(String classPath)
 			throws IOException, IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException {
-		
+
 		File fClass = new File(classPath);
-		
+
 		// for each Java class
 		if (fClass.isFile() && fClass.getAbsolutePath().endsWith("java")) {
 
@@ -113,16 +111,14 @@ public class Instrumenter {
 
 				// read the source into a string
 				String source = FileUtils.readFileToString(fClass);
-				
+
 				// create a structure which can be parsed
 				Document document = new Document(source);
-				
-				List<ClassModel> classes = 
-						ClassModel.getClasses(
-								document.get(), true, classPath, 
+
+				List<ClassModel> classes = ClassModel.getClasses(document.get(), true, classPath,
 						new String[] { Settings.PROJECT_PATH + "/src" },
 						new String[] { Settings.LIBRARY_JAVA, Settings.PROJECT_PATH + "/target" });
-				
+
 				for (ClassModel clazz : classes) {
 					updateStructs(clazz);
 					classFileMapping.put(clazz.name, fClass.getAbsolutePath());
@@ -131,7 +127,7 @@ public class Instrumenter {
 				}
 
 			}
-			
+
 			// if it is a directory, go down recursively
 		} else if (fClass.isDirectory()) {
 			File[] listOfFiles = fClass.listFiles();
@@ -140,14 +136,14 @@ public class Instrumenter {
 			}
 		}
 	}
-	
+
 	private static void initChildClassDependency() {
 		for (Entry<String, Set<String>> entry : parentClassDependency.entrySet()) {
 			for (String child : entry.getValue())
 				childClassDependency.put(child, entry.getKey());
 		}
 	}
-	
+
 	public static void loadStructs() {
 		try {
 			ObjectInputStream in = new ObjectInputStream(new FileInputStream(PARENT_CLASS_DEPENDENCY_FILE));
@@ -163,10 +159,10 @@ public class Instrumenter {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public static void instrumentClass(String classPath)
 			throws IOException, IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException {
-		
+
 		File fClass = new File(classPath);
 		if (fClass.isFile() && fClass.getAbsolutePath().endsWith("java")) {
 
@@ -179,17 +175,18 @@ public class Instrumenter {
 			if (!Utils.isTestClass(fClass)) {
 				if (!fClass.getAbsolutePath().contains("src/main"))
 					return;
-				
+
 				Settings.consoleLogger.error(String.format("production class: %s", fClass.getName()));
-				
+
 				if (classes.size() > 0) {
 					ASTRewrite rewriter = ASTRewrite.create(classes.get(0).getCu().getAST());
-					
+
 					for (ClassModel clazz : classes) {
-						// if clazz is an interface this method does not do anything, perhaps add control?
+						// if clazz is an interface this method does not do
+						// anything, perhaps add control?
 						ProductionClassInstrumenter.instrumentClass(clazz, null, document, rewriter);
 					}
-					
+
 					Document newDocument = new Document(document.get());
 					TextEdit edits = rewriter.rewriteAST(document, null);
 					edits.apply(newDocument);
@@ -235,10 +232,10 @@ public class Instrumenter {
 		String runner = "Parameterized";
 
 		// checks if the class uses @RunWith of @Parameters constructs
-		if (clazz.isClassIsRunBy(runWith, runner)){
+		if (clazz.isClassIsRunBy(runWith, runner)) {
 			parameterizedClasses.add(clazz.name);
 		}
-		
+
 		// for each superclass, save the list of its subclasses
 		Type parent = clazz.typeDec.getSuperclassType();
 		if (parent != null) {
