@@ -24,6 +24,7 @@ import java.util.Set;
 
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
+import org.xml.sax.SAXParseException;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
@@ -53,7 +54,7 @@ public class BackwardTestMerger {
 	public static List<MergingResult> mergingResultsList = new ArrayList<MergingResult>();
 
 	public static void main(String[] args)
-			throws FileNotFoundException, ClassNotFoundException, IOException, CloneNotSupportedException {
+			throws FileNotFoundException, ClassNotFoundException, IOException, CloneNotSupportedException, SAXParseException {
 
 		System.out.println("Merging Project: " + Settings.PROJECT_PATH);
 		long startTime = System.currentTimeMillis();
@@ -96,7 +97,7 @@ public class BackwardTestMerger {
 	}
 
 	private static void merge2()
-			throws IOException, FileNotFoundException, ClassNotFoundException, CloneNotSupportedException {
+			throws IOException, FileNotFoundException, ClassNotFoundException, CloneNotSupportedException, SAXParseException {
 
 		// delete the unnecessary files
 		Utils.cleanProjectBeforeMerging();
@@ -154,11 +155,12 @@ public class BackwardTestMerger {
 
 		for (Set<String> connectedComponent : connectedComponents) {
 
-//			if (connectedComponent.size() > 100){
-//				Settings.consoleLogger.error("skipped a cluster of " + connectedComponent.size()); 
-//				continue;
-//			}
-			
+			// if (connectedComponent.size() > 100){
+			// Settings.consoleLogger.error("skipped a cluster of " +
+			// connectedComponent.size());
+			// continue;
+			// }
+
 			if (connectedComponent.size() < 2)
 				continue;
 
@@ -283,12 +285,12 @@ public class BackwardTestMerger {
 					continue;
 				}
 
+				totalNumberOfStatementsBeforeMerging += totalNumberOfStatements;
+				totalNumberOfStatementsAftermerging += totalMerged;
+				numberOfMergedTests += connectedComponent.size();
+				
 				Settings.consoleLogger.error(String.format("Before Merging : %d, After Merging %d, saved : %d",
 						totalNumberOfStatements, totalMerged, totalNumberOfStatements - totalMerged));
-
-				totalNumberOfStatementsBeforeMerging += totalNumberOfStatements;
-				totalNumberOfStatementsAftermerging  += totalMerged;
-				numberOfMergedTests += connectedComponent.size();
 
 				writeStatToFileAndConsole(formatter, totalNumberOfStatementsBeforeMerging,
 						totalNumberOfStatementsAftermerging, numberOfMergedTests, counter, connectedComponent,
@@ -298,26 +300,52 @@ public class BackwardTestMerger {
 			}
 		}
 
+		writeTotalsToConsole(numberOfMergedTests, counter,
+				totalNumberOfStatementsBeforeMerging, totalNumberOfStatementsAftermerging);
+
 		writeMergingResultsToFile(formatter);
+	}
+
+	private static void writeTotalsToConsole( 
+			int numberOfMergedTests, int counter,
+			int totalBeforeMerging, int totalAftermerging) {
+
+		if(numberOfMergedTests == 0){
+			Settings.consoleLogger
+			.error(String.format("NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Test reduction percentage: %d",
+					numberOfMergedTests, counter, 0));
+		} else {
+			Settings.consoleLogger
+			.error(String.format("NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Test reduction percentage: %d",
+					numberOfMergedTests, counter, (numberOfMergedTests - counter) * 100 / numberOfMergedTests));
+		}
+		
+		
+
+		Settings.consoleLogger.error(
+				String.format("Statements Before merging : %d, Statements After merging : %d, Reduced Statements: %d",
+						totalBeforeMerging, totalAftermerging, totalBeforeMerging - totalAftermerging));
+
 	}
 
 	private static void writeStatToFileAndConsole(Formatter formatter, int totalBeforeMerging, int totalAftermerging,
 			int numberOfMergedTests, int counter, Set<String> connectedComponent, String mergedTestcaseName,
 			String mainClassName, int totalNumberOfStatements, int totalMerged) {
 
-		Settings.consoleLogger.error(String.format(
-				"NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Test reduction percentage: %d",
-				numberOfMergedTests, counter, (numberOfMergedTests - counter) * 100 / numberOfMergedTests));
-		
+		Settings.consoleLogger
+				.error(String.format("NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Test reduction percentage: %d",
+						numberOfMergedTests, counter, (numberOfMergedTests - counter) * 100 / numberOfMergedTests));
+
 		Settings.consoleLogger.error(
 				String.format("Statements Before merging : %d, Statements After merging : %d, Reduced Statements: %d",
-						totalBeforeMerging, totalAftermerging, totalBeforeMerging-totalAftermerging));
+						totalBeforeMerging, totalAftermerging, totalBeforeMerging - totalAftermerging));
 
-//		Settings.consoleLogger.error(String.format(
-//				"Total Before merging : %d, After merging : %d, NumberOfTestsBefore : %d, NumberOfTestsAfter : %d",
-//				totalBeforeMerging, totalAftermerging, numberOfMergedTests, counter));
-		
-		
+		// Settings.consoleLogger.error(String.format(
+		// "Total Before merging : %d, After merging : %d, NumberOfTestsBefore :
+		// %d, NumberOfTestsAfter : %d",
+		// totalBeforeMerging, totalAftermerging, numberOfMergedTests,
+		// counter));
+
 		formatter.format("%s,%s,%s,%d,%d,%d,%b,%b,%b\n", connectedComponent.toString().replaceAll(",", " "),
 				mainClassName, mergedTestcaseName, totalNumberOfStatements, totalMerged,
 				totalNumberOfStatements - totalMerged, mergingResult.fatalError, mergingResult.warning,
@@ -325,6 +353,7 @@ public class BackwardTestMerger {
 	}
 
 	private static void writeMergingResultsToFile(Formatter formatter) throws IOException, FileNotFoundException {
+
 		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(Settings.SUBJECT + "-mergingResult.xml"));
 		out.writeObject(mergingResultsList);
 		out.flush();
@@ -342,7 +371,7 @@ public class BackwardTestMerger {
 		mergingResultsList.add(mergingResult);
 	}
 
-	private static Map<String, Map<String, List<String>>> getTheMapOfConnectedComponentsMap(
+	public static Map<String, Map<String, List<String>>> getTheMapOfConnectedComponentsMap(
 			Map<String, List<String>> connectedComponentsMap) {
 		Map<String, Map<String, List<String>>> map = new HashMap<String, Map<String, List<String>>>();
 		for (Entry<String, List<String>> entry : connectedComponentsMap.entrySet()) {
@@ -449,8 +478,6 @@ public class BackwardTestMerger {
 					List<TestStatement> stmts = Planning.backward(allTestStatements.get(assertion), runningState,
 							readValues, connectedComponentsMap, allStmtsView.get(testCase), definitionPreq);
 
-			
-
 					if (stmts == null) {
 						Settings.consoleLogger.error(String.format("Couldn't satisfay %s - %s",
 								allTestStatements.get(assertion), assertion));
@@ -484,20 +511,20 @@ public class BackwardTestMerger {
 		TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>> frontier = new TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>>(
 				rootStmt, initialState, new HashMap<String, String>(), new LinkedHashSet<String>());
 		TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>> prevFrontier;
-		
+
 		do {
 			prevFrontier = frontier;
 			// frontier = dijkstra(frontier.getFirst(), graph,
 			// frontier.getSecond(), readValues, connectedComponentsMap,
 			// allTestStatements, assertions, definitionPreq);
-			
-//			frontier = Planning.forward(frontier, graph, readValues, connectedComponentsMap, allTestStatements,
-//					assertions, definitionPreq, 7, 7, connectedComponent);
+
+//			 frontier = Planning.forward(frontier, graph, readValues,
+//			 connectedComponentsMap, allTestStatements,
+//			 assertions, definitionPreq, 7, 7, connectedComponent);
 
 			frontier = Planning.forward(frontier, graph, readValues, connectedComponentsMap, allTestStatements,
 					assertions, definitionPreq, 1, 1, connectedComponent);
 
-			
 			if (frontier == null)
 				break;
 			TestMerger.markAsCovered(frontier.getFirst(), connectedComponentsMap, equivalentTestStmtsPerTestCase);
@@ -727,13 +754,11 @@ public class BackwardTestMerger {
 
 	public static Map<String, Map<String, String>> getAllReadValues(List<String> testCases,
 			Map<String, Set<VarDefinitionPreq>> definitionPreq, Set<String> corruptedTestCases,
-			Map<String, Statement> allASTStatements) throws IOException {
+			Map<String, Statement> allASTStatements) throws IOException, SAXParseException {
+		
 		Map<String, Map<String, String>> readValues = new HashMap<String, Map<String, String>>();
 
 		for (String testCase : testCases) {
-			// if
-			// (testCase.equals("org.apache.commons.math4.stat.regression.GLSMultipleLinearRegressionTest.testGLSEfficiency"))
-			// System.out.println();
 			// state1 -> <a, b, c>
 
 			String path = Utils.getTestCaseFile(testCase);

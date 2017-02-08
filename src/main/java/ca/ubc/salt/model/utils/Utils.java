@@ -153,7 +153,7 @@ public class Utils {
 	 */
 	public static void cleanProjectBeforeMerging() {
 		
-		String fileToDelete = System.getProperty("user.dir") + Settings.SUBJECT + "-components.xml";
+		String fileToDelete = System.getProperty("user.dir") + "/" + Settings.SUBJECT + "-components.xml";
 		
 		String[] cmdRM = new String[] { "rm", fileToDelete };
 		try {
@@ -164,7 +164,7 @@ public class Utils {
 			e.printStackTrace();
 		}
 		
-		fileToDelete = System.getProperty("user.dir") + Settings.SUBJECT + "-unique.xml";
+		fileToDelete = System.getProperty("user.dir") + "/" + Settings.SUBJECT + "-unique.xml";
 		
 		cmdRM = new String[] { "rm", fileToDelete };
 		try {
@@ -175,7 +175,7 @@ public class Utils {
 			e.printStackTrace();
 		}
 		
-		fileToDelete = System.getProperty("user.dir") + Settings.SUBJECT + "-mergingStat.csv";
+		fileToDelete = System.getProperty("user.dir") + "/" + Settings.SUBJECT + "-mergingStat.csv";
 		
 		cmdRM = new String[] { "rm", fileToDelete };
 		try {
@@ -186,7 +186,7 @@ public class Utils {
 			e.printStackTrace();
 		}
 		
-		fileToDelete = System.getProperty("user.dir") + Settings.SUBJECT + "-stat.csv";
+		fileToDelete = System.getProperty("user.dir") + "/" + Settings.SUBJECT + "-stat.csv";
 		
 		cmdRM = new String[] { "rm", fileToDelete };
 		try {
@@ -526,7 +526,7 @@ public class Utils {
 			int index = testCaseName.lastIndexOf('.');
 			return testStatement.substring(0, index);
 		} catch (Exception e) {
-			Settings.consoleLogger.error("there is a state name " + testStatement);
+//			Settings.consoleLogger.error("there is a state name " + testStatement);
 			return "";
 		}
 	}

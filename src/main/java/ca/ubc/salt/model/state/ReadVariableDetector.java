@@ -22,6 +22,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXParseException;
 
 import ca.ubc.salt.model.instrumenter.ClassModel;
 import ca.ubc.salt.model.instrumenter.Method;
@@ -166,7 +167,8 @@ public class ReadVariableDetector {
 	}
 
 	public static void getReadValues(Map<String, Set<SimpleName>> readVars, Map<String, Map<String, String>> readValues,
-			Set<String> corruptedTestCases) {
+			Set<String> corruptedTestCases) throws SAXParseException {
+		
 		for (Entry<String, Set<SimpleName>> entry : readVars.entrySet()) {
 			String stateName = entry.getKey();
 			Map<String, String> readValuesForState = getReadValuesOfState(stateName, entry.getValue());
@@ -178,7 +180,9 @@ public class ReadVariableDetector {
 		}
 	}
 
-	public static Map<String, String> getReadValuesOfState(String stateName, Set<SimpleName> readVars) {
+	public static Map<String, String> getReadValuesOfState(String stateName, Set<SimpleName> readVars) 
+		throws SAXParseException {
+		
 		Map<String, String> varStateSet = new HashMap<String, String>();
 
 		String varXML = FileUtils.getVars(stateName);
