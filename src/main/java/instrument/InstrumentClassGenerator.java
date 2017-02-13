@@ -20,7 +20,7 @@ public class InstrumentClassGenerator {
 	static String methodName;
 	static String fileName;
 	// static XStream xstream = new XStream(new StaxDriver());
-	static XStream xstream = new XStream(new DomDriver("UTF-8"));
+	static XStream xstream = new XStream(new DomDriver("UTF-16"));
 	// static FileWriter fw = null;
 	static BufferedWriter fw = null;
 	static ObjectOutputStream out;

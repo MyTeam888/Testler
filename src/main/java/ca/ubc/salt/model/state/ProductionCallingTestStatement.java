@@ -176,11 +176,13 @@ public class ProductionCallingTestStatement {
 		
 		int totalRedudant = 0;
 		int totalRedudantUnique = 0;
-		Map<String, Set<String>> uniqueTestStatements = splitMethodCalls(getUniqueTestStatements());
+		
+//		Map<String, Set<String>> uniqueTestStatements = splitMethodCalls(getUniqueTestStatements());
+		Map<String, List<String>> uniqueTestStatements = getUniqueTestStatements();
 
 		Formatter fw = new Formatter(Settings.SUBJECT + "-expnmethod.csv");
 
-		for (Entry<String, Set<String>> entry : uniqueTestStatements.entrySet()) {
+		for (Entry<String, List<String>> entry : uniqueTestStatements.entrySet()) {
 			// System.out.println(entry.getKey()+","+entry.getValue().size());
 			String key = entry.getKey();
 			int limit = 1000;
@@ -197,15 +199,15 @@ public class ProductionCallingTestStatement {
 			if(!key.equals("") && entry.getValue().size() > 1){
 				totalRedudant += entry.getValue().size();
 				totalRedudantUnique++;
-			}
-			
+			}		
 		}
+		
 		System.out.println("Redundant Statements: " + totalRedudant);
 		System.out.println("Redundant Unique Statements: " + totalRedudantUnique);
 		System.out.println("Redundant Statements to be reduced: " + (totalRedudant-totalRedudantUnique));
 		fw.format("%s,%s,%d\n", "", "Common", totalRedudant);
-		fw.format("%s,%s,%d\n", "", "Unique", (totalRedudantUnique));
-		fw.format("%s,%s,%d\n", "", "To be reduced", (totalRedudant-totalRedudantUnique));
+		fw.format("%s,%s,%d\n", "", "Unique", totalRedudantUnique);
+		fw.format("%s,%s,%d\n", "", "To be reduced", (totalRedudant - totalRedudantUnique));
 		fw.close();
 		// System.out.println(uniqueTestStatements.size());
 	} 
@@ -224,6 +226,7 @@ public class ProductionCallingTestStatement {
 	// returns the map from each test statement to set of equivalent test
 	// statements
 	public static Map<String, List<String>> getUniqueTestStatements() {
+		
 		Map<String, List<String>> uniqueTestStatements = new HashMap<String, List<String>>();
 
 		File folder = new File(Settings.tracePaths);
@@ -254,8 +257,9 @@ public class ProductionCallingTestStatement {
 			}
 
 			counter++;
-			if (counter % 1000 == 0)
+			if (counter % 1000 == 0){
 				Settings.consoleLogger.error(String.format("processed %d logs", counter));
+			}
 
 		}
 
@@ -294,8 +298,9 @@ public class ProductionCallingTestStatement {
 			}
 
 			counter++;
-			if (counter % 1000 == 0)
+			if (counter % 1000 == 0){
 				Settings.consoleLogger.error(String.format("processed %d logs", counter));
+			}
 
 		}
 

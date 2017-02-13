@@ -56,7 +56,7 @@ public class BackwardTestMerger {
 	public static void main(String[] args)
 			throws FileNotFoundException, ClassNotFoundException, IOException, CloneNotSupportedException, SAXParseException {
 
-		System.out.println("Merging Project: " + Settings.PROJECT_PATH);
+		System.out.println("Merging project: " + Settings.PROJECT_PATH);
 		long startTime = System.currentTimeMillis();
 
 		merge2();
@@ -111,6 +111,7 @@ public class BackwardTestMerger {
 		File file = new File(Settings.SUBJECT + "-components.xml");
 		List<Set<String>> connectedComponents = null;
 		Map<String, List<String>> connectedComponentsMap = null;
+		
 		if (!file.exists()) {
 			long setupCost = 10;
 			List<Map<String, List<String>>> uniqueTestStatementSet = new ArrayList<Map<String, List<String>>>();
@@ -154,13 +155,7 @@ public class BackwardTestMerger {
 				connectedComponentsMap);
 
 		for (Set<String> connectedComponent : connectedComponents) {
-
-			// if (connectedComponent.size() > 100){
-			// Settings.consoleLogger.error("skipped a cluster of " +
-			// connectedComponent.size());
-			// continue;
-			// }
-
+			
 			if (connectedComponent.size() < 2)
 				continue;
 
@@ -312,12 +307,12 @@ public class BackwardTestMerger {
 
 		if(numberOfMergedTests == 0){
 			Settings.consoleLogger
-			.error(String.format("NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Test reduction percentage: %d",
+			.error(String.format("NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Saved: %d",
 					numberOfMergedTests, counter, 0));
 		} else {
 			Settings.consoleLogger
-			.error(String.format("NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Test reduction percentage: %d",
-					numberOfMergedTests, counter, (numberOfMergedTests - counter) * 100 / numberOfMergedTests));
+			.error(String.format("NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Saved: %d",
+					numberOfMergedTests, counter, numberOfMergedTests - counter));
 		}
 		
 		
@@ -333,8 +328,8 @@ public class BackwardTestMerger {
 			String mainClassName, int totalNumberOfStatements, int totalMerged) {
 
 		Settings.consoleLogger
-				.error(String.format("NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Test reduction percentage: %d",
-						numberOfMergedTests, counter, (numberOfMergedTests - counter) * 100 / numberOfMergedTests));
+				.error(String.format("NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Saved: %d",
+						numberOfMergedTests, counter, numberOfMergedTests - counter));
 
 		Settings.consoleLogger.error(
 				String.format("Statements Before merging : %d, Statements After merging : %d, Reduced Statements: %d",

@@ -2,7 +2,6 @@ package ca.ubc.salt.model.instrumenter;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -37,21 +36,18 @@ public class InstrumentedTestSuiteExecutor {
 	public static void main(String[] args) throws Exception {
 
 		Settings.consoleLogger.error("Deleting old traces");
-
 		deleteTraces();
-
 		Settings.consoleLogger.error("Running instrumented project");
 		
 		long startTime = System.currentTimeMillis();
-		//
+		
 		runInstrumentedProject();
-		//
+		
 		long stopTime = System.currentTimeMillis();
 		long elapsedTime = stopTime - startTime;
 		System.out.println("Running instrumented test suite in: " + elapsedTime / 1000);
 
 		Settings.consoleLogger.error("Check trace inconsistency");
-		
 		checkTraceConsistency();
 	}
 

@@ -160,15 +160,38 @@ public class TestCaseComposer {
 		for (SimpleName var : cpyVars) {
 			boolean leftHandSide = false;
 			String renamedVar = renameSet.get(var.getIdentifier());
-			if (renamedVar == null && castToMap != null && castToMap.containsKey(var.getIdentifier()))
+			
+			if (renamedVar == null && castToMap != null && castToMap.containsKey(var.getIdentifier())){
 				renamedVar = var.getIdentifier();
+			}
+			
+//			if(renamedVar == null){
+//				System.out.println(var.getIdentifier());
+//				System.exit(1);
+//			}
+			
 			if (renamedVar != null) {
 				ASTNode parentNode = var.getParent();
 
 				if (parentNode.getNodeType() == ASTNode.VARIABLE_DECLARATION_FRAGMENT
 						&& ((VariableDeclarationFragment) parentNode).getName().equals(var)) {
+					
 					VariableDeclarationFragment vdf = (VariableDeclarationFragment) parentNode;
-					vdf.setName(vdf.getAST().newSimpleName(renamedVar));
+					
+					try{
+						vdf.setName(vdf.getAST().newSimpleName(renamedVar));
+					}
+					catch(IllegalArgumentException e){
+//						System.out.println(renamedVar);
+//						System.exit(1);
+//						if(renamedVar.length() == 0){
+//							renamedVar = Integer.toString(renamedVar.hashCode());
+//						} else if (renamedVar.contains(".")){
+//							renamedVar = renamedVar.replaceAll(".", "");
+//						}
+//						
+//						vdf.setName(vdf.getAST().newSimpleName(renamedVar));
+					}
 
 				} else {
 					if (isLeftHandSide(parentNode, var)) {
