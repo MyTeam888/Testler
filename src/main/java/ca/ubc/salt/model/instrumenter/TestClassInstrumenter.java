@@ -30,7 +30,7 @@ import ca.ubc.salt.model.utils.Utils;
 public class TestClassInstrumenter {
 	public static void instrumentClass(String testClassPath)
 			throws IOException, IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException {
-		
+
 		File testClass = new File(testClassPath);
 		if (testClass.isFile()) {
 			if (!Utils.isTestClass(testClass))

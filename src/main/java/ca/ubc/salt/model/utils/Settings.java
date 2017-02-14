@@ -23,9 +23,11 @@ public class Settings {
 //	public static final String SUBJECT = "assertj-core";
 //	public static final String SUBJECT = "assertj-core-master";
 //	public static final String SUBJECT = "commons-math";
-	public static final String SUBJECT = "math-simple-small2";
+//	public static final String SUBJECT = "math-simple-small2";
 //	public static final String SUBJECT = "commons-lang-master";
-//	public static final String SUBJECT = "pmd-java";
+//	public static final String SUBJECT = "pmd-core";
+	public static final String SUBJECT = "pmd-java";
+//	public static final String SUBJECT = "checkstyle-master";
 
 
 	public static final String PROJECT_PATH = FILESYSTEM_PATH + SUBJECT;
