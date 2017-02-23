@@ -24,7 +24,8 @@ import ca.ubc.salt.model.utils.Utils;
 public class ProductionCallingTestStatement {
 
 	public static void main(String[] args) throws FileNotFoundException {
-		writeStatToFile();
+//		writeStatToFile();
+		System.out.println(getTestCasesThatShareTestStatement(1));
 	}
 	
 	public static List<Set<String>> getTestCasesThatShareTestStatement(int cutOff) {
@@ -33,10 +34,11 @@ public class ProductionCallingTestStatement {
 
 	public static List<Set<String>> getTestCasesThatShareTestStatement(int cutOff,
 			Map<String, List<String>> uniqueTestStatements) {
+		
 		Map<String, Map<String, Integer>> conGraph = new HashMap<String, Map<String, Integer>>();
 		conGraph = getConnectivityGraph(uniqueTestStatements, conGraph);
 
-		System.out.println(conGraph);
+//		System.out.println(conGraph);
 		Set<String> visited = new HashSet<String>();
 		List<Set<String>> connectedComponents = new LinkedList<Set<String>>();
 

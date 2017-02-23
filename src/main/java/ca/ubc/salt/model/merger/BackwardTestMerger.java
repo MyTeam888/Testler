@@ -64,6 +64,8 @@ public class BackwardTestMerger {
 		long stopTime = System.currentTimeMillis();
 		long elapsedTime = stopTime - startTime;
 		System.out.println("Merging time: " + elapsedTime / 1000);
+		
+		ProductionCallingTestStatement.main(args);
 
 	}
 
@@ -99,7 +101,7 @@ public class BackwardTestMerger {
 	private static void merge2()
 			throws IOException, FileNotFoundException, ClassNotFoundException, CloneNotSupportedException, SAXParseException {
 
-		// delete the unnecessary files
+		// delete some unnecessary files
 		Utils.cleanProjectBeforeMerging();
 
 		Instrumenter.loadStructs();
@@ -121,8 +123,11 @@ public class BackwardTestMerger {
 			}
 			Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
 			uniqueTestStatementSet.add(uniqueTestStatements);
-			connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(1,
-					uniqueTestStatementSet);
+			
+			int commonStms = 1;
+			
+			connectedComponents = 
+					ProductionCallingTestStatement.getTestCasesThatShareTestStatement(commonStms, uniqueTestStatementSet);
 			// connectedComponents.remove(0);
 
 			connectedComponentsMap = ProductionCallingTestStatement.convertTheSetToMap(uniqueTestStatementSet);
@@ -392,6 +397,7 @@ public class BackwardTestMerger {
 			Map<String, TestStatement> allTestStatements, Set<String> assertions, String mainClassName,
 			TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>> prevFrontier)
 			throws CloneNotSupportedException {
+		
 		List<TestStatement> secondPhasePath = new LinkedList<TestStatement>();
 		Map<String, Map<String, TestStatement>> allStmtsView = Planning
 				.getTestCaseTestStatementMapping(allTestStatements);
@@ -474,7 +480,7 @@ public class BackwardTestMerger {
 							readValues, connectedComponentsMap, allStmtsView.get(testCase), definitionPreq);
 
 					if (stmts == null) {
-						Settings.consoleLogger.error(String.format("Couldn't satisfay %s - %s",
+						Settings.consoleLogger.error(String.format("Couldn't satisfy %s - %s",
 								allTestStatements.get(assertion), assertion));
 						mergingResult.couldntsatisfy = true;
 						testCasesToRemove.add(Utils.getTestCaseNameFromTestStatement(assertion));
