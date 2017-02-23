@@ -24,21 +24,64 @@ import ca.ubc.salt.model.utils.Utils;
 public class ProductionCallingTestStatement {
 
 	public static void main(String[] args) throws FileNotFoundException {
-//		writeStatToFile();
-		System.out.println(getTestCasesThatShareTestStatement(1));
+		writeStatToFile();
+		getCommonStmsForEachTestCase();
+		// System.out.println(getTestCasesThatShareTestStatement(1));
 	}
-	
+
+	public static void getCommonStmsForEachTestCase() throws FileNotFoundException {
+
+		Map<String, List<String>> results = new HashMap<String, List<String>>();
+
+		Map<String, List<String>> uniqueTestStatements = getUniqueTestStatements();
+
+		Formatter fw = new Formatter(Settings.SUBJECT + "-numberOfCommonsStmts.csv");
+
+		for (Entry<String, List<String>> entry : uniqueTestStatements.entrySet()) {
+
+			// consider only those statements that share a PMC
+			if (entry.getValue().size() != 1) {
+
+				List<String> list = entry.getValue();
+				for (String string : list) {
+
+					String test = Utils.getTestCaseNameFromTestStatementWithoutClassName(string);
+					String statement = Utils.getTestClassNameFromTestCase(string);
+					//
+					if (results.containsKey(test)) {
+						List<String> v = results.get(test);
+						v.add(statement);
+						results.put(test, v);
+					} else {
+						List<String> v = new LinkedList<String>();
+						v.add(statement);
+						results.put(test, v);
+					}
+				}
+			}
+		}
+
+		for (String test : results.keySet()) {
+			System.out.println(test + "\t" + results.get(test).size());
+			fw.format("%s,%d\n", test, results.get(test).size());
+		}
+		
+		fw.close();
+		// System.out.println(results.values());
+
+	}
+
 	public static List<Set<String>> getTestCasesThatShareTestStatement(int cutOff) {
 		return getTestCasesThatShareTestStatement(cutOff, getUniqueTestStatements());
 	}
 
 	public static List<Set<String>> getTestCasesThatShareTestStatement(int cutOff,
 			Map<String, List<String>> uniqueTestStatements) {
-		
+
 		Map<String, Map<String, Integer>> conGraph = new HashMap<String, Map<String, Integer>>();
 		conGraph = getConnectivityGraph(uniqueTestStatements, conGraph);
 
-//		System.out.println(conGraph);
+		// System.out.println(conGraph);
 		Set<String> visited = new HashSet<String>();
 		List<Set<String>> connectedComponents = new LinkedList<Set<String>>();
 
@@ -55,13 +98,13 @@ public class ProductionCallingTestStatement {
 
 	public static List<Set<String>> getTestCasesThatShareTestStatement(int cutOff,
 			List<Map<String, List<String>>> uniqueTestStatementsSet) {
-		
+
 		Map<String, Map<String, Integer>> conGraph = new HashMap<String, Map<String, Integer>>();
-		
+
 		for (Map<String, List<String>> uniqueTestStatements : uniqueTestStatementsSet)
 			conGraph = getConnectivityGraph(uniqueTestStatements, conGraph);
 
-//		System.out.println(conGraph);
+		// System.out.println(conGraph);
 		Set<String> visited = new HashSet<String>();
 		List<Set<String>> connectedComponents = new LinkedList<Set<String>>();
 
@@ -106,7 +149,8 @@ public class ProductionCallingTestStatement {
 			Map<String, Integer> children = conGraph.get(parent);
 			for (Entry<String, Integer> child : children.entrySet()) {
 				if (!visited.contains(child.getKey())) {
-//					System.out.println("child.getValue(): " + child.getValue());
+					// System.out.println("child.getValue(): " +
+					// child.getValue());
 					if (child.getValue() >= cutOff) {
 						visited.add(child.getKey());
 						queue.addLast(child.getKey());
@@ -153,8 +197,6 @@ public class ProductionCallingTestStatement {
 		return null;
 	}
 
-	
-
 	private static Map<String, Set<String>> splitMethodCalls(Map<String, List<String>> uniqueTestStatements) {
 		Map<String, Set<String>> uniqueMethodCalls = new HashMap<String, Set<String>>();
 
@@ -174,12 +216,13 @@ public class ProductionCallingTestStatement {
 		return uniqueMethodCalls;
 	}
 
-	private static void writeStatToFile() throws FileNotFoundException {
-		
+	public static void writeStatToFile() throws FileNotFoundException {
+
 		int totalRedudant = 0;
 		int totalRedudantUnique = 0;
-		
-//		Map<String, Set<String>> uniqueTestStatements = splitMethodCalls(getUniqueTestStatements());
+
+		// Map<String, Set<String>> uniqueTestStatements =
+		// splitMethodCalls(getUniqueTestStatements());
 		Map<String, List<String>> uniqueTestStatements = getUniqueTestStatements();
 
 		Formatter fw = new Formatter(Settings.SUBJECT + "-expnmethod.csv");
@@ -188,6 +231,7 @@ public class ProductionCallingTestStatement {
 			// System.out.println(entry.getKey()+","+entry.getValue().size());
 			String key = entry.getKey();
 			int limit = 1000;
+
 			if (key != null) {
 				if (key.length() > limit)
 					key = key.substring(0, limit);
@@ -195,24 +239,26 @@ public class ProductionCallingTestStatement {
 				key = key.replaceAll(",", "");
 			}
 
+//			System.out.println(entry.getValue());
+
 			String entr = entry.getValue().toString().replaceAll(",", " ");
 			fw.format("%s,%s,%d\n", key, entr, entry.getValue().size());
-			
-			if(!key.equals("") && entry.getValue().size() > 1){
+
+			if (!key.equals("") && entry.getValue().size() > 1) {
 				totalRedudant += entry.getValue().size();
 				totalRedudantUnique++;
-			}		
+			}
 		}
-		
+
 		System.out.println("Redundant Statements: " + totalRedudant);
 		System.out.println("Redundant Unique Statements: " + totalRedudantUnique);
-		System.out.println("Redundant Statements to be reduced: " + (totalRedudant-totalRedudantUnique));
+		System.out.println("Redundant Statements to be reduced: " + (totalRedudant - totalRedudantUnique));
 		fw.format("%s,%s,%d\n", "", "Common", totalRedudant);
 		fw.format("%s,%s,%d\n", "", "Unique", totalRedudantUnique);
 		fw.format("%s,%s,%d\n", "", "To be reduced", (totalRedudant - totalRedudantUnique));
 		fw.close();
 		// System.out.println(uniqueTestStatements.size());
-	} 
+	}
 
 	public static long getTime(String stmt) {
 		try {
@@ -228,7 +274,7 @@ public class ProductionCallingTestStatement {
 	// returns the map from each test statement to set of equivalent test
 	// statements
 	public static Map<String, List<String>> getUniqueTestStatements() {
-		
+
 		Map<String, List<String>> uniqueTestStatements = new HashMap<String, List<String>>();
 
 		File folder = new File(Settings.tracePaths);
@@ -259,7 +305,7 @@ public class ProductionCallingTestStatement {
 			}
 
 			counter++;
-			if (counter % 1000 == 0){
+			if (counter % 1000 == 0) {
 				Settings.consoleLogger.error(String.format("processed %d logs", counter));
 			}
 
@@ -300,7 +346,7 @@ public class ProductionCallingTestStatement {
 			}
 
 			counter++;
-			if (counter % 1000 == 0){
+			if (counter % 1000 == 0) {
 				Settings.consoleLogger.error(String.format("processed %d logs", counter));
 			}
 

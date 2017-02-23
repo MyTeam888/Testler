@@ -35,16 +35,16 @@ public class InstrumentedTestSuiteExecutor {
 
 	public static void main(String[] args) throws Exception {
 
-//		Settings.consoleLogger.error("Deleting old traces");
+		Settings.consoleLogger.error("Deleting old traces");
 		deleteTraces();
-//		Settings.consoleLogger.error("Running instrumented project");
-//		long startTime = System.currentTimeMillis();
-//		
-//		runInstrumentedProject();
-//		
-//		long stopTime = System.currentTimeMillis();
-//		long elapsedTime = stopTime - startTime;
-//		System.out.println("Running instrumented test suite in: " + elapsedTime / 1000);
+		Settings.consoleLogger.error("Running instrumented project");
+		long startTime = System.currentTimeMillis();
+		
+		runInstrumentedProject();
+		
+		long stopTime = System.currentTimeMillis();
+		long elapsedTime = stopTime - startTime;
+		System.out.println("Running instrumented test suite in: " + elapsedTime / 1000);
 
 		Settings.consoleLogger.error("Check trace consistency");
 		checkTraceConsistency();

@@ -53,8 +53,8 @@ public class BackwardTestMerger {
 	public static MergingResult mergingResult;
 	public static List<MergingResult> mergingResultsList = new ArrayList<MergingResult>();
 
-	public static void main(String[] args)
-			throws FileNotFoundException, ClassNotFoundException, IOException, CloneNotSupportedException, SAXParseException {
+	public static void main(String[] args) throws FileNotFoundException, ClassNotFoundException, IOException,
+			CloneNotSupportedException, SAXParseException {
 
 		System.out.println("Merging project: " + Settings.PROJECT_PATH);
 		long startTime = System.currentTimeMillis();
@@ -64,10 +64,13 @@ public class BackwardTestMerger {
 		long stopTime = System.currentTimeMillis();
 		long elapsedTime = stopTime - startTime;
 		System.out.println("Merging time: " + elapsedTime / 1000);
-		
-		ProductionCallingTestStatement.main(args);
+
+		// ProductionCallingTestStatement.main(args);
+		ProductionCallingTestStatement.writeStatToFile();
 
 	}
+
+	
 
 	public static Map<String, TestStatement> getAllTestStatements(ArrayList<String> allStmtStr,
 			Map<String, TestState> graph) {
@@ -98,8 +101,8 @@ public class BackwardTestMerger {
 		}
 	}
 
-	private static void merge2()
-			throws IOException, FileNotFoundException, ClassNotFoundException, CloneNotSupportedException, SAXParseException {
+	private static void merge2() throws IOException, FileNotFoundException, ClassNotFoundException,
+			CloneNotSupportedException, SAXParseException {
 
 		// delete some unnecessary files
 		Utils.cleanProjectBeforeMerging();
@@ -113,7 +116,7 @@ public class BackwardTestMerger {
 		File file = new File(Settings.SUBJECT + "-components.xml");
 		List<Set<String>> connectedComponents = null;
 		Map<String, List<String>> connectedComponentsMap = null;
-		
+
 		if (!file.exists()) {
 			long setupCost = 10;
 			List<Map<String, List<String>>> uniqueTestStatementSet = new ArrayList<Map<String, List<String>>>();
@@ -123,11 +126,11 @@ public class BackwardTestMerger {
 			}
 			Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
 			uniqueTestStatementSet.add(uniqueTestStatements);
-			
+
 			int commonStms = 1;
-			
-			connectedComponents = 
-					ProductionCallingTestStatement.getTestCasesThatShareTestStatement(commonStms, uniqueTestStatementSet);
+
+			connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(commonStms,
+					uniqueTestStatementSet);
 			// connectedComponents.remove(0);
 
 			connectedComponentsMap = ProductionCallingTestStatement.convertTheSetToMap(uniqueTestStatementSet);
@@ -160,7 +163,7 @@ public class BackwardTestMerger {
 				connectedComponentsMap);
 
 		for (Set<String> connectedComponent : connectedComponents) {
-			
+
 			if (connectedComponent.size() < 2)
 				continue;
 
@@ -288,7 +291,7 @@ public class BackwardTestMerger {
 				totalNumberOfStatementsBeforeMerging += totalNumberOfStatements;
 				totalNumberOfStatementsAftermerging += totalMerged;
 				numberOfMergedTests += connectedComponent.size();
-				
+
 				Settings.consoleLogger.error(String.format("Before Merging : %d, After Merging %d, saved : %d",
 						totalNumberOfStatements, totalMerged, totalNumberOfStatements - totalMerged));
 
@@ -300,27 +303,22 @@ public class BackwardTestMerger {
 			}
 		}
 
-		writeTotalsToConsole(numberOfMergedTests, counter,
-				totalNumberOfStatementsBeforeMerging, totalNumberOfStatementsAftermerging);
+		writeTotalsToConsole(numberOfMergedTests, counter, totalNumberOfStatementsBeforeMerging,
+				totalNumberOfStatementsAftermerging);
 
 		writeMergingResultsToFile(formatter);
 	}
 
-	private static void writeTotalsToConsole( 
-			int numberOfMergedTests, int counter,
-			int totalBeforeMerging, int totalAftermerging) {
+	private static void writeTotalsToConsole(int numberOfMergedTests, int counter, int totalBeforeMerging,
+			int totalAftermerging) {
 
-		if(numberOfMergedTests == 0){
-			Settings.consoleLogger
-			.error(String.format("NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Saved: %d",
+		if (numberOfMergedTests == 0) {
+			Settings.consoleLogger.error(String.format("NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Saved: %d",
 					numberOfMergedTests, counter, 0));
 		} else {
-			Settings.consoleLogger
-			.error(String.format("NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Saved: %d",
+			Settings.consoleLogger.error(String.format("NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Saved: %d",
 					numberOfMergedTests, counter, numberOfMergedTests - counter));
 		}
-		
-		
 
 		Settings.consoleLogger.error(
 				String.format("Statements Before merging : %d, Statements After merging : %d, Reduced Statements: %d",
@@ -332,9 +330,8 @@ public class BackwardTestMerger {
 			int numberOfMergedTests, int counter, Set<String> connectedComponent, String mergedTestcaseName,
 			String mainClassName, int totalNumberOfStatements, int totalMerged) {
 
-		Settings.consoleLogger
-				.error(String.format("NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Saved: %d",
-						numberOfMergedTests, counter, numberOfMergedTests - counter));
+		Settings.consoleLogger.error(String.format("NumberOfTestsBefore : %d, NumberOfTestsAfter : %d, Saved: %d",
+				numberOfMergedTests, counter, numberOfMergedTests - counter));
 
 		Settings.consoleLogger.error(
 				String.format("Statements Before merging : %d, Statements After merging : %d, Reduced Statements: %d",
@@ -397,7 +394,7 @@ public class BackwardTestMerger {
 			Map<String, TestStatement> allTestStatements, Set<String> assertions, String mainClassName,
 			TwoPair<TestStatement, RunningState, Map<String, String>, LinkedHashSet<String>> prevFrontier)
 			throws CloneNotSupportedException {
-		
+
 		List<TestStatement> secondPhasePath = new LinkedList<TestStatement>();
 		Map<String, Map<String, TestStatement>> allStmtsView = Planning
 				.getTestCaseTestStatementMapping(allTestStatements);
@@ -480,8 +477,8 @@ public class BackwardTestMerger {
 							readValues, connectedComponentsMap, allStmtsView.get(testCase), definitionPreq);
 
 					if (stmts == null) {
-						Settings.consoleLogger.error(String.format("Couldn't satisfy %s - %s",
-								allTestStatements.get(assertion), assertion));
+						Settings.consoleLogger.error(
+								String.format("Couldn't satisfy %s - %s", allTestStatements.get(assertion), assertion));
 						mergingResult.couldntsatisfy = true;
 						testCasesToRemove.add(Utils.getTestCaseNameFromTestStatement(assertion));
 						continue outer;
@@ -519,9 +516,9 @@ public class BackwardTestMerger {
 			// frontier.getSecond(), readValues, connectedComponentsMap,
 			// allTestStatements, assertions, definitionPreq);
 
-//			 frontier = Planning.forward(frontier, graph, readValues,
-//			 connectedComponentsMap, allTestStatements,
-//			 assertions, definitionPreq, 7, 7, connectedComponent);
+			// frontier = Planning.forward(frontier, graph, readValues,
+			// connectedComponentsMap, allTestStatements,
+			// assertions, definitionPreq, 7, 7, connectedComponent);
 
 			frontier = Planning.forward(frontier, graph, readValues, connectedComponentsMap, allTestStatements,
 					assertions, definitionPreq, 1, 1, connectedComponent);
@@ -756,7 +753,7 @@ public class BackwardTestMerger {
 	public static Map<String, Map<String, String>> getAllReadValues(List<String> testCases,
 			Map<String, Set<VarDefinitionPreq>> definitionPreq, Set<String> corruptedTestCases,
 			Map<String, Statement> allASTStatements) throws IOException, SAXParseException {
-		
+
 		Map<String, Map<String, String>> readValues = new HashMap<String, Map<String, String>>();
 
 		for (String testCase : testCases) {
