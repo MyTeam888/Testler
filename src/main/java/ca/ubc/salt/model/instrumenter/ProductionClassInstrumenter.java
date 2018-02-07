@@ -26,13 +26,13 @@ public class ProductionClassInstrumenter {
 
 	public static void main(String[] args)
 			throws IOException, IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException {
-		
+
 		instrumentClass(Settings.PROD_TEST_CLASS);
 	}
 
 	public static void instrumentClass(String testClassPath)
 			throws IOException, IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException {
-		
+
 		File testClass = new File(testClassPath);
 		if (testClass.isFile()) {
 

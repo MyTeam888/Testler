@@ -89,7 +89,6 @@ public class Instrumenter {
 
 		} catch (IllegalArgumentException | MalformedTreeException | IOException | BadLocationException
 				| CoreException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -164,6 +163,7 @@ public class Instrumenter {
 			throws IOException, IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException {
 
 		File fClass = new File(classPath);
+
 		if (fClass.isFile() && fClass.getAbsolutePath().endsWith("java")) {
 
 			String source = FileUtils.readFileToString(fClass);
@@ -173,6 +173,7 @@ public class Instrumenter {
 					new String[] { Settings.LIBRARY_JAVA, Settings.PROJECT_PATH + "/target" });
 
 			if (!Utils.isTestClass(fClass)) {
+
 				if (!fClass.getAbsolutePath().contains("src/main"))
 					return;
 
@@ -197,8 +198,10 @@ public class Instrumenter {
 
 			} else {
 				Settings.consoleLogger.error(String.format("test : %s", classPath));
+
 				if (classes.size() == 0)
 					return;
+
 				ASTRewrite rewriter = ASTRewrite.create(classes.get(0).getCu().getAST());
 				for (ClassModel clazz : classes) {
 

@@ -28,21 +28,27 @@ import ca.ubc.salt.model.utils.Settings;
 import ca.ubc.salt.model.utils.Utils;
 
 public class TestClassInstrumenter {
+	
 	public static void instrumentClass(String testClassPath)
 			throws IOException, IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException {
 
 		File testClass = new File(testClassPath);
+		
 		if (testClass.isFile()) {
+			
 			if (!Utils.isTestClass(testClass))
 				return;
 
 			String source = FileUtils.readFileToString(testClass);
 			Document document = new Document(source);
+			
 			List<ClassModel> classes = ClassModel.getClasses(document.get(), true, testClassPath,
 					new String[] { Settings.PROJECT_PATH }, new String[] { Settings.LIBRARY_JAVA });
-			if (classes.size() == 0)
-				return;
+			
+			if (classes.size() == 0) return;
+			
 			ASTRewrite rewriter = ASTRewrite.create(classes.get(0).cu.getAST());
+			
 			for (ClassModel clazz : classes)
 				instrumentClass(clazz, null, clazz.typeDec.getName().toString(), rewriter);
 
@@ -82,8 +88,6 @@ public class TestClassInstrumenter {
 			throws IllegalArgumentException, MalformedTreeException, BadLocationException, CoreException {
 
 		List<Method> methods = srcClass.getMethods();
-
-		// Document newDocument = new Document(document.get());
 
 		for (Method method : methods) {
 			if (method.isTestMethod() && !method.isIgnored()

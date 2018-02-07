@@ -204,6 +204,7 @@ public class RunningState {
 	}
 
 	public static String getTypeOfValue(String origVal) {
+		
 		int end = origVal.indexOf('>');
 		String val = origVal.substring(0, end);
 		int begin = val.lastIndexOf('.');
@@ -222,6 +223,7 @@ public class RunningState {
 	}
 
 	public RunningState(Collection<String> testCases, String mainTestClass) {
+		
 		nameValuePairForCurrentState = new HashMap<String, String>();
 		valueNamePairForCurrentState = new HashMap<String, Set<String>>();
 		typeNamePairForCurrentState = new HashMap<String, Set<String>>();
@@ -229,15 +231,27 @@ public class RunningState {
 
 		Set<String> done = new HashSet<String>();
 		for (String testCase : testCases) {
+			
 			String testClass = Utils.getTestClassNameFromTestCase(testCase);
-			if (done.contains(testClass))
-				continue;
+			
+			if (done.contains(testClass)) continue;
+			
 			Map<String, String> nameValuePair = FileUtils.getNameValuePairs(testCase + "-0.xml");
 			for (Entry<String, String> entry : nameValuePair.entrySet()) {
+				
 				String name = entry.getKey();
+				
 				if (!testClass.equals(mainTestClass))
 					name = Utils.getTestCaseName(testClass.toLowerCase()) + "." + name;
-				this.put(name, entry.getValue(), getTypeOfValue(entry.getValue()));
+				
+				String value = entry.getValue();
+				if(value.equals("")) {
+					this.put(name, "", "");
+				} else {
+					this.put(name, entry.getValue(), getTypeOfValue(entry.getValue()));
+				}
+				
+					
 			}
 			done.add(testClass);
 		}

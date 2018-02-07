@@ -34,6 +34,7 @@ import org.eclipse.text.edits.TextEdit;
 
 import ca.ubc.salt.model.state.ReadVariableVisitor;
 import ca.ubc.salt.model.state.VarDefinitionPreq;
+import ca.ubc.salt.model.utils.Settings;
 import ca.ubc.salt.model.utils.Utils;
 
 public class Method {
@@ -208,7 +209,7 @@ public class Method {
 					na.setTypeName(name);
 					MemberValuePair pair = ast.newMemberValuePair();
 					pair.setName(ast.newSimpleName("timeout"));
-					pair.setValue(ast.newNumberLiteral("180000"));
+					pair.setValue(ast.newNumberLiteral(Settings.TIMEOUT));
 					na.values().add(pair);
 					listRewrite.insertFirst(na, null);
 				}

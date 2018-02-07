@@ -69,13 +69,18 @@ public class Utils {
 	}
 
 	public static List<ClassModel> getAllClasses(List<String> classesNames) {
+		
 		List<ClassModel> classesModel = new LinkedList<ClassModel>();
+		
 		for (String testClassName : classesNames) {
 			try {
 				ClassModel theClass;
 				theClass = Utils.getTheModelForTheClass(testClassName);
 				if (theClass != null)
 					classesModel.add(theClass);
+				else {
+					continue;
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -87,11 +92,18 @@ public class Utils {
 	private static ClassModel getTheModelForTheClass(String testClassName) {
 		try {
 			String testClassPath = null;
+			
 			if (testClassName.indexOf('.') == -1) {
 				testClassName = Utils.getTestCaseName(testClassName);
 				testClassPath = Instrumenter.classFileMappingShortName.get(testClassName);
 			} else
 				testClassPath = Utils.classFileMapping.get(testClassName);
+			
+			if(testClassPath == null){
+				System.out.println("[ERROR]\tUtils.getTheModelForTheClass()::Model not found for class " + testClassName);
+				return null;
+			}
+			
 			String source = FileUtils.readFileToString(testClassPath);
 			Document document = new Document(source);
 			List<ClassModel> classes = ClassModel.getClasses(document.get(), true, testClassPath,
@@ -142,7 +154,7 @@ public class Utils {
 	 * @return
 	 */
 	public static boolean isTestClass(File classFile) {
-		if (classFile.getAbsolutePath().contains("src/test/"))
+		if (classFile.getAbsolutePath().contains("src/test/") || classFile.getAbsolutePath().contains("src/it/"))
 			return true;
 		else
 			return false;

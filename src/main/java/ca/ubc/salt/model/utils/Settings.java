@@ -13,38 +13,32 @@ public class Settings {
 
 	public static final String LIBRARY_JAVA = "/Library/Java/JavaVirtualMachines/jdk1.8.0_111.jdk/Contents/Home/jre/lib/rt.jar";
 
-	public static final String FILESYSTEM_PATH = "/Users/tsigalko18/Desktop/";
+	public static final String FILESYSTEM_PATH = "/Users/tsigalko18/Desktop/toTry/";
 //	public static final String FILESYSTEM_PATH = "/Users/astocco/Desktop/";
 	
-//	public static final String SUBJECT = "math-simple-small2";
-//	public static final String SUBJECT = "math-simple-complete";
-//	public static final String SUBJECT = "commons-math-semplificato";
-	
 //	public static final String SUBJECT = "assertj-core";
-//	public static final String SUBJECT = "assertj-core-master";
 //	public static final String SUBJECT = "commons-math";
-//	public static final String SUBJECT = "math-simple-small2";
+//	public static final String SUBJECT = "math-simple-complete";
 //	public static final String SUBJECT = "commons-lang-master";
 //	public static final String SUBJECT = "pmd-core";
-	public static final String SUBJECT = "pmd-java";
+//	public static final String SUBJECT = "pmd-java";
 //	public static final String SUBJECT = "checkstyle-master";
-
+//	public static final String SUBJECT = "Tudu-Lists-master";
+//	public static final String SUBJECT = "lambdaj-master";
+//	public static final String SUBJECT = "truth-master"; // small results (7%)
+//	public static final String SUBJECT = "jfreechart-pulito";
+//	public static final String SUBJECT = "java-library-master";
+//	public static final String SUBJECT = "checkstyle-6.14";
+	public static final String SUBJECT = "log4j-core";
+	
+//	public static final String SUBJECT = "crunch-core-normal";
+//	public static final String SUBJECT = "crunch-kafka";
+//	public static final String SUBJECT = "tika-xmp";
+//	public static final String SUBJECT = "xmlsec-2.0.8";
+//	public static final String SUBJECT = "commons-email";
+//	public static final String SUBJECT = "log4j-core";
 
 	public static final String PROJECT_PATH = FILESYSTEM_PATH + SUBJECT;
-	
-//	public static final String PROJECT_PATH = FILESYSTEM_PATH + "math-simple";
-	// public static final String PROJECT_PATH =
-	// FILESYSTEM_PATH + "pmd-core";
-	// public static final String PROJECT_PATH =
-	// FILESYSTEM_PATH + "pmd-java";
-	// public static final String PROJECT_PATH =
-	// FILESYSTEM_PATH + "commons-io-2.5-src";
-	// public static final String PROJECT_PATH =
-	// FILESYSTEM_PATH + "commons-lang3-3.5-src";
-	// public static final String PROJECT_PATH =
-	// FILESYSTEM_PATH + "commons-beanutils-1.9.3-src";
-	// public static final String PROJECT_PATH =
-	// FILESYSTEM_PATH + "commons-configuration2-2.1-src";
 
 	public static final String PROJECT_INSTRUMENTED_PATH = 	PROJECT_PATH + "-instrumented";
 	public static final String PROJECT_MERGED_PATH = 		PROJECT_PATH + "-merged";
@@ -52,8 +46,11 @@ public class Settings {
 	public final static String tracePaths = 				PROJECT_INSTRUMENTED_PATH + "/traces";
 	public final static String classFileMappingPath = 		SUBJECT + "-classFileMapping.xml";
 	public final static String shortClassFileMappingPath = 	SUBJECT + "-shortClassFileMapping.xml";
+	
+	// tests timeout in ms
+	public final static String TIMEOUT = "180000";
 
-	public final static String[] methodBlackList = new String[] { "" };
+	public final static String[] methodBlackList = new String[] {""};
 
 	public static final Set<String> blackListSet = new HashSet<String>(Arrays.asList(methodBlackList));
 	

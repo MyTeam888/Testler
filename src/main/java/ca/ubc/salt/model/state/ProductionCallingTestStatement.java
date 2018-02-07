@@ -24,9 +24,8 @@ import ca.ubc.salt.model.utils.Utils;
 public class ProductionCallingTestStatement {
 
 	public static void main(String[] args) throws FileNotFoundException {
-		writeStatToFile();
+		// writeStatToFile();
 		getCommonStmsForEachTestCase();
-		// System.out.println(getTestCasesThatShareTestStatement(1));
 	}
 
 	public static void getCommonStmsForEachTestCase() throws FileNotFoundException {
@@ -65,7 +64,7 @@ public class ProductionCallingTestStatement {
 			System.out.println(test + "\t" + results.get(test).size());
 			fw.format("%s,%d\n", test, results.get(test).size());
 		}
-		
+
 		fw.close();
 		// System.out.println(results.values());
 
@@ -239,7 +238,7 @@ public class ProductionCallingTestStatement {
 				key = key.replaceAll(",", "");
 			}
 
-//			System.out.println(entry.getValue());
+			// System.out.println(entry.getValue());
 
 			String entr = entry.getValue().toString().replaceAll(",", " ");
 			fw.format("%s,%s,%d\n", key, entr, entry.getValue().size());

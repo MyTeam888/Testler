@@ -67,14 +67,14 @@ public class BackwardTestMerger {
 
 		// ProductionCallingTestStatement.main(args);
 		ProductionCallingTestStatement.writeStatToFile();
-
+		ProductionCallingTestStatement.getCommonStmsForEachTestCase();
 	}
-
-	
 
 	public static Map<String, TestStatement> getAllTestStatements(ArrayList<String> allStmtStr,
 			Map<String, TestState> graph) {
+
 		Map<String, TestStatement> allStmts = new HashMap<String, TestStatement>();
+
 		for (String stmt : allStmtStr) {
 			TestStatement ts = getTestStatementFromStr(allStmtStr, graph, stmt);
 			if (ts != null)
@@ -127,7 +127,7 @@ public class BackwardTestMerger {
 			Map<String, List<String>> uniqueTestStatements = ProductionCallingTestStatement.getUniqueTestStatements();
 			uniqueTestStatementSet.add(uniqueTestStatements);
 
-			int commonStms = 1;
+			int commonStms = 3;
 
 			connectedComponents = ProductionCallingTestStatement.getTestCasesThatShareTestStatement(commonStms,
 					uniqueTestStatementSet);
