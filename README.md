@@ -1,4 +1,5 @@
-# TestModler
+# Testler
+
 This tool creates a test suite model from existing test suites for various test refactoring purposes
 
 In order to create the test model first you need to instrument the project.
