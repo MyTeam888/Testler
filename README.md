@@ -1,6 +1,6 @@
-# Testler
+# Testler:
 
-This tool creates a test suite model from existing test suites for various test refactoring purposes
+This tool aims at creating a test suite model that can be used to eliminate fine-grained redundancies in Java tests.
 
 In order to create the test model first you need to instrument the project.
 
@@ -14,3 +14,11 @@ In order to create the test model first you need to instrument the project.
 **Merging Usecase**
 
 To merge test cases you can call `java ca.ubc.salt.model.merger.TestMerger`, it builds a test suite model and uses the test model to identify partly redundant test cases, it then tries to reorganize these test cases in a way that removes the redundancy and repeated production method calls. It writes the reorganized test suite back to the disk. Path for the reorganized test suite can be set in `Settings`.
+
+###Publication
+
+The tool and its empirical evaluation have been published in the following conference paper.
+
+- Arash Vahabzadeh, Andrea Stocco, Ali Mesbah. **Fine-Grained Test Minimization.**
+    _Proceedings of 40th International Conference on Software Engineering (ICSE 2018) - Research Track_, May 27-June 3 2018, Gothenburg, Sweden, ACM, New York, NY, USA, 2018. [DOI](https://doi.org/10.1145/3180155.3180203)
+
