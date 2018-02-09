@@ -263,8 +263,8 @@ public class ComposerHelper
 		    ListRewrite listRewrite = rewriter.getListRewrite(clazz.getTypeDec(),
 			    TypeDeclaration.BODY_DECLARATIONS_PROPERTY);
 
-		    // TestCaseComposer.removeTestCasesFromTestClass(clazz,
-		    // testCasesOfClass, rewriter);
+		     TestCaseComposer.removeTestCasesFromTestClass(clazz,
+		     testCasesOfClass, rewriter);
 
 		    if (testClassName.equals(mainClassName))
 		    {

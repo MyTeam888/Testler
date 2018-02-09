@@ -26,7 +26,7 @@ import ca.ubc.salt.model.utils.Utils;
 public class RollBackChanges
 {
 
-    static final String mergedInfoPath = "results/mergingResult.txt";
+    static final String mergedInfoPath = Settings.SUBJECT + "-" + "mergingResult.xml";
 
     public static void main(String[] args) throws FileNotFoundException, IOException, ClassNotFoundException
     {

@@ -11,3 +11,12 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 /target/
+stat.csv
+unique.xml
+/parameterizedClasses-commons-io-2.5-src.txt
+/parentClassDependency-commons-io-2.5-src.txt
+/classFileMapping.xml
+/parameterizedClasses-commons-math-small.txt
+/parentClassDependency-commons-math-small.txt
+/components.xml
+/mergingStat.csv
