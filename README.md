@@ -15,7 +15,7 @@ In order to create the test model first you need to instrument the project.
 
 To merge test cases you can call `java ca.ubc.salt.model.merger.TestMerger`, it builds a test suite model and uses the test model to identify partly redundant test cases, it then tries to reorganize these test cases in a way that removes the redundancy and repeated production method calls. It writes the reorganized test suite back to the disk. Path for the reorganized test suite can be set in `Settings`.
 
-###Publication
+### Publication
 
 The tool and its empirical evaluation have been published in the following conference paper.
 
